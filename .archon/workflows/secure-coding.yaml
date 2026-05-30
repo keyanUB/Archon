@@ -1,0 +1,76 @@
+name: secure-coding
+description: |
+  Implements code following OWASP Secure Coding Practices. Loads the SCP reference
+  from .archon/commands/owasp-scp.md, implements with security controls enforced,
+  then validates with both functional and security-focused tests.
+provider: claude
+
+nodes:
+  # Load OWASP SCP reference from disk — keeps the workflow prompt lean
+  - id: load-owasp
+    bash: |
+      cat ".archon/commands/owasp-scp.md" 2>/dev/null \
+        || cat "$HOME/.archon/commands/owasp-scp.md" 2>/dev/null \
+        || echo "ERROR: OWASP SCP reference not found at .archon/commands/owasp-scp.md"
+    timeout: 5000
+
+  # Implement with OWASP controls — SCP text injected from $load-owasp.output
+  - id: implement
+    depends_on: [load-owasp]
+    idle_timeout: 900000
+    loop:
+      prompt: |
+        Task: $ARGUMENTS
+
+        Implement the requested changes following these OWASP Secure Coding Practices:
+
+        $load-owasp.output
+
+        Before signaling complete, verify:
+        - No raw user input in queries, templates, or shell commands
+        - No plaintext secrets or credentials in code or config
+        - No internal details (stack traces, paths, query text) in error responses
+        - Errors fail securely — deny on error, never allow
+
+        When implementation is complete: <promise>IMPLEMENTED</promise>
+      until: IMPLEMENTED
+      max_iterations: 5
+      fresh_context: false
+
+  # Generate both functional and security-focused tests
+  - id: generate-tests
+    depends_on: [implement]
+    prompt: |
+      Write a test suite for the implementation above.
+
+      ## Functional tests
+      Cover: happy path, edge cases, and error conditions for every change made.
+
+      ## Security tests
+      Write at least one adversarial test per applicable SCP category below.
+      Each security test must FAIL if the control is absent — they are not smoke tests.
+      Mark each with: // [SECURITY: <category>]
+
+      Applicable SCP categories:
+      $load-owasp.output
+
+      Use the project's existing test framework and file conventions.
+      Write tests directly into the appropriate test files.
+
+  # Run tests and fix failures — never weaken a security test
+  - id: validate
+    depends_on: [generate-tests]
+    idle_timeout: 300000
+    loop:
+      prompt: |
+        Run the test suite. Fix any failures.
+
+        Rules:
+        - Fix the implementation to make tests pass — never comment out, skip, or weaken a test
+        - If a [SECURITY: ...] test fails, a vulnerability exists in the implementation — fix the code
+
+        When all tests pass: <promise>ALL_PASSING</promise>
+      until: ALL_PASSING
+      until_bash: "bun run test 2>&1"
+      max_iterations: 6
+      fresh_context: false
