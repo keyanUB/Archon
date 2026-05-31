@@ -1,0 +1,329 @@
+name: grasp-secure-coding
+description: |
+  Implements GRASP (Guided Reasoning with Actionable Security Principles).
+  Rather than teaching the model what insecure patterns to avoid, GRASP guides it
+  through an SCP Graph — a DAG of OWASP Secure Coding Principles — and iteratively
+  applies only the principles that are relevant to the task, in dependency order.
+
+  Use when: User wants to implement a feature, function, or endpoint with strong
+  security guarantees baked in from the start.
+  Triggers: "grasp", "implement securely", "secure implementation", "apply OWASP",
+            "grasp secure coding", "secure this code".
+  NOT for: Code reviews, bug fixes unrelated to security, pure refactoring.
+
+  Supports two SCP reference formats (tried in order):
+    1. .archon/data/scp-graph.json  — structured DAG (full GRASP with prerequisite edges)
+    2. .archon/commands/owasp-scp.md — flat OWASP markdown (simplified GRASP, category-based)
+
+provider: claude
+model: sonnet
+
+nodes:
+
+  # ── Phase 1: Load SCP Reference ───────────────────────────────────────────────
+  # Deterministic file read — no AI. Emits FORMAT:json or FORMAT:markdown as the
+  # first line so the loop prompt knows which graph mode to use.
+  - id: load-scp-graph
+    bash: |
+      if [ -f ".archon/data/scp-graph.json" ]; then
+        echo "FORMAT:json"
+        cat ".archon/data/scp-graph.json"
+      elif [ -f "$HOME/.archon/data/scp-graph.json" ]; then
+        echo "FORMAT:json"
+        cat "$HOME/.archon/data/scp-graph.json"
+      elif [ -f ".archon/commands/owasp-scp.md" ]; then
+        echo "FORMAT:markdown"
+        cat ".archon/commands/owasp-scp.md"
+      elif [ -f "$HOME/.archon/commands/owasp-scp.md" ]; then
+        echo "FORMAT:markdown"
+        cat "$HOME/.archon/commands/owasp-scp.md"
+      else
+        echo "ERROR: No SCP reference found."
+        echo "Provide .archon/data/scp-graph.json (structured graph) or"
+        echo ".archon/commands/owasp-scp.md (flat OWASP list)."
+        exit 1
+      fi
+    timeout: 5000
+
+  # ── Phase 2: Generate Seed Code ───────────────────────────────────────────────
+  # Functionally correct baseline. Security controls are NOT added here — the GRASP
+  # loop adds them incrementally so each refinement is traceable to a specific SCP.
+  - id: generate-seed
+    depends_on: [load-scp-graph]
+    prompt: |
+      Generate a functionally correct baseline implementation for this task.
+      Focus purely on correctness and completeness — do NOT add security controls yet.
+      The GRASP algorithm will harden the code iteratively in the next phase.
+
+      Task: $ARGUMENTS
+
+      Requirements:
+      - Include all required imports and necessary boilerplate
+      - The code must be syntactically valid and complete
+      - Use idiomatic style for the target language
+      - Do not add input validation, parameterized queries, sanitization, or error
+        message filtering — these will be layered on by GRASP
+
+      Return a JSON object with exactly these fields:
+      {
+        "language": "<python|typescript|javascript|go|c|other>",
+        "code": "<the complete baseline implementation>",
+        "description": "<one sentence: what this code does and what inputs/outputs it handles>"
+      }
+    output_format:
+      type: object
+      properties:
+        language: { type: string }
+        code: { type: string }
+        description: { type: string }
+      required: [language, code, description]
+    allowed_tools: []
+    context: fresh
+
+  # ── Phase 3: Select Relevant SCP Groups ───────────────────────────────────────
+  # Haiku for cheap classification — no tools, pure reasoning over the seed + graph.
+  - id: select-groups
+    depends_on: [generate-seed, load-scp-graph]
+    prompt: |
+      You are a security expert identifying which OWASP SCP categories apply to a task.
+
+      Task: $ARGUMENTS
+      Language: $generate-seed.output.language
+      Code description: $generate-seed.output.description
+
+      Seed code:
+      ```
+      $generate-seed.output.code
+      ```
+
+      SCP reference:
+      $load-scp-graph.output
+
+      Select the 2–5 most relevant SCP categories for this specific implementation.
+      Reason about: What inputs does this code handle? What resources does it access?
+      What data flows to external systems? What attack vectors are plausible?
+
+      Return a JSON object:
+      {
+        "selected_groups": ["<exact category name from the reference>", ...],
+        "rationale": "<one sentence explaining why these categories apply to this task>"
+      }
+    output_format:
+      type: object
+      properties:
+        selected_groups:
+          type: array
+          items: { type: string }
+        rationale: { type: string }
+      required: [selected_groups, rationale]
+    model: claude-haiku-4-5-20251001
+    allowed_tools: []
+    context: fresh
+
+  # ── Phase 4: GRASP Iterative Refinement Loop ──────────────────────────────────
+  # Core algorithm. fresh_context: false preserves conversation history across
+  # iterations — the AI tracks VISITED / APPLIED / READY state in its own context,
+  # anchored by the explicit <state> blocks it writes each iteration.
+  #
+  # Graph modes (detected from FORMAT: prefix in load-scp-graph output):
+  #   json     → each SCP node has id, category, text, prerequisites[], specializes[]
+  #              READY = SCPs whose prerequisites[] are all in VISITED
+  #   markdown → flat category-grouped list; READY = next unevaluated batch in selected categories
+  - id: grasp-refine
+    depends_on: [generate-seed, select-groups, load-scp-graph]
+    idle_timeout: 900000
+    loop:
+      prompt: |
+        You are executing the GRASP algorithm: Guided Reasoning with Actionable Security Principles.
+        You traverse a DAG of Secure Coding Principles, applying each relevant one in dependency
+        order, and incrementally refine the seed code into a secure implementation.
+
+        ════════════════════════════════════════════════════
+        TASK        : $ARGUMENTS
+        LANGUAGE    : $generate-seed.output.language
+        SCP GROUPS  : $select-groups.output.selected_groups
+        RATIONALE   : $select-groups.output.rationale
+        ════════════════════════════════════════════════════
+
+        SCP REFERENCE (the full graph — use for traversal):
+        $load-scp-graph.output
+
+        ════════════════════════════════════════════════════
+        SEED CODE (use as CURRENT_CODE on your FIRST iteration only):
+        ```$generate-seed.output.language
+        $generate-seed.output.code
+        ```
+
+        ════════════════════════════════════════════════════
+        GRASP ALGORITHM — execute every iteration:
+
+        ┌─ FIRST ITERATION ONLY ────────────────────────────────────────────────────┐
+        │ CURRENT_CODE = seed code above                                            │
+        │ VISITED      = []                                                         │
+        │ APPLIED      = []                                                         │
+        │ READY        = initial frontier:                                          │
+        │   JSON graph : SCPs in selected groups whose prerequisites[] are either   │
+        │                (a) outside the selected groups, or (b) already in VISITED │
+        │   Flat list  : first batch of SCPs from the selected categories           │
+        └───────────────────────────────────────────────────────────────────────────┘
+
+        ┌─ SUBSEQUENT ITERATIONS ───────────────────────────────────────────────────┐
+        │ Read CURRENT_CODE, VISITED, APPLIED, READY from your last <state> block  │
+        └───────────────────────────────────────────────────────────────────────────┘
+
+        STEP 1 — SCORE each SCP in READY for relevance to CURRENT_CODE (1–5):
+          1 = entirely irrelevant to this implementation
+          5 = directly applies; absence would introduce a clear vulnerability
+          Apply if score ≥ 3. Skip if score < 3.
+
+        STEP 2 — APPLY each SCP with score ≥ 3, one at a time:
+          Revise CURRENT_CODE to satisfy the SCP's security obligation.
+          PRESERVE all original functionality, interfaces, and behavior.
+          Each revision is incremental — apply exactly one SCP per revision.
+          Show your reasoning: "SCP X (score Y): <what you changed and why>"
+
+        STEP 3 — UPDATE state:
+          VISITED = VISITED ∪ {ALL SCPs evaluated this iteration, applied or skipped}
+          APPLIED = APPLIED ∪ {SCPs with score ≥ 3}
+          READY   = {SCPs whose prerequisites are ALL in VISITED} − VISITED
+                    (flat list: next unevaluated batch in the selected categories)
+
+        STEP 4 — TERMINATE when READY is empty:
+          → Signal completion and output the final code
+
+        ════════════════════════════════════════════════════
+        REQUIRED OUTPUT FORMAT — every response MUST end with this exact block:
+
+        <state>
+        VISITED: [scp-id-or-name, ...]
+        APPLIED: [scp-id-or-name, ...]
+        READY: [scp-id-or-name, ...]
+        CURRENT_CODE:
+        ```$generate-seed.output.language
+        <your latest hardened code>
+        ```
+        </state>
+
+        When READY is empty, also output on its own line: <promise>COMPLETE</promise>
+
+      until: COMPLETE
+      max_iterations: 12
+      fresh_context: false
+    context: fresh
+
+  # ── Phase 5: Extract Final Code ───────────────────────────────────────────────
+  # Parse the free-form loop output into structured data for downstream nodes.
+  # Haiku is sufficient — this is extraction, not reasoning.
+  - id: extract-final
+    depends_on: [grasp-refine]
+    prompt: |
+      Extract the final secured code from the GRASP refinement log below.
+      Use ONLY the CURRENT_CODE from the LAST <state> block in the log.
+
+      GRASP log:
+      $grasp-refine.output
+
+      Return a JSON object:
+      {
+        "language": "<language>",
+        "final_code": "<the complete hardened code from the last state block>",
+        "applied_scps": ["<scp name or id>", ...]
+      }
+    output_format:
+      type: object
+      properties:
+        language: { type: string }
+        final_code: { type: string }
+        applied_scps:
+          type: array
+          items: { type: string }
+      required: [language, final_code, applied_scps]
+    model: claude-haiku-4-5-20251001
+    allowed_tools: []
+    context: fresh
+
+  # ── Phase 6: Write Secured Code to Disk ───────────────────────────────────────
+  - id: write-code
+    depends_on: [extract-final]
+    prompt: |
+      Write the final GRASP-secured implementation to the appropriate file(s).
+
+      Task: $ARGUMENTS
+      Language: $extract-final.output.language
+      Applied security principles: $extract-final.output.applied_scps
+
+      Final secured code:
+      ```$extract-final.output.language
+      $extract-final.output.final_code
+      ```
+
+      Instructions:
+      1. Explore the project structure to determine the correct file path(s)
+      2. Write the secured code respecting existing project conventions
+      3. Ensure all imports and dependencies are present and correct
+    context: fresh
+
+  # ── Phase 7: Generate Functional + Security Tests ─────────────────────────────
+  # One adversarial security test per applied SCP — tests must FAIL without the control.
+  - id: generate-tests
+    depends_on: [write-code, extract-final]
+    prompt: |
+      Write a test suite for the GRASP-secured implementation.
+
+      Task: $ARGUMENTS
+      Language: $extract-final.output.language
+
+      Final secured code:
+      ```$extract-final.output.language
+      $extract-final.output.final_code
+      ```
+
+      Applied security principles — write one adversarial test per principle:
+      $extract-final.output.applied_scps
+
+      ── Functional tests ──────────────────────────────────────────────────────
+      Cover: happy path, edge cases, error conditions, and boundary inputs.
+      These verify the code still does what it's supposed to do.
+
+      ── Security tests ────────────────────────────────────────────────────────
+      For each applied SCP, write at least one adversarial test that:
+      - FAILS if the security control is absent (not a smoke test — a real exploit attempt)
+      - Actively tries to exploit the specific vulnerability the SCP guards against
+        (e.g. for SQL injection: pass '; DROP TABLE users; --)
+        (e.g. for path traversal: pass ../../etc/passwd as a filename)
+      - Is tagged exactly: // [SECURITY: <principle name>]
+
+      Use the project's existing test framework, runner, and file conventions.
+      Write tests directly into the appropriate test files.
+    context: fresh
+
+  # ── Phase 8: Run Tests and Fix Failures ───────────────────────────────────────
+  # until_bash provides a deterministic exit-code gate so the loop can't signal
+  # COMPLETE while tests are still failing.
+  - id: validate
+    depends_on: [generate-tests]
+    idle_timeout: 300000
+    loop:
+      prompt: |
+        Run the full test suite. Fix any failures.
+
+        Non-negotiable rules:
+        - Fix the IMPLEMENTATION to make tests pass — never comment out, skip, or weaken a test
+        - A failing [SECURITY: ...] test means a real vulnerability exists — fix the code, not the test
+        - Preserve all security controls and original functionality while fixing
+
+        When all tests pass: <promise>ALL_PASSING</promise>
+      until: ALL_PASSING
+      until_bash: |
+        if [ -f "package.json" ] && grep -q '"test"' package.json 2>/dev/null; then
+          bun run test 2>&1
+        elif [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "pytest.ini" ]; then
+          pytest 2>&1
+        elif [ -f "Makefile" ] && grep -q '^test:' Makefile 2>/dev/null; then
+          make test 2>&1
+        else
+          exit 0
+        fi
+      max_iterations: 6
+      fresh_context: false
+    context: fresh
