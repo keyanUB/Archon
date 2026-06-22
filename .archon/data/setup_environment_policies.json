@@ -1,0 +1,1296 @@
+{
+  "_metadata": {
+    "description": "Setup/environment-related security policies extracted from combined_policies.json",
+    "extracted_on": "2026-06-22",
+    "source_file": "combined_policies.json",
+    "total_records_in_source": 869,
+    "records_selected": 84,
+    "selection_criteria": "Records whose policy_description concerns environment/deployment setup: dependency & supply-chain integrity, build/release integrity, configuration hardening & secure defaults, secrets/key management, least-privilege & access control at the system level, transport/network configuration, endpoint/runtime hardening, logging/monitoring setup, and secure-SDLC process. Application-runtime logic (e.g., password hashing algorithms, OAuth flow parameters, cookie attributes, RNG design, output encoding) was excluded as application security rather than setup/environment.",
+    "theme_counts": {
+      "endpoint_runtime_hardening": 2,
+      "least_privilege_access": 9,
+      "other_setup_env": 22,
+      "dependency_supply_chain": 12,
+      "process_lifecycle": 9,
+      "build_release_integrity": 1,
+      "config_hardening": 6,
+      "transport_network_config": 14,
+      "secrets_key_management": 8,
+      "logging_monitoring_setup": 1
+    },
+    "source_counts": {
+      "CWE_Top25": 3,
+      "NIST_AI_RMF": 3,
+      "NIST_SP800218": 17,
+      "OWASP_AI_Agent_Security": 1,
+      "OWASP_ASVS": 47,
+      "OWASP_LLM_Top10": 12,
+      "PaloAlto_GenAI_Risk": 1
+    }
+  },
+  "policies": [
+    {
+      "policy_id": "CWE-049",
+      "source": "CWE_Top25",
+      "setup_env_theme": "endpoint_runtime_hardening",
+      "scope": "Architecture and Design Operation",
+      "policy_description": "Run the code in a jail or similar sandbox environment that enforces strict boundaries between the process and the operating system.",
+      "definition": [],
+      "reference": [
+        "CWE-22",
+        "CWE-78"
+      ]
+    },
+    {
+      "policy_id": "CWE-067",
+      "source": "CWE_Top25",
+      "setup_env_theme": "endpoint_runtime_hardening",
+      "scope": "Architecture and Design Operation",
+      "policy_description": "Use quotas or other resource-limiting settings provided by the operating system or environment.",
+      "definition": [],
+      "reference": [
+        "CWE-770"
+      ]
+    },
+    {
+      "policy_id": "CWE-079",
+      "source": "CWE_Top25",
+      "setup_env_theme": "least_privilege_access",
+      "scope": "Architecture and Design",
+      "policy_description": "Use the access control capabilities of your operating system and server environment and define your access control lists accordingly. Use a default deny policy when defining these ACLs.",
+      "definition": [],
+      "reference": [
+        "CWE-862",
+        "CWE-863"
+      ]
+    },
+    {
+      "policy_id": "RMF-027",
+      "source": "NIST_AI_RMF",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "AI systems that can maintain confidentiality, integrity, and availability through protection mechanisms that prevent unauthorized access and use may be said to be secure.",
+      "definition": [],
+      "reference": [
+        "3.3 SecureandResilient",
+        "Page 15"
+      ]
+    },
+    {
+      "policy_id": "RMF-031",
+      "source": "NIST_AI_RMF",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": "Developers / data maintainers",
+      "policy_description": "Maintaining the provenance of training data and supporting attribution of the AI system’s decisions to subsets of training data can assist with both transparency and accountability.",
+      "definition": [],
+      "reference": [
+        "3.4 AccountableandTransparent",
+        "Page 15"
+      ]
+    },
+    {
+      "policy_id": "RMF-121",
+      "source": "NIST_AI_RMF",
+      "setup_env_theme": "other_setup_env",
+      "scope": "continual improvement activities",
+      "policy_description": "MANAGE 4.2: Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
+      "definition": [],
+      "reference": [
+        "MANAGE 4.2",
+        "Table 4"
+      ]
+    },
+    {
+      "policy_id": "SSDF-001",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "process_lifecycle",
+      "scope": "Organizations (software producers and software acquirers)",
+      "policy_description": "Organizations should integrate the SSDF throughout their existing software development practices, express their secure software development requirements to third-party suppliers using SSDF conventions, and acquire software that meets the practices described in the SSDF.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "SSDF-002",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "other_setup_env",
+      "scope": "Organizations (software producers and software acquirers)",
+      "policy_description": "Organizations should ensure that their people, processes, and technology are prepared to perform secure software development.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "SSDF-004",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "build_release_integrity",
+      "scope": "Organizations (software producers and software acquirers)",
+      "policy_description": "Organizations should produce well-secured software with minimal security vulnerabilities in its releases.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "SSDF-011",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "process_lifecycle",
+      "scope": "Personnel with development-related responsibilities",
+      "policy_description": "PO.2.2: Provide role-based training for all personnel with responsibilities that contribute to secure development. Periodically review personnel proficiency and role-based training, and update the training as needed.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: PD.2-2",
+        "BSIMM: T1.1, T1.7, T1.8, T2.5, T2.8, T2.9, T3.1, T3.2, T3.4",
+        "EO14028: 4e(ix)",
+        "IEC62443: SM-4",
+        "MSSDL: 1",
+        "NISTCSF: PR.AT",
+        "OWASPSAMM: EG1-A, EG2-A",
+        "PCISSLC: 1.3",
+        "SCAGILE: Operational Security Tasks 14, 15; Tasks Requiring the Help of Security Experts 1",
+        "SCFPSSD: Planning the Implementation and Deployment of Secure Development Practices",
+        "SCSIC: Vendor Software Development Integrity Controls",
+        "SP80053: SA-8",
+        "SP800160: 3.2.4, 3.2.6",
+        "SP800161: SA-8",
+        "SP800181: OV-TEA-001, OV-TEA-002; T0030, T0073, T0320; K0204, K0208, K0220, K0226, K0243, K0245, K0252; S0100, S0101; A0004, A0057"
+      ]
+    },
+    {
+      "policy_id": "SSDF-012",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "process_lifecycle",
+      "scope": "Organization leadership and authorizing officials for SDLC",
+      "policy_description": "PO.2.3: Obtain upper management or authorizing official commitment to secure development, and convey that commitment to all with development-related roles and responsibilities.",
+      "definition": [],
+      "reference": [
+        "BSIMM: SM1.3, SM2.7, CP2.5",
+        "EO14028: 4e(ix)",
+        "NISTCSF: ID.RM-1, ID.SC-1",
+        "OWASPSAMM: SM1.A",
+        "PCISSLC: 1.1",
+        "SP800181: T0001, T0004"
+      ]
+    },
+    {
+      "policy_id": "SSDF-015",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "other_setup_env",
+      "scope": "Tools and automation used to support secure development",
+      "policy_description": "PO.3.3: Configure tools to generate artifacts of their support of secure software development practices as defined by the organization.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: PD.1-5",
+        "BSIMM: SM1.4, SM3.4, SR1.3",
+        "CNCFSSCP: Securing Build Pipelines—Verification, Automation, Controlled Environments; Securing Artefacts—Verification",
+        "EO14028: 4e(i)(F), 4e(ii), 4e(v), 4e(ix)",
+        "IEC62443: SM-12, SI-2",
+        "MSSDL: 8",
+        "OWASPSAMM: PC3-B",
+        "OWASPSCVS: 3.13, 3.14",
+        "PCISSLC: 2.5",
+        "SCAGILE: Tasks Requiring the Help of Security Experts 9",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SP80053: SA-15",
+        "SP800161: SA-15",
+        "SP800181: K0013; T0024"
+      ]
+    },
+    {
+      "policy_id": "SSDF-019",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "config_hardening",
+      "scope": "Development endpoints used by designers, developers, testers, builders, etc.",
+      "policy_description": "PO.5.2: Secure and harden development endpoints (i.e., endpoints for software designers, developers, testers, builders, etc.) to perform development-related tasks using a risk-based approach.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: DE.1-1, IA.1, IA.2",
+        "EO14028: 4e(i)(C), 4e(i)(E), 4e(i)(F), 4e(ii), 4e(iii), 4e(v), 4e(vi), 4e(ix)",
+        "IEC62443: SM-7",
+        "NISTCSF: PR.AC-4, PR.AC-7, PR.IP-1, PR.IP-3, PR.IP-12, PR.PT-1, PR.PT-3, DE.CM",
+        "SCAGILE: Tasks Requiring the Help of Security Experts 11",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SP80053: SA-15",
+        "SP800161: SA-15",
+        "SP800181: OM-ADM-001, SP-SYS-001; T0484, T0485, T0489, T0553; K0005, K0007, K0077, K0088, K0130, K0167, K0205, K0275; S0076, S0097, S0121, S0158; A0155"
+      ]
+    },
+    {
+      "policy_id": "SSDF-022",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": "Software releases and archival of release artifacts",
+      "policy_description": "PS.3.1: Securely archive the necessary files and supporting data (e.g., integrity verification information, provenance data) to be retained for each software release.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: PD.1-5, DE.1-2, IA.2",
+        "CNCFSSCP: Securing Artefacts—Automation, Controlled Environments, Encryption; Securing Deployments—Verification",
+        "EO14028: 4e(iii), 4e(vi), 4e(ix), 4e(x)",
+        "IDASOAR: 25",
+        "IEC62443: SM-6, SM-7",
+        "NISTCSF: PR.IP-4",
+        "OWASPSCVS: 1, 3.18, 3.19, 6.3",
+        "PCISSLC: 5.2, 6.1, 6.2",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SP80053: SA-10, SA-15, SA-15(11), SR-4",
+        "SP800161: SA-8, SA-10, SA-15(11), SR-4"
+      ]
+    },
+    {
+      "policy_id": "SSDF-023",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": "All components of each software release (including third-party components)",
+      "policy_description": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM]).",
+      "definition": [],
+      "reference": [
+        "BSAFSS: SM.2",
+        "BSIMM: SE3.6",
+        "CNCFSSCP: Securing Materials—Verification, Automation",
+        "EO14028: 4e(vi), 4e(vii), 4e(ix), 4e(x)",
+        "NTIASBOM: All",
+        "OWASPSCVS: 1.4, 2",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SCTPC: MAINTAIN3",
+        "SP80053: SA-8, SR-3, SR-4",
+        "SP800161: SA-8, SR-3, SR-4"
+      ]
+    },
+    {
+      "policy_id": "SSDF-028",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "PW.4.1: Acquire and maintain well-secured software components (e.g., software libraries, modules, middleware, frameworks) from commercial, open-source, and other third-party developers for use by the organization\u0019s software.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: SM.2",
+        "BSIMM: SFD2.1",
+        "BSIMM: SFD3.2",
+        "BSIMM: SR2.4",
+        "BSIMM: SR3.1",
+        "BSIMM: SE3.6",
+        "CNCFSSCP: Securing Materials—Verification",
+        "EO14028: 4e(iii)",
+        "EO14028: 4e(vi)",
+        "EO14028: 4e(ix)",
+        "EO14028: 4e(x)",
+        "IDASOAR: 19",
+        "IEC62443: SM-9",
+        "IEC62443: SM-10",
+        "MSSDL: 6",
+        "NISTCSF: ID.SC-2",
+        "OWASPASVS: 1.1.6",
+        "OWASPSAMM: SA1-A",
+        "OWASPSCVS: 4",
+        "SCSIC: Vendor Sourcing Integrity Controls",
+        "SCTPC: MAINTAIN",
+        "SP80053: SA-4",
+        "SP80053: SA-5",
+        "SP80053: SA-8(3)",
+        "SP80053: SA-10(6)",
+        "SP80053: SR-3",
+        "SP80053: SR-4",
+        "SP800161: SA-4",
+        "SP800161: SA-5",
+        "SP800161: SA-8(3)",
+        "SP800161: SA-10(6)",
+        "SP800161: SR-3",
+        "SP800161: SR-4",
+        "SP800181: K0039"
+      ]
+    },
+    {
+      "policy_id": "SSDF-029",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": "in-house created software components intended to meet common internal needs",
+      "policy_description": "PW.4.2: Create and maintain well-secured software components in-house following SDLC processes to meet common internal software development needs that cannot be better met by third-party software components.",
+      "definition": [],
+      "reference": [
+        "BSIMM: SFD1.1",
+        "BSIMM: SFD2.1",
+        "BSIMM: SFD3.2",
+        "EO14028: 4e(ix)",
+        "IDASOAR: 19",
+        "OWASPASVS: 1.1.6",
+        "SCTPC: MAINTAIN",
+        "SP80053: SA-8(3)",
+        "SP800161: SA-8(3)",
+        "SP800181: SP-DEV-001"
+      ]
+    },
+    {
+      "policy_id": "SSDF-031",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "PW.5.1: Follow all secure coding practices that are appropriate to the development languages and environment to meet the organization\u0019s requirements.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: SC.2",
+        "BSAFSS: SC.3",
+        "BSAFSS: LO.1",
+        "BSAFSS: EE.1",
+        "BSIMM: SR3.3",
+        "BSIMM: CR1.4",
+        "BSIMM: CR3.5",
+        "EO14028: 4e(iv)",
+        "EO14028: 4e(ix)",
+        "IDASOAR: 2",
+        "IEC62443: SI-1",
+        "IEC62443: SI-2",
+        "ISO27034: 7.3.5",
+        "MSSDL: 9",
+        "OWASPASVS: 1.1.7",
+        "OWASPASVS: 1.5",
+        "OWASPASVS: 1.7",
+        "OWASPASVS: 5",
+        "OWASPASVS: 7",
+        "OWASPMASVS: 7.6",
+        "SCFPSSD: Establish Log Requirements and Audit Practices, Use Code Analysis Tools to Find Security Issues Early",
+        "SP800181: SP-DEV-001",
+        "SP800181: T0013",
+        "SP800181: T0077",
+        "SP800181: T0176",
+        "SP800181: K0009",
+        "SP800181: K0016",
+        "SP800181: K0039",
+        "SP800181: K0070",
+        "SP800181: K0140",
+        "SP800181: K0624",
+        "SP800181: S0019",
+        "SP800181: S0060",
+        "SP800181: S0149",
+        "SP800181: S0172",
+        "SP800181: S0266",
+        "SP800181: A0036",
+        "SP800181: A0047"
+      ]
+    },
+    {
+      "policy_id": "SSDF-035",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "other_setup_env",
+      "scope": "code subject to the organization\u0019s secure coding standards",
+      "policy_description": "PW.7.2: Perform the code review and/or code analysis based on the organization\u0019s secure coding standards, and record and triage all discovered issues and recommended remediations in the development team\u0019s workflow or issue tracking system.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: TV.2",
+        "BSAFSS: PD.1-4",
+        "BSIMM: CR1.2",
+        "BSIMM: CR1.4",
+        "BSIMM: CR1.6",
+        "BSIMM: CR2.6",
+        "BSIMM: CR2.7",
+        "BSIMM: CR3.4",
+        "BSIMM: CR3.5",
+        "EO14028: 4e(iv)",
+        "EO14028: 4e(v)",
+        "EO14028: 4e(ix)",
+        "IDASOAR: 3",
+        "IDASOAR: 4",
+        "IDASOAR: 5",
+        "IDASOAR: 14",
+        "IDASOAR: 15",
+        "IDASOAR: 48",
+        "IEC62443: SI-1",
+        "IEC62443: SVV-1",
+        "IEC62443: SVV-2",
+        "IR8397: 2.3",
+        "IR8397: 2.4",
+        "ISO27034: 7.3.6",
+        "MSSDL: 9",
+        "MSSDL: 10",
+        "NISTLABEL: 2.2.2.2",
+        "OWASPASVS: 1.1.7",
+        "OWASPASVS: 10",
+        "OWASPMASVS: 7.5",
+        "OWASPSAMM: IR1-B",
+        "OWASPSAMM: IR2-A",
+        "OWASPSAMM: IR2-B",
+        "OWASPSAMM: IR3-A",
+        "PCISSLC: 3.2",
+        "PCISSLC: 4.1",
+        "SCAGILE: Operational Security Tasks 4, 7; Tasks Requiring the Help of Security Experts 10",
+        "SCFPSSD: Use Code Analysis Tools to Find Security Issues Early, Use Static Analysis Security Testing Tools, Perform Manual Verification of Security Features/Mitigations",
+        "SCSIC: Peer Reviews and Security Testing",
+        "SP80053: SA-11",
+        "SP80053: SA-11(1)",
+        "SP80053: SA-11(4)",
+        "SP80053: SA-15(7)",
+        "SP800161: SA-11",
+        "SP800161: SA-11(1)",
+        "SP800161: SA-11(4)",
+        "SP800161: SA-15(7)",
+        "SP800181: SP-DEV-001",
+        "SP800181: SP-DEV-002",
+        "SP800181: T0013",
+        "SP800181: T0111",
+        "SP800181: T0176",
+        "SP800181: T0267",
+        "SP800181: T0516",
+        "SP800181: K0009",
+        "SP800181: K0039",
+        "SP800181: K0070",
+        "SP800181: K0140",
+        "SP800181: K0624",
+        "SP800181: S0019",
+        "SP800181: S0060",
+        "SP800181: S0078",
+        "SP800181: S0137",
+        "SP800181: S0149",
+        "SP800181: S0167",
+        "SP800181: S0174",
+        "SP800181: S0242",
+        "SP800181: S0266",
+        "SP800181: A0007",
+        "SP800181: A0015",
+        "SP800181: A0036",
+        "SP800181: A0044",
+        "SP800181: A0047"
+      ]
+    },
+    {
+      "policy_id": "SSDF-038",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "config_hardening",
+      "scope": null,
+      "policy_description": "PW.9.1: Define a secure baseline by determining how to configure each setting that has an effect on security or a security-related setting so that the default settings are secure and do not weaken the security functions provided by the platform, network infrastructure, or services.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: CF.1",
+        "BSIMM: SE2.2",
+        "EO14028: 4e(iv)",
+        "EO14028: 4e(ix)",
+        "IDASOAR: 23",
+        "IEC62443: SD-4",
+        "IEC62443: SVV-1",
+        "IEC62443: SG-1",
+        "ISO27034: 7.3.5",
+        "SCAGILE: Tasks Requiring the Help of Security Experts 12",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SCSIC: Vendor Software Development Integrity Controls",
+        "SP800181: SP-DEV-002",
+        "SP800181: K0009",
+        "SP800181: K0039",
+        "SP800181: K0073",
+        "SP800181: K0153",
+        "SP800181: K0165",
+        "SP800181: K0275",
+        "SP800181: K0531",
+        "SP800181: S0167"
+      ]
+    },
+    {
+      "policy_id": "SSDF-039",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "config_hardening",
+      "scope": "default settings for software administrators",
+      "policy_description": "PW.9.2: Implement the default settings (or groups of default settings, if applicable), and document each setting for software administrators.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: CF.1",
+        "BSIMM: SE2.2",
+        "EO14028: 4e(iv)",
+        "EO14028: 4e(ix)",
+        "IDASOAR: 23",
+        "IEC62443: SG-3",
+        "OWASPSAMM: OE1-A",
+        "PCISSLC: 8.1",
+        "PCISSLC: 8.2",
+        "SCAGILE: Tasks Requiring the Help of Security Experts 12",
+        "SCFPSSD: Verify Secure Configurations and Use of Platform Mitigation",
+        "SCSIC: Vendor Software Delivery Integrity Controls",
+        "SCSIC: Vendor Software Development Integrity Controls",
+        "SP80053: SA-5",
+        "SP80053: SA-8(23)",
+        "SP800161: SA-5",
+        "SP800161: SA-8(23)",
+        "SP800181: SP-DEV-001",
+        "SP800181: K0009",
+        "SP800181: K0039",
+        "SP800181: K0073",
+        "SP800181: K0153",
+        "SP800181: K0165",
+        "SP800181: K0275",
+        "SP800181: K0531"
+      ]
+    },
+    {
+      "policy_id": "SSDF-040",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": "sources of information about potential vulnerabilities in software and third-party components",
+      "policy_description": "RV.1.1: Gather information from software acquirers, users, and public sources on potential vulnerabilities in the software and third-party components that the software uses, and investigate all credible reports.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: VM.1-3",
+        "BSAFSS: VM.3",
+        "BSIMM: AM1.5",
+        "BSIMM: CMVM1.2",
+        "BSIMM: CMVM2.1",
+        "BSIMM: CMVM3.4",
+        "BSIMM: CMVM3.7",
+        "CNCFSSCP: Securing Materials—Verification",
+        "EO14028: 4e(iv)",
+        "EO14028: 4e(vi)",
+        "EO14028: 4e(viii)",
+        "EO14028: 4e(ix)",
+        "IEC62443: DM-1",
+        "IEC62443: DM-2",
+        "IEC62443: DM-3",
+        "ISO29147: 6.2.1",
+        "ISO29147: 6.2.2",
+        "ISO29147: 6.2.4",
+        "ISO29147: 6.3",
+        "ISO29147: 6.5",
+        "ISO30111: 7.1.3",
+        "OWASPSAMM: IM1-A",
+        "OWASPSAMM: IM2-B",
+        "OWASPSCVS: 4",
+        "PCISSLC: 3.4",
+        "PCISSLC: 4.1",
+        "PCISSLC: 9.1",
+        "SCAGILE: Operational Security Task 5",
+        "SCFPSSD: Vulnerability Response and Disclosure",
+        "SCTPC: MONITOR1",
+        "SP80053: SA-10",
+        "SP80053: SR-3",
+        "SP80053: SR-4",
+        "SP800161: SA-10",
+        "SP800161: SR-3",
+        "SP800161: SR-4",
+        "SP800181: K0009",
+        "SP800181: K0038",
+        "SP800181: K0040",
+        "SP800181: K0070",
+        "SP800181: K0161",
+        "SP800181: K0362",
+        "SP800181: S0078"
+      ]
+    },
+    {
+      "policy_id": "SSDF-046",
+      "source": "NIST_SP800218",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "RV.3.2: Analyze the root causes over time to identify patterns, such as a particular secure coding practice not being followed consistently.",
+      "definition": [],
+      "reference": [
+        "BSAFSS: VM.2-1",
+        "BSAFSS: PD.1-3",
+        "BSIMM: CP3.3",
+        "BSIMM: CMVM3.2",
+        "EO14028: 4e(ix)",
+        "IEC62443: DM-4",
+        "ISO30111: 7.1.7",
+        "OWASPSAMM: IM3-B",
+        "PCISSLC: 2.6",
+        "PCISSLC: 4.2",
+        "SCFPSSD: Secure Development Lifecycle Feedback",
+        "SP800160: 3.3.8",
+        "SP800181: T0111",
+        "SP800181: K0009",
+        "SP800181: K0039",
+        "SP800181: K0070",
+        "SP800181: K0343"
+      ]
+    },
+    {
+      "policy_id": "AIAS-040",
+      "source": "OWASP_AI_Agent_Security",
+      "setup_env_theme": "least_privilege_access",
+      "scope": "agent tools and permissions",
+      "policy_description": "Apply least privilege to all agent tools and permissions.",
+      "definition": [
+        "AI agents are autonomous systems powered by Large Language Models (LLMs) that can reason, plan, use tools, maintain memory, and take actions to accomplish goals."
+      ],
+      "reference": [
+        "Do's and Don'ts",
+        "https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html"
+      ]
+    },
+    {
+      "policy_id": "ASVS-082",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that the application only uses client-side technologies which are still supported and considered secure. Examples of technologies which do not meet this requirement include NSAPI plugins, Flash, Shockwave, ActiveX, Silverlight, NACL, or client-side Java applets.",
+      "definition": [],
+      "reference": [
+        "3.7.1",
+        "V3.7 Other Browser Security Considerations",
+        "ApplicationSecurityVerificationStandard May2025"
+      ]
+    },
+    {
+      "policy_id": "ASVS-092",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that all application components (including load balancers, firewalls, and application servers) determine boundaries of incoming HTTP messages using the appropriate mechanism for the HTTP version to prevent HTTP request smuggling. In HTTP/1.x, if a Transfer-Encoding header field is present, the Content-Length header must be ignored per RFC2616. When using HTTP/2 or HTTP/3, if a Content-Length header field is present, the receiver must ensure that it is consistent with the length of the DATA frames.",
+      "definition": [],
+      "reference": [
+        "4.2.1",
+        "V4.2 HTTP Message Structure Validation",
+        "RFC2616",
+        "ApplicationSecurityVerificationStandard May2025"
+      ]
+    },
+    {
+      "policy_id": "ASVS-128",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that a user’s passwords stay valid until it is discovered to be compromised or the user rotates it. The application must not require periodic credential rotation.",
+      "definition": [],
+      "reference": [
+        "6.2.10",
+        "V6.2 Password Security",
+        "NISTSP800-63",
+        "ApplicationSecurityVerificationStandard May2025"
+      ]
+    },
+    {
+      "policy_id": "ASVS-139",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that system generated initial passwords or activation codes are securely randomly generated, follow the existing password policy, and expire after a short period of time or after they are initially used. These initial secrets must not be permitted to become the long term password.",
+      "definition": [],
+      "reference": [
+        "6.4.1",
+        "V6.4 Authentication Factor Lifecycle and Recovery",
+        "ApplicationSecurityVerificationStandard May2025"
+      ]
+    },
+    {
+      "policy_id": "ASVS-141",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that a secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor authentication mechanisms.",
+      "definition": [],
+      "reference": [
+        "6.4.3",
+        "V6.4 Authentication Factor Lifecycle and Recovery",
+        "ApplicationSecurityVerificationStandard May2025"
+      ]
+    },
+    {
+      "policy_id": "ASVS-166",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Where shared or secret keys are used for cryptographic authentication, these should be stored using the same mechanisms as other system secrets, as documented in the 'Secret Management' section in the 'Configuration' chapter.",
+      "definition": [],
+      "reference": [
+        "V6.7",
+        "Configuration: Secret Management"
+      ]
+    },
+    {
+      "policy_id": "ASVS-198",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Verify that the application ensures that data‑specific access is restricted to consumers with explicit permissions to specific data items to mitigate insecure direct object reference (IDOR) and broken object level authorization (BOLA).",
+      "definition": [],
+      "reference": [
+        "8.2.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-208",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that key material that is used to validate self‑contained tokens is from trusted pre‑configured sources for the token issuer, preventing attackers from specifying untrusted sources and keys. For JWTs and other JWS structures, headers such as 'jku', 'x5u', and 'jwk' must be validated against an allowlist of trusted sources.",
+      "definition": [],
+      "reference": [
+        "9.1.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-214",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that the client only accepts values from the authorization server (such as the authorization code or ID Token) if these values result from an authorization flow that was initiated by the same user agent session and transaction. This requires that client‑generated secrets, such as the proof key for code exchange (PKCE) 'code_verifier', 'state' or OIDC 'nonce', are not guessable, are specific to the transaction, and are securely bound to both the client and the user agent session in which the transaction was started.",
+      "definition": [],
+      "reference": [
+        "10.1.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-237",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that, for a server‑side client (which is not executed on the end‑user device), the authorization server ensures that the 'authorization_details' parameter value is from the client backend and that the user has not tampered with it. For example, by requiring the usage of pushed authorization request (PAR) or JWT‑secured Authorization Request (JAR).",
+      "definition": [],
+      "reference": [
+        "10.4.15"
+      ]
+    },
+    {
+      "policy_id": "ASVS-249",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that there is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a key management such as NIST SP800‑57. This should include ensuring that keys are not overshared (for example, with more than two entities for shared secrets and more than one entity for private keys).",
+      "definition": [],
+      "reference": [
+        "11.1.1",
+        "NISTSP800‑57"
+      ]
+    },
+    {
+      "policy_id": "ASVS-257",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that all cryptographic modules fail securely, and errors are handled in a way that does not enable vulnerabilities, such as Padding Oracle attacks.",
+      "definition": [],
+      "reference": [
+        "11.2.5"
+      ]
+    },
+    {
+      "policy_id": "ASVS-268",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verifythattherandomnumbergenerationmechanisminuseisdesignedto worksecurely,evenunderheavydemand.",
+      "definition": [],
+      "reference": [
+        "11.5.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-269",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verifythatonlyapprovedcryptographicalgorithmsandmodesofoperation areusedforkeygenerationandseeding,anddigitalsignaturegeneration andverification. Keygenerationalgorithmsmustnotgenerateinsecurekeys vulnerabletoknownattacks,forexample,RSAkeyswhicharevulnerableto Fermatfactorization.",
+      "definition": [],
+      "reference": [
+        "11.6.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-278",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that TLS is used for all connectivity between a client and external facing, HTTP‑based services, and does not fall back to insecure or unencrypted communications.",
+      "definition": [],
+      "reference": [
+        "12.2.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-280",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that an encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application, including monitoring systems, management tools, remote access and SSH, middleware, databases, mainframes, partner systems, or external APIs. The server must not fall back to insecure or unencrypted protocols.",
+      "definition": [],
+      "reference": [
+        "12.3.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-282",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP‑based services within the application, and does not fall back to insecure or unencrypted communications.",
+      "definition": [],
+      "reference": [
+        "12.3.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-284",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that services communicating internally within a system (intra‑service communications) use strong authentication to ensure that each endpoint is verified. Strong authentication methods, such as TLS client authentication, must be employed to ensure identity, using public‑key infrastructure and mechanisms that are resistant to replay attacks. For microservice architectures, consider using a service mesh to simplify certificate management and enhance security.",
+      "definition": [],
+      "reference": [
+        "12.3.5"
+      ]
+    },
+    {
+      "policy_id": "ASVS-289",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short‑term tokens, or certificate‑based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
+      "definition": [],
+      "reference": [
+        "13.2.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-292",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verifythatanallowlistisusedtodefinetheexternalresourcesorsystems withwhichtheapplicationispermittedtocommunicate(e.g.,foroutbound requests,dataloads,orfileaccess). Thisallowlistcanbeimplementedatthe applicationlayer,webserver,firewall,oracombinationofdifferentlayers.",
+      "definition": [],
+      "reference": [
+        "13.2.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-295",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third‑party systems, keys and seeds for time‑based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware‑backed solution such as an HSM.",
+      "definition": [],
+      "reference": [
+        "13.3.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-297",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that all cryptographic operations are performed using an isolated security module (such as a vault or hardware security module) to securely manage and protect key material from exposure outside of the security module.",
+      "definition": [],
+      "reference": [
+        "13.3.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-298",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verifythatsecretsareconfiguredtoexpireandberotatedbasedonthe application’sdocumentation.",
+      "definition": [],
+      "reference": [
+        "13.3.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-307",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short-term tokens, or certificate-based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
+      "definition": [],
+      "reference": [
+        "13.2.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-308",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that an allowlist is used to define the external resources or systems with which the application is permitted to communicate (e.g., for outbound requests, data loads, or file access). This allowlist can be implemented at the application layer, web server, firewall, or a combination of different layers.",
+      "definition": [],
+      "reference": [
+        "13.2.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-311",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "secrets_key_management",
+      "scope": null,
+      "policy_description": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third-party systems, keys and seeds for time-based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware-backed solution such as an HSM.",
+      "definition": [],
+      "reference": [
+        "13.3.1"
+      ]
+    },
+    {
+      "policy_id": "ASVS-312",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Verify that access to secret assets adheres to the principle of least privilege.",
+      "definition": [],
+      "reference": [
+        "13.3.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-331",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Verify that an inventory catalog, such as a software bill of materials (SBOM), is maintained of all third-party libraries in use, including verifying that components come from pre-defined, trusted, and continually maintained repositories.",
+      "definition": [
+        "SBOM: software bill of materials — a structured inventory of third-party libraries and components used by the application."
+      ],
+      "reference": [
+        "15.1.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-333",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Verify that application documentation highlights third-party libraries which are considered to be \"risky components\".",
+      "definition": [
+        "'Risky component' — a 3rd party library (i.e., not internally developed) with missing or poorly implemented security controls around its development processes or functionality; examples include poorly maintained, unsupported, end-of-life, or components with a history of significant vulnerabilities."
+      ],
+      "reference": [
+        "15.1.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-338",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Verify that third-party components and all of their transitive dependencies are included from the expected repository, whether internally owned or an external source, and that there is no risk of a dependency confusion attack.",
+      "definition": [],
+      "reference": [
+        "15.2.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-339",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Verify that the application implements additional protections around parts of the application which are documented as containing \"dangerous functionality\" or using third-party libraries considered to be \"risky components\". This could include techniques such as sandboxing, encapsulation, containerization or network level isolation to delay and deter attackers who compromise one part of an application from pivoting elsewhere in the application.",
+      "definition": [
+        "\"Dangerous functionality\" — a component that performs operations such as deserialization of untrusted data, raw file or binary data parsing, dynamic code execution, or direct memory manipulation.",
+        "'Risky component' — a 3rd party library with missing or poorly implemented security controls or poor maintenance."
+      ],
+      "reference": [
+        "15.2.5"
+      ]
+    },
+    {
+      "policy_id": "ASVS-343",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": null,
+      "policy_description": "Verify that all proxying and middleware components transfer the user’s original IP address correctly using trusted data fields that cannot be manipulated by the end user, and the application and web server use this correct value for logging and security decisions such as rate limiting, taking into account that even the original IP address may not be reliable due to dynamic IPs, VPNs, or corporate firewalls.",
+      "definition": [],
+      "reference": [
+        "15.3.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-363",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "logging_monitoring_setup",
+      "scope": null,
+      "policy_description": "Verify that logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation. The aim is to ensure that if the application is breached, the logs are not compromised.",
+      "definition": [],
+      "reference": [
+        "16.4.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-365",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that the application continues to operate securely when external resource access fails, for example, by using patterns such as circuit breakers or graceful degradation.",
+      "definition": [],
+      "reference": [
+        "16.5.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-366",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Verify that the application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions such as processing a transaction despite errors resulting from validation logic.",
+      "definition": [],
+      "reference": [
+        "16.5.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-371",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": "Systems that host their own WebRTC media servers (e.g., SFUs, MCUs, recording servers, or gateway servers). Systems relying solely on peer-to-peer media between browsers are excluded.",
+      "policy_description": "Verify that the media server is configured to use and support approved Datagram Transport Layer Security (DTLS) ciphersuites and a secure protection profile for the DTLS Extension for establishing keys for the Secure Real-time Transport Protocol (DTLS-SRTP).",
+      "definition": [],
+      "reference": [
+        "17.2.2"
+      ]
+    },
+    {
+      "policy_id": "ASVS-372",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": "Systems that host their own WebRTC media servers (e.g., SFUs, MCUs, recording servers, or gateway servers). Systems relying solely on peer-to-peer media between browsers are excluded.",
+      "policy_description": "Verify that Secure Real-time Transport Protocol (SRTP) authentication is checked at the media server to prevent Real-time Transport Protocol (RTP) injection attacks from leading to either a Denial of Service condition or audio or video media insertion into media streams.",
+      "definition": [],
+      "reference": [
+        "17.2.3"
+      ]
+    },
+    {
+      "policy_id": "ASVS-373",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": "Systems that host their own WebRTC media servers (e.g., SFUs, MCUs, recording servers, or gateway servers). Systems relying solely on peer-to-peer media between browsers are excluded.",
+      "policy_description": "Verify that the media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time Transport Protocol (SRTP) packets.",
+      "definition": [],
+      "reference": [
+        "17.2.4"
+      ]
+    },
+    {
+      "policy_id": "ASVS-374",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": "Systems that host their own WebRTC media servers (e.g., SFUs, MCUs, recording servers, or gateway servers). Systems relying solely on peer-to-peer media between browsers are excluded.",
+      "policy_description": "Verify that the media server is able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
+      "definition": [],
+      "reference": [
+        "17.2.5"
+      ]
+    },
+    {
+      "policy_id": "ASVS-376",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "transport_network_config",
+      "scope": "Systems that host their own WebRTC media servers (e.g., SFUs, MCUs, recording servers, or gateway servers). Systems relying solely on peer-to-peer media between browsers are excluded.",
+      "policy_description": "Verify that any audio or video recording mechanisms associated with the media server are able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
+      "definition": [],
+      "reference": [
+        "17.2.7"
+      ]
+    },
+    {
+      "policy_id": "ASVS-419",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Security controls should be centralized, simple (economy of design), verifiably secure, and reusable. This should avoid duplicate, missing, or ineffective controls.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "ASVS-421",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Ideally, a single access control mechanism should be used to access protected data and resources. All requests should pass through this single mechanism to avoid copy and paste or insecure alternative paths.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "ASVS-423",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "Verify the use of a secure software development lifecycle that addresses security in all stages of development.",
+      "definition": [],
+      "reference": [
+        "OWASPSoftwareAssuranceMaturityModelProject",
+        "MicrosoftSDL"
+      ]
+    },
+    {
+      "policy_id": "ASVS-426",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "Verify availability of a secure coding checklist, security requirements, guideline, or policy to all developers and testers.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "ASVS-427",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "Verify that an ongoing process exists to ensure that the application source code is free from backdoors, malicious code (e.g., salami attacks, logic bombs, time bombs), and undocumented or hidden features (e.g., Easter eggs, insecure debugging tools). Complying with this section is not possible without complete access to source code, including third‑party libraries, and is therefore probably only suitable for applications requiring the very highest levels of security.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "ASVS-428",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "config_hardening",
+      "scope": null,
+      "policy_description": "Verify that mechanisms are in place to detect and respond to configuration drift in deployed environments. This may include using immutable infrastructure, automated redeployment from a secure baseline, or drift detection tools that compare current state against approved configurations.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "ASVS-429",
+      "source": "OWASP_ASVS",
+      "setup_env_theme": "config_hardening",
+      "scope": null,
+      "policy_description": "Verify that configuration hardening is performed on all third‑party products, libraries, frameworks, and services as per their individual recommendations.",
+      "definition": [],
+      "reference": []
+    },
+    {
+      "policy_id": "LLM-010",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Limit access to sensitive data based on the principle of least privilege. Only grant access to data that is necessary for the specific user or process.",
+      "definition": [],
+      "reference": [
+        "LLM02:2025 Sensitive Information Disclosure",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-011",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Limit model access to external data sources, and ensure runtime data orchestration is securely managed to avoid unintended data leakage.",
+      "definition": [],
+      "reference": [
+        "LLM02:2025 Sensitive Information Disclosure",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-014",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Provide guidance on avoiding the input of sensitive information. Offer training on best practices for interacting with LLMs securely.",
+      "definition": [],
+      "reference": [
+        "LLM02:2025 Sensitive Information Disclosure",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-017",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "config_hardening",
+      "scope": null,
+      "policy_description": "Follow guidelines like \"OWASP API8:2023 Security Misconfiguration\" to prevent leaking sensitive information through error messages or configuration details.",
+      "definition": [],
+      "reference": [
+        "LLM02:2025 Sensitive Information Disclosure",
+        "OWASP Top 10 for LLM Applications v2.0",
+        "OWASP API8:2023 Security Misconfiguration"
+      ]
+    },
+    {
+      "policy_id": "LLM-018",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Use homomorphic encryption to enable secure data analysis and privacy-preserving machine learning. This ensures data remains confidential while being processed by the model.",
+      "definition": [],
+      "reference": [
+        "LLM02:2025 Sensitive Information Disclosure",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-023",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Maintain an up-to-date inventory of components using a Software Bill of Materials (SBOM) to ensure you have an up-to-date, accurate, and signed inventory, preventing tampering with deployed packages. SBOMs can be used to detect and alert for new, zero-date vulnerabilities quickly. AI BOMs and ML SBOMs are an emerging area and you should evaluate options starting with OWASP CycloneDX",
+      "definition": [],
+      "reference": [
+        "LLM03:2025 Supply Chain",
+        "OWASP Top 10 for LLM Applications v2.0",
+        "OWASP CycloneDX"
+      ]
+    },
+    {
+      "policy_id": "LLM-025",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "dependency_supply_chain",
+      "scope": null,
+      "policy_description": "Only use models from verifiable sources and use third-party model integrity checks with signing and file hashes to compensate for the lack of strong model provenance. Similarly, use code signing for externally supplied code.",
+      "definition": [],
+      "reference": [
+        "LLM03:2025 Supply Chain",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-051",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Avoid open-ended extensions\nAvoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality. For example, an LLM-based app may need to write some output to a file. If this were implemented using an extension to run a shell function then the scope for undesirable actions is very large (any other shell command could be executed). A more secure alternative would be to build a specific file-writing exOtWenAsSiPo nTo tph a10t ofonrl yLL iMm Applepmliceanttios ntsh avt2 .s0pecific functionality.",
+      "definition": [],
+      "reference": [
+        "LLM06:2025 Excessive Agency",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-056",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "other_setup_env",
+      "scope": null,
+      "policy_description": "Sanitise LLM inputs and outputs\nFollow secure coding best practice, such as applying OWASP’s recommendations in ASVS (Application Security Verification Standard), with a particularly strong focus on input sanitisation. Use Static Application Security Testing (SAST) and Dynamic and Interactive application testing (DAST, IAST) in development pipelines.",
+      "definition": [],
+      "reference": [
+        "LLM06:2025 Excessive Agency",
+        "OWASP Top 10 for LLM Applications v2.0",
+        "ASVS (Application Security Verification Standard)"
+      ]
+    },
+    {
+      "policy_id": "LLM-063",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Ensure that security controls are enforced independently from the LLM\nCritical controls such as privilege separation, authorization bounds checks, and similar must not be delegated to the LLM, either through the system prompt or otherwise. These controls need to occur in a deterministic, auditable manner, and LLMs are not (currently) conducive to this. In cases where an agent is performing tasks, if those tasks require different levels of access, then multiple agents should be used, each configured with the least privileges needed to perform the desired tasks.",
+      "definition": [],
+      "reference": [
+        "LLM07:2025 System Prompt Leakage",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-073",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "process_lifecycle",
+      "scope": null,
+      "policy_description": "Secure Coding Practices\nEstablish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
+      "definition": [],
+      "reference": [
+        "LLM09:2025 Misinformation",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "LLM-088",
+      "source": "OWASP_LLM_Top10",
+      "setup_env_theme": "least_privilege_access",
+      "scope": null,
+      "policy_description": "Access Controls\nImplement strong access controls, including role-based access control (RBAC) and the principle of least privilege, to limit unauthorized access to LLM model repositories and training environments.",
+      "definition": [],
+      "reference": [
+        "LLM10:2025 Unbounded Consumption",
+        "OWASP Top 10 for LLM Applications v2.0"
+      ]
+    },
+    {
+      "policy_id": "PALO-002",
+      "source": "PaloAlto_GenAI_Risk",
+      "setup_env_theme": "transport_network_config",
+      "scope": "across your organization",
+      "policy_description": "Conduct a comprehensive inventory of GenAI usage across your organization and inspect usage analytics and firewall logs.",
+      "definition": [],
+      "reference": [
+        "Page 7"
+      ]
+    }
+  ]
+}

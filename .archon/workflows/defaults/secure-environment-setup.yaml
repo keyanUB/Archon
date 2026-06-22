@@ -1,0 +1,76 @@
+name: secure-environment-setup
+description: |
+  Use when: User asks to install, configure, harden, or supervise system/environment components.
+  Examples: apt packages, systemd services, SSH tunnels, reverse proxies, firewall/network
+  configuration, secrets/key setup, logging/monitoring setup, runtime hardening.
+
+  Non-interactive demo workflow:
+  1. Classify the setup task and its risk
+  2. Select relevant setup/environment security policies from .archon/data/setup_environment_policies.json
+  3. Produce a secure setup plan with safe defaults
+  4. Implement the setup
+  5. Validate functionality
+  6. Validate security controls
+  7. Write a final report with residual risk and success command
+
+  NOT for: Application feature development, code-only changes, PR review, or tasks that need
+  human approval before execution.
+
+# Environment setup acts on the host, not a git branch/worktree.
+worktree:
+  enabled: false
+
+nodes:
+  - id: classify
+    command: secure-env-classify
+    context: fresh
+    output_format:
+      type: object
+      properties:
+        task_type:
+          type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high]
+        required_inputs:
+          type: array
+          items:
+            type: string
+        security_themes:
+          type: array
+          items:
+            type: string
+        continue_without_human_gate:
+          type: boolean
+      required: [task_type, risk_level, required_inputs, security_themes, continue_without_human_gate]
+
+  - id: policy-analysis
+    command: secure-env-policy-analysis
+    depends_on: [classify]
+    context: fresh
+
+  - id: secure-plan
+    command: secure-env-plan
+    depends_on: [policy-analysis]
+    context: fresh
+
+  - id: implement
+    command: secure-env-implement
+    depends_on: [secure-plan]
+    context: fresh
+
+  - id: functional-validation
+    command: secure-env-functional-validation
+    depends_on: [implement]
+    context: fresh
+
+  - id: security-validation
+    command: secure-env-security-validation
+    depends_on: [functional-validation]
+    context: fresh
+
+  - id: final-report
+    command: secure-env-final-report
+    depends_on: [security-validation]
+    context: fresh
+
