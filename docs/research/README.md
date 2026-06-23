@@ -10,6 +10,6 @@ Runtime assets for these additions live under:
 
 Experiment outputs live under:
 
+- `reports/agent-behavior-comparison/`
 - `reports/secure-environment-setup/`
 - `reports/grasp-secure-coding/`
-
