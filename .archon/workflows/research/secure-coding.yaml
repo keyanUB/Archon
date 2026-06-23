@@ -1,7 +1,7 @@
 name: secure-coding
 description: |
   Implements code following OWASP Secure Coding Practices. Loads the SCP reference
-  from .archon/commands/owasp-scp.md, implements with security controls enforced,
+  from .archon/data/research/grasp-secure-coding/owasp-scp.md, implements with security controls enforced,
   then validates with both functional and security-focused tests.
 provider: claude
 
@@ -9,9 +9,9 @@ nodes:
   # Load OWASP SCP reference from disk — keeps the workflow prompt lean
   - id: load-owasp
     bash: |
-      cat ".archon/commands/owasp-scp.md" 2>/dev/null \
-        || cat "$HOME/.archon/commands/owasp-scp.md" 2>/dev/null \
-        || echo "ERROR: OWASP SCP reference not found at .archon/commands/owasp-scp.md"
+      cat ".archon/data/research/grasp-secure-coding/owasp-scp.md" 2>/dev/null \
+        || cat "$HOME/.archon/data/research/grasp-secure-coding/owasp-scp.md" 2>/dev/null \
+        || echo "ERROR: OWASP SCP reference not found at .archon/data/research/grasp-secure-coding/owasp-scp.md"
     timeout: 5000
 
   # Implement with OWASP controls — SCP text injected from $load-owasp.output

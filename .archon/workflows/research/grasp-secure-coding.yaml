@@ -12,8 +12,8 @@ description: |
   NOT for: Code reviews, bug fixes unrelated to security, pure refactoring.
 
   Supports two SCP reference formats (tried in order):
-    1. .archon/data/scp-graph.json  — structured DAG (full GRASP with prerequisite edges)
-    2. .archon/commands/owasp-scp.md — flat OWASP markdown (simplified GRASP, category-based)
+    1. .archon/data/research/grasp-secure-coding/scp-graph.json — structured DAG (full GRASP with prerequisite edges)
+    2. .archon/data/research/grasp-secure-coding/owasp-scp.md — flat OWASP markdown (simplified GRASP, category-based)
 
 provider: claude
 model: sonnet
@@ -25,22 +25,22 @@ nodes:
   # first line so the loop prompt knows which graph mode to use.
   - id: load-scp-graph
     bash: |
-      if [ -f ".archon/data/scp-graph.json" ]; then
+      if [ -f ".archon/data/research/grasp-secure-coding/scp-graph.json" ]; then
         echo "FORMAT:json"
-        cat ".archon/data/scp-graph.json"
-      elif [ -f "$HOME/.archon/data/scp-graph.json" ]; then
+        cat ".archon/data/research/grasp-secure-coding/scp-graph.json"
+      elif [ -f "$HOME/.archon/data/research/grasp-secure-coding/scp-graph.json" ]; then
         echo "FORMAT:json"
-        cat "$HOME/.archon/data/scp-graph.json"
-      elif [ -f ".archon/commands/owasp-scp.md" ]; then
+        cat "$HOME/.archon/data/research/grasp-secure-coding/scp-graph.json"
+      elif [ -f ".archon/data/research/grasp-secure-coding/owasp-scp.md" ]; then
         echo "FORMAT:markdown"
-        cat ".archon/commands/owasp-scp.md"
-      elif [ -f "$HOME/.archon/commands/owasp-scp.md" ]; then
+        cat ".archon/data/research/grasp-secure-coding/owasp-scp.md"
+      elif [ -f "$HOME/.archon/data/research/grasp-secure-coding/owasp-scp.md" ]; then
         echo "FORMAT:markdown"
-        cat "$HOME/.archon/commands/owasp-scp.md"
+        cat "$HOME/.archon/data/research/grasp-secure-coding/owasp-scp.md"
       else
         echo "ERROR: No SCP reference found."
-        echo "Provide .archon/data/scp-graph.json (structured graph) or"
-        echo ".archon/commands/owasp-scp.md (flat OWASP list)."
+        echo "Provide .archon/data/research/grasp-secure-coding/scp-graph.json (structured graph) or"
+        echo ".archon/data/research/grasp-secure-coding/owasp-scp.md (flat OWASP list)."
         exit 1
       fi
     timeout: 5000

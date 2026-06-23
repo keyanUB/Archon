@@ -17,7 +17,7 @@ Read the setup/environment policy file and map relevant policies to this setup t
 Policy source:
 
 ```bash
-cat .archon/data/setup_environment_policies.json
+cat .archon/data/research/secure-environment-setup/setup-environment-policies.json
 ```
 
 Classification from prior node:
@@ -28,7 +28,7 @@ $classify.output
 
 ## Instructions
 
-1. Read `.archon/data/setup_environment_policies.json`.
+1. Read `.archon/data/research/secure-environment-setup/setup-environment-policies.json`.
 2. Select policies whose `setup_env_theme` matches the classification themes.
 3. Prefer policies with practical setup implications:
    - least privilege and service identity
@@ -65,4 +65,3 @@ Write `$ARTIFACTS_DIR/policy-analysis.md`:
 
 - ...
 ```
-

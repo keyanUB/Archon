@@ -181,7 +181,7 @@ Behavior observed:
    - `network_tunnel_service`
    - `high` risk
    - missing required inputs: remote host, port, username, identity key, and `known_hosts`
-2. `policy-analysis` read `.archon/data/setup_environment_policies.json` and selected policies for:
+2. `policy-analysis` read `.archon/data/research/secure-environment-setup/setup-environment-policies.json` and selected policies for:
    - endpoint verification
    - least privilege
    - secrets/key handling
