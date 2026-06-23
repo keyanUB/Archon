@@ -8,6 +8,7 @@ import type { IsolationEnvironmentRow } from '@archon/isolation';
 
 const mockLogger = createMockLogger();
 mock.module('@archon/paths', () => ({
+  captureApprovalResolved: () => undefined,
   createLogger: mock(() => mockLogger),
   getArchonWorkspacesPath: mock(() => '/home/test/.archon/workspaces'),
   ensureArchonWorkspacesPath: mock(() => Promise.resolve('/home/test/.archon/workspaces')),
@@ -35,6 +36,13 @@ mock.module('../db/isolation-environments', () => ({
   })),
 }));
 
+// orchestrator.ts resolves the per-user no-reply email for worktree git identity;
+// mock it (like the other db deps) so the real db/connection + adapters aren't
+// dragged into this test's light module graph.
+mock.module('../db/user-github-token-store', () => ({
+  getUserGithubNoreplyEmail: mock(() => Promise.resolve(null)),
+}));
+
 mock.module('../db/sessions', () => ({
   getActiveSession: mock(() => Promise.resolve(null)),
   createSession: mock(() => Promise.resolve(null)),
@@ -53,6 +61,10 @@ mock.module('../handlers/command-handler', () => ({
 
 mock.module('@archon/providers', () => ({
   getAgentProvider: mock(() => null),
+  getRegisteredProviders: mock(() => []),
+  // credentials/delivery (#1955) imports these from '@archon/providers'.
+  PI_PROVIDER_ENV_VARS: { anthropic: 'ANTHROPIC_API_KEY', openai: 'OPENAI_API_KEY' },
+  PI_AMBIENT_VENDORS: ['amazon-bedrock', 'google-vertex'],
 }));
 
 mock.module('../workflows/store-adapter', () => ({

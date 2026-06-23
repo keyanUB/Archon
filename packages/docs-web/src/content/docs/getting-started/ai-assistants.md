@@ -11,6 +11,17 @@ sidebar:
 
 You must configure **at least one** AI assistant. All four can be configured and mixed within workflows.
 
+## Structured output guarantees
+
+When a workflow node sets `output_format`, the guarantee level depends on the provider's tier (exposed as `capabilities.structuredOutput` on `GET /api/providers`):
+
+| Provider | Tier | How it works | On a validation miss |
+|----------|------|--------------|----------------------|
+| Claude, Codex, OpenCode | **enforced** | The SDK/backend grammar-constrains decoding (`output_config.format` / `outputSchema` / `format:{json_schema}`). | The node **fails** — a refusal or `max_tokens` truncation can still bypass grammar enforcement, so the parsed output is validated post-parse for these too. No reask (a failure here is a genuine edge). |
+| Pi, Copilot | **best-effort** | The schema is appended to the prompt; JSON is extracted from the response and structurally repaired (trailing commas, single quotes, truncated tails). | The executor re-asks (prompt + the schema errors) up to **3×**; if still invalid, the node **fails loudly**. |
+
+In all cases the parsed output is **validated against your `output_format` schema** before downstream nodes see it, and a node that declares `output_format` but produces no schema-valid output **fails** rather than silently degrading. See [Authoring Workflows → `output_format`](/guides/authoring-workflows/#output_format-for-structured-json) for field-access (`$node.output.field`) semantics.
+
 ## Claude Code
 
 **Recommended for Claude Pro/Max subscribers.**
@@ -232,6 +243,12 @@ If you want Codex to be the default AI assistant for new conversations without c
 DEFAULT_AI_ASSISTANT=codex
 ```
 
+### Skills
+
+Codex supports skills via filesystem auto-discovery from `.agents/skills/`. Run `archon skill install` (or `archon setup`) to install the bundled `archon` and `manage-run` skills for both Claude Code and Codex.
+
+See [Per-Node Skills](/guides/skills/#codex-compatibility) for behavior details and limitations.
+
 ## OpenCode (Community Provider)
 
 **SDK-backed community provider.** Archon's OpenCode adapter uses `@opencode-ai/sdk`, which provides a multi-provider AI coding agent with support for Anthropic, OpenAI, Google, and more through a unified interface.
@@ -345,7 +362,7 @@ Pi supports both OAuth subscriptions and API keys. Archon's adapter reads your e
 
 | Pi provider id | Env var |
 |---|---|
-| `anthropic` | `ANTHROPIC_API_KEY` |
+| `anthropic` | `ANTHROPIC_OAUTH_TOKEN` (subscription, read first) or `ANTHROPIC_API_KEY` |
 | `openai` | `OPENAI_API_KEY` |
 | `google` | `GEMINI_API_KEY` |
 | `groq` | `GROQ_API_KEY` |
@@ -353,9 +370,9 @@ Pi supports both OAuth subscriptions and API keys. Archon's adapter reads your e
 | `cerebras` | `CEREBRAS_API_KEY` |
 | `xai` | `XAI_API_KEY` |
 | `openrouter` | `OPENROUTER_API_KEY` |
-| `huggingface` | `HUGGINGFACE_API_KEY` |
+| `huggingface` | `HF_TOKEN` |
 
-Additional cloud backends exist (Azure, Bedrock, Vertex, etc.) — file an issue if you need an env-var shortcut wired for them.
+The full backend → env-var map is generated from the installed Pi SDK (`bun run generate:pi-vendor-map`) and covers every key-based backend (DeepSeek, Together, Fireworks, Azure OpenAI, Vercel AI Gateway, Cloudflare, MiniMax, Moonshot, Z.AI, Xiaomi, …). Amazon Bedrock and Google Vertex authenticate via ambient cloud credentials (AWS chain / gcloud ADC) instead of a pasted key.
 
 **Local / custom providers (no credentials needed):**
 
@@ -480,8 +497,9 @@ nodes:
 | System prompt override | ✅ | `systemPrompt:` |
 | Codebase env vars (`envInjection`) | ✅ | `.archon/config.yaml` `env:` section |
 | MCP servers | ❌ | Pi rejects MCP by design |
+| In-process native tools | ✅ | none — Archon's `manage_run` tool is auto-injected in project-scoped chat via Pi `customTools` (distinct from MCP, which Pi rejects). Gated on the `nativeTools` provider capability. |
 | Claude-SDK hooks | ❌ | Claude-specific format |
-| Structured output | ✅ (best-effort) | `output_format:` — schema is appended to the prompt and JSON is parsed out of the assistant text. Handles bare JSON, ```json```-fenced, and reasoning-model prose preambles like `Let me evaluate... {...}` (Minimax M2.x pattern). Trailing-text-interleaved cases still degrade cleanly to the missing-structured-output warning. Not SDK-enforced like Claude/Codex. |
+| Structured output | ✅ (best-effort) | `output_format:` — schema is appended to the prompt and JSON is parsed out of the assistant text. Handles bare JSON, ```json```-fenced, reasoning-model prose preambles like `Let me evaluate... {...}` (Minimax M2.x pattern), and structurally-corrupt JSON (trailing commas, single quotes, truncated tails) via repair. The parsed output is then **validated against the schema**; on a miss the executor re-asks (prompt + the schema errors) up to **3×**, and only then **fails** the node (it no longer degrades silently to a warning). Not SDK-enforced like Claude/Codex. |
 | Cost limits (`maxBudgetUsd`) | ❌ | tracked in result chunk, not enforced |
 | Fallback model | ❌ | not native in Pi |
 | Sandbox | ❌ | not native in Pi |
@@ -564,7 +582,7 @@ Copilot accepts OpenAI models (`gpt-5`, `gpt-5-mini`), Anthropic via BYOK (`clau
 | Tool restrictions | ✅ | `allowed_tools` → `availableTools`, `denied_tools` → `excludedTools` |
 | MCP servers | ✅ | `mcp: path/to/servers.json` → `SessionConfig.mcpServers` (env vars `$FOO` expanded; missing vars warned) |
 | Skills | ✅ | `skills: [name]` resolved from `.agents/skills/` or `.claude/skills/` (project or home) → `SessionConfig.skillDirectories` |
-| Structured output | ✅ | best-effort via prompt augmentation; unparseable output degrades to dag-executor's missing-output warning |
+| Structured output | ✅ | best-effort via prompt augmentation + repair; the parsed output is validated against the schema, the executor re-asks up to 3× on a miss, then **fails** the node (no longer a silent warning) |
 | Sub-agents (`agents:`) | ✅ | `name`/`description`/`prompt`/`tools` → `SessionConfig.customAgents`; Claude-specific fields (`model`, `disallowedTools`, `skills`, `maxTurns`) warn per agent and are ignored |
 | Fork-session retry | ⚠️ | Copilot SDK has no fork API — when Archon requests a fork (on retry), we create a fresh session and emit a system-chunk warning |
 | Hooks | ❌ | Archon hooks ≠ Copilot's `SessionHooks` event vocabulary |
@@ -582,6 +600,65 @@ DEFAULT_AI_ASSISTANT=copilot
 
 - [Adding a Community Provider](../contributing/adding-a-community-provider/) — the contributor-facing guide for extending Archon with your own provider.
 - [`@github/copilot-sdk`](https://www.npmjs.com/package/@github/copilot-sdk) — upstream SDK.
+
+## Per-user credentials and AI Settings
+
+Everything above configures the **install-wide** assistant credentials (env vars, `claude /login`, etc.) — every run uses the same shared keys. On a **shared Archon box** where several people use the same server, each user can instead connect **their own** provider — by API key or subscription — so their runs and chats bill to them, not to the install's shared key.
+
+### When you need this
+
+- You run Archon for a team and want each person to bring their own provider key or Claude Pro/Max / Copilot subscription.
+- You want a personal key isolated from the shared install key.
+
+Solo users don't need any of this — the install-wide setup above is enough.
+
+### Enabling it
+
+Per-user credentials are gated on a single secret. Set `TOKEN_ENCRYPTION_KEY` (a 64-char hex string) so Archon can encrypt stored credentials at rest (AES-256-GCM):
+
+```ini
+# .env — generate with: openssl rand -hex 32
+TOKEN_ENCRYPTION_KEY=<64-char hex>
+```
+
+Without it, the per-user surface is inert (the routes report `enabled: false`) and Archon keeps reading provider keys from the environment as above. The console's **Agents** section still renders in that state — each agent card shows install-level status (which keys the server environment already carries, plus ambient cloud-chain detection) with the connect/login/disconnect affordances hidden, so a solo install can see *what's authenticated* even though there's nothing per-user to manage.
+
+### Connecting from the console
+
+The console **AI Settings** page (Settings in the web UI) has four sections:
+
+- **Model Tiers** — map the `small` / `medium` / `large` tiers to a provider + model (and optional effort). This writes the install's `tiers:` config and works on **any** install, even without `TOKEN_ENCRYPTION_KEY` (it's non-secret config). Pi tier models show a cost/reasoning/context hint from Pi's model catalog.
+- **Model Aliases** — define `@custom` refs (e.g. `@fast`) usable in workflow `model:` fields, with the same scope toggle.
+- **Agents** — one card per agent (Claude Code, Codex, Pi, OpenCode, Copilot) with the credentials it can spend nested inside, each card showing a readiness state (ready / needs credential). Connect a credential for *your* user inside the agent that uses it. Credentials are keyed by **vendor** (`anthropic`, `openai`, `github-copilot`, `openrouter`, …), and one credential serves every agent that consumes it (an `anthropic` key powers Claude Code and Pi's anthropic backend — both cards reflect it). Every vendor accepts an **API key**; **`anthropic`**, **`openai`**, and **`github-copilot`** additionally offer **subscription login** (an OAuth flow — for `openai`/ChatGPT it is an Archon-owned PKCE flow where you paste the redirect URL or code back, [#1924](https://github.com/coleam00/Archon/issues/1924)). Legacy ids (`claude`/`codex`/`copilot`) are accepted and normalized. The **Pi** card keeps its 30+ backends behind a searchable "Add backend…" picker (with model counts from Pi's catalog) and shows ambient chains (Amazon Bedrock, Google Vertex) as status-only rows; the **OpenCode** card loads its backend catalog on demand from the embedded runtime — its connections are install-wide, not per-user.
+- **Defaults** — the default assistant and per-provider model defaults, plus a "Your default" (just-me) assistant select.
+
+### Per-user model preferences ("Just me")
+
+When you're logged in (a web identity resolves), the **Model Tiers** and **Model Aliases** panels show a **"This install / Just me"** scope toggle, and **Defaults** gains a "Your default" select. The "Just me" scope stores your personal tiers/aliases/default assistant in Archon's database and applies them as the **highest-precedence** layer — your overrides win over the install config for runs and chats *you* start, without changing anyone else's. This needs an identity but **no** `TOKEN_ENCRYPTION_KEY` (model names aren't secrets); on a solo install without web auth the toggle simply doesn't appear and everything behaves exactly as before.
+
+If a chat asks for the `large` tier and only a different tier is configured, Archon uses the nearest preset and posts a one-line notice telling you which tier answered and where to set `large`.
+
+### Connecting from the CLI
+
+The same actions are available headless via [`archon ai`](/reference/cli/#ai):
+
+```bash
+# Per-user credentials (need TOKEN_ENCRYPTION_KEY)
+echo "$MY_KEY" | archon ai key set openrouter   # API key for any vendor
+archon ai login anthropic                        # subscription (anthropic, openai, or github-copilot)
+archon ai list                                   # what's connected
+
+# Model tiers + aliases + default (ungated config — solo-OK)
+archon ai tier set large claude opus
+archon ai alias set @fast claude haiku
+archon ai default claude
+
+# The same, but just for YOU (per-user prefs; identity from ARCHON_USER_ID/$USER)
+archon ai tier set large claude opus --scope user
+archon ai default codex --scope user
+```
+
+The model-tier presets are the same ones you can hand-write in `~/.archon/config.yaml`; see [Configuration](/reference/configuration/) for the YAML format.
 
 ## How Assistant Selection Works
 

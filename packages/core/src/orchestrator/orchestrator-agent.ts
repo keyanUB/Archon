@@ -7,7 +7,7 @@
  * - Does NOT require a project to be selected before starting a conversation
  */
 import { existsSync } from 'fs';
-import { createLogger } from '@archon/paths';
+import { createLogger, captureChatTurn, captureApprovalResolved } from '@archon/paths';
 import type {
   IPlatformAdapter,
   HandleMessageContext,
@@ -25,31 +25,57 @@ import { formatToolCall } from '@archon/workflows/utils/tool-formatter';
 import { classifyAndFormatError } from '../utils/error-formatter';
 import { toError } from '../utils/error';
 import { getAgentProvider, getProviderCapabilities } from '@archon/providers';
+import { buildManageRunTool } from './manage-run-tool';
 import { getArchonWorkspacesPath, ensureArchonWorkspacesPath } from '@archon/paths';
 import { syncArchonToWorktree } from '../utils/worktree-sync';
-import { syncWorkspace, toRepoPath } from '@archon/git';
+import { execFileAsync, syncWorkspace, toBranchName, toRepoPath } from '@archon/git';
 import type { WorkspaceSyncResult } from '@archon/git';
 import { discoverWorkflowsWithConfig } from '@archon/workflows/workflow-discovery';
-import { findWorkflow } from '@archon/workflows/router';
+import { findWorkflow, resolveWorkflowName } from '@archon/workflows/router';
 import { executeWorkflow, hydrateResumableRun } from '@archon/workflows/executor';
+import {
+  assertWorkflowRequirementsMet,
+  WorkflowRequirementError,
+} from '@archon/workflows/utils/workflow-requirements';
 import type {
   WorkflowDefinition,
   WorkflowWithSource,
   WorkflowLoadError,
+  WorkflowSource,
 } from '@archon/workflows/schemas/workflow';
+import { isPerUserGitHubEnabled } from '../github-auth/config';
+import { getDecryptedAccessToken } from '../db/user-github-token-store';
+import { isPerUserProviderKeysEnabled } from '../credentials/config';
+import { deliverCredential } from '../credentials/delivery';
+import { listDecryptedUserProviderCredentials } from '../db/user-provider-key-store';
+import { getUserAiPrefs, type UserAiPrefs } from '../db/user-ai-prefs-store';
 import { createWorkflowDeps } from '../workflows/store-adapter';
 import { loadConfig } from '../config/config-loader';
 import type { MergedConfig } from '../config/config-types';
 import { generateAndSetTitle } from '../services/title-generator';
 import { validateAndResolveIsolation, dispatchBackgroundWorkflow } from './orchestrator';
 import { IsolationBlockedError } from '@archon/isolation';
-import { buildOrchestratorSystemAppend, formatWorkflowContextSection } from './prompt-builder';
+import {
+  buildOrchestratorSystemAppend,
+  buildRunManagementSection,
+  formatWorkflowContextSection,
+} from './prompt-builder';
 import type { WorkflowResultContext } from './prompt-builder';
 import * as messageDb from '../db/messages';
 import * as workflowDb from '../db/workflows';
 import * as workflowEventDb from '../db/workflow-events';
 import { getCodebaseEnvVars } from '../db/env-vars';
 import type { ApprovalContext } from '@archon/workflows/schemas/workflow-run';
+import {
+  buildAiProfile,
+  isLiteralSpec,
+  isTierName,
+  resolveModelSpec,
+  resolveTierWithFallback,
+  routePresetEffort,
+  type ModelAliasPreset,
+  type TierName,
+} from '@archon/workflows/model-validation';
 
 /** Lazy-initialized logger (deferred so test mocks can intercept createLogger) */
 let cachedLog: ReturnType<typeof createLogger> | undefined;
@@ -64,6 +90,56 @@ function getLog(): ReturnType<typeof createLogger> {
 const MAX_BATCH_ASSISTANT_CHUNKS = 20;
 /** Max total chunks (assistant + tool) to keep in batch mode */
 const MAX_BATCH_TOTAL_CHUNKS = 200;
+function applyPresetToRequestOptions(
+  provider: string,
+  preset: ModelAliasPreset,
+  options: SendQueryOptions
+): void {
+  if (preset.thinking !== undefined) {
+    options.nodeConfig = { ...(options.nodeConfig ?? {}), thinking: preset.thinking };
+  }
+
+  if (preset.effort === undefined) return;
+
+  const routed = routePresetEffort(provider, preset.effort);
+  if (!routed) {
+    // Cross-provider effort mismatch — warn instead of silently dropping.
+    getLog().warn({ provider, effort: preset.effort }, 'orchestrator.preset_effort_unsupported');
+    return;
+  }
+  if (routed.field === 'effort') {
+    options.nodeConfig = { ...(options.nodeConfig ?? {}), effort: routed.value };
+  } else {
+    options.assistantConfig = {
+      ...(options.assistantConfig ?? {}),
+      modelReasoningEffort: routed.value,
+    };
+  }
+}
+
+interface ResolvedModelRequest {
+  provider: string;
+  model: string | undefined;
+  preset?: ModelAliasPreset;
+  /** When `modelRef` was a tier: which tier in the fallback chain matched. */
+  matchedTier?: TierName;
+}
+
+function resolveModelRequest(
+  aiProfile: ReturnType<typeof buildAiProfile>,
+  modelRef: string,
+  fallbackProvider: string
+): ResolvedModelRequest {
+  if (isTierName(modelRef)) {
+    const { preset, matchedTier } = resolveTierWithFallback(aiProfile, modelRef);
+    return { provider: preset.provider, model: preset.model, preset, matchedTier };
+  }
+  const spec = resolveModelSpec(aiProfile, modelRef);
+  if (isLiteralSpec(spec)) {
+    return { provider: fallbackProvider, model: spec.literal };
+  }
+  return { provider: spec.provider, model: spec.model, preset: spec };
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -181,6 +257,63 @@ function isCommandFullyParsed(accumulated: string): boolean {
 }
 
 /**
+ * Resolve the env-only per-user AI-provider credential bag for a direct-chat
+ * turn (Phase 2). Drops deliveries that require file writes (Codex
+ * `CODEX_HOME/auth.json` for the ChatGPT subscription path) because chat has
+ * no per-call scratch directory — those rely on the workflow inject path that
+ * provides an `artifactsDir`.
+ *
+ * NEVER THROWS — returns `{}` on any failure so the chat turn falls back to
+ * whatever process-global env was already in place.
+ */
+async function resolveUserProviderEnvForChat(userId: string): Promise<Record<string, string>> {
+  try {
+    const creds = await listDecryptedUserProviderCredentials(userId);
+    const env: Record<string, string> = {};
+    for (const { provider, cred } of creds) {
+      try {
+        // artifactsDir intentionally empty: chat doesn't host file deliveries.
+        const result = deliverCredential(provider, cred, { artifactsDir: '' });
+        if (!result.files?.length) Object.assign(env, result.env);
+      } catch (err) {
+        getLog().error(
+          { err: err as Error, userId, provider },
+          'orchestrator.provider_creds_deliver_failed'
+        );
+      }
+    }
+    return env;
+  } catch (err) {
+    getLog().warn({ err: err as Error, userId }, 'orchestrator.user_provider_env_resolve_failed');
+    return {};
+  }
+}
+
+/**
+ * Conversations (DB ids) already nudged about a tier fallback. Process-lifetime
+ * memory is intentional and sufficient: the nudge is a discovery aid, not
+ * state — a server restart re-nudging once per conversation is acceptable.
+ */
+const tierFallbackNudgedConversations = new Set<string>();
+
+/**
+ * Resolve the user's personal AI prefs (tiers / aliases / default assistant)
+ * for a direct-chat turn (Phase 3). Folded into `buildAiProfile` as the
+ * highest-precedence layer.
+ *
+ * NEVER THROWS — returns `{}` on any failure so model resolution falls back
+ * to install-wide config exactly as before.
+ */
+async function resolveUserAiPrefsForChat(userId: string): Promise<UserAiPrefs> {
+  try {
+    return await getUserAiPrefs(userId);
+  } catch (err) {
+    getLog().warn({ err: err as Error, userId }, 'orchestrator.user_ai_prefs_resolve_failed');
+    return {};
+  }
+}
+
+/**
  * Find a codebase by exact name or by last path segment (e.g., "repo" matches "owner/repo").
  * Case-insensitive. Used in both the parse phase and the dispatch phase.
  */
@@ -193,6 +326,49 @@ function findCodebaseByName(
     const nameLower = c.name.toLowerCase();
     return nameLower === projectLower || nameLower.endsWith(`/${projectLower}`);
   });
+}
+
+/**
+ * Resolve a codebase by name using 4-tier fuzzy matching.
+ * Tiers: exact → case-insensitive → prefix → substring.
+ * Returns undefined if not found; throws on ambiguity within a tier.
+ *
+ * Mirrors `resolveWorkflowName` (packages/workflows/src/router.ts) but uses
+ * prefix instead of suffix for tier 3 — project names don't follow the
+ * `archon-X` suffix convention workflows use.
+ */
+function resolveCodebaseName(name: string, codebases: readonly Codebase[]): Codebase | undefined {
+  const exact = codebases.find(c => c.name === name);
+  if (exact) return exact;
+
+  const lowerName = name.toLowerCase();
+
+  function checkTier(matches: readonly Codebase[], logEvent: string): Codebase | undefined {
+    if (matches.length === 1) {
+      getLog().debug({ requested: name, matched: matches[0].name }, logEvent);
+      return matches[0];
+    }
+    if (matches.length > 1) {
+      const candidates = matches.map(c => `  - ${c.name}`).join('\n');
+      throw new Error(`Ambiguous project name '${name}'. Did you mean:\n${candidates}`);
+    }
+    return undefined;
+  }
+
+  return (
+    checkTier(
+      codebases.filter(c => c.name.toLowerCase() === lowerName),
+      'project.set_resolve_case_insensitive_match'
+    ) ??
+    checkTier(
+      codebases.filter(c => c.name.toLowerCase().startsWith(lowerName)),
+      'project.set_resolve_prefix_match'
+    ) ??
+    checkTier(
+      codebases.filter(c => c.name.toLowerCase().includes(lowerName)),
+      'project.set_resolve_substring_match'
+    )
+  );
 }
 
 /**
@@ -316,8 +492,34 @@ async function dispatchOrchestratorWorkflow(
   workflow: WorkflowDefinition,
   userMessage: string,
   isolationHints?: HandleMessageContext['isolationHints'],
-  userId?: string
+  userId?: string,
+  /**
+   * Discovery source of the workflow — telemetry only (bundled workflows
+   * report their real name, custom ones report "custom"). Optional: callers
+   * that don't have it readily in scope omit it and the run reports "custom".
+   */
+  source?: WorkflowSource
 ): Promise<void> {
+  // Capability gate: hard-fail before any worktree/clone/AI cost if the
+  // workflow declares `requires: [github]` and the originating user hasn't
+  // connected. No-op when per-user GitHub is disabled (solo PAT installs).
+  if (isPerUserGitHubEnabled() && workflow.requires?.length) {
+    const githubConnected = userId ? Boolean(await getDecryptedAccessToken(userId)) : false;
+    try {
+      assertWorkflowRequirementsMet(workflow, { githubConnected });
+    } catch (err) {
+      if (err instanceof WorkflowRequirementError) {
+        getLog().info(
+          { workflowName: workflow.name, conversationId, userId, requirement: err.requirement },
+          'workflow.requirement_unmet'
+        );
+        await platform.sendMessage(conversationId, err.message);
+        return;
+      }
+      throw err;
+    }
+  }
+
   // Auto-attach project to conversation
   await db.updateConversation(conversation.id, {
     codebase_id: codebase.id,
@@ -389,7 +591,29 @@ async function dispatchOrchestratorWorkflow(
     // gate) — surface that to the user and fall through to a fresh run on
     // the same worktree rather than silently restarting.
     const deps = createWorkflowDeps();
-    const prepared = await hydrateResumableRun(deps, resumableRun);
+    let prepared: Awaited<ReturnType<typeof hydrateResumableRun>>;
+    try {
+      prepared = await hydrateResumableRun(deps, resumableRun);
+    } catch (err) {
+      // resumeWorkflowRun is a compare-and-swap: if another surface (web Resume,
+      // a concurrent re-dispatch, the CLI) already claimed this run, it throws
+      // WorkflowNotResumableError. Surface a friendly note instead of leaking the
+      // raw internal string to the generic failure catch, and do NOT fall through
+      // to a fresh run — the other resumer owns the worktree (#1830 I2).
+      if (err instanceof workflowDb.WorkflowNotResumableError) {
+        getLog().info(
+          { workflowName: workflow.name, runId: resumableRun.id, status: err.currentStatus },
+          'orchestrator.resume_lost_race'
+        );
+        await platform.sendMessage(
+          conversationId,
+          `⚠️ **${workflow.name}** is already being resumed (status: ${err.currentStatus}). ` +
+            'No action taken — follow the existing run for progress.'
+        );
+        return;
+      }
+      throw err;
+    }
     if (prepared) {
       await executeWorkflow(
         deps,
@@ -403,6 +627,7 @@ async function dispatchOrchestratorWorkflow(
           codebaseId: codebase.id,
           parentConversationId: conversation.id,
           userId,
+          source,
           ...prepared,
         }
       );
@@ -423,6 +648,7 @@ async function dispatchOrchestratorWorkflow(
           codebaseId: codebase.id,
           parentConversationId: conversation.id,
           userId,
+          source,
         }
       );
     }
@@ -439,6 +665,7 @@ async function dispatchOrchestratorWorkflow(
         availableWorkflows: [workflow],
         isolationHints,
         userId,
+        source,
       },
       workflow
     );
@@ -456,6 +683,7 @@ async function dispatchOrchestratorWorkflow(
         codebaseId: codebase.id,
         parentConversationId: conversation.id,
         userId,
+        source,
       }
     );
   }
@@ -543,21 +771,17 @@ async function discoverAllWorkflows(conversation: Conversation): Promise<Discove
       const codebase = await codebaseDb.getCodebase(conversation.codebase_id);
       if (codebase) {
         // Sync canonical source with remote before the AI reads codebase state.
-        // Only hard-reset for Archon-managed clones (under ~/.archon/workspaces/).
-        // Locally-registered repos get fetch-only to avoid destroying uncommitted work.
+        // This path must remain non-destructive: users and agents can write to source/.
         // Non-fatal: if fetch fails (network, no remote), proceed with local state.
         try {
-          const isManagedClone = codebase.default_cwd
-            .replace(/\\/g, '/')
-            .startsWith(getArchonWorkspacesPath().replace(/\\/g, '/'));
-          syncResult = await syncWorkspace(toRepoPath(codebase.default_cwd), undefined, {
-            resetAfterFetch: isManagedClone,
-          });
+          syncResult = await syncWorkspace(
+            toRepoPath(codebase.default_cwd),
+            codebase.default_branch ? toBranchName(codebase.default_branch) : undefined
+          );
           getLog().debug(
             {
               codebaseId: codebase.id,
               repoPath: codebase.default_cwd,
-              isManagedClone,
               ...syncResult,
             },
             'workspace.sync_completed'
@@ -654,7 +878,10 @@ export async function handleMessage(
 
     // 1. Get/create conversation and inherit thread context.
     // userId is recorded on the conversation row only on first creation —
-    // first-user-wins. Per-message attribution happens on workflow_runs.
+    // first-user-wins. The row's user_id is provenance plus a fallback for
+    // execution identity; each turn's prefs/credentials resolve from the
+    // SENDER when the adapter supplied one (see executionUserId below).
+    // Per-message attribution happens on workflow_runs.
     let conversation = await db.getOrCreateConversation(
       platform.getPlatformType(),
       conversationId,
@@ -668,16 +895,6 @@ export async function handleMessage(
       parentConversationId,
       conversationId
     );
-
-    // 1c. Auto-generate title for untitled conversations (fire-and-forget)
-    if (!conversation.title && !message.startsWith('/')) {
-      void generateAndSetTitle(
-        conversation.id,
-        message,
-        conversation.ai_assistant_type,
-        getArchonWorkspacesPath()
-      );
-    }
 
     // Natural-language approval routing — if a workflow is paused in this
     // conversation, treat any non-slash message as the approval response.
@@ -731,6 +948,9 @@ export async function handleMessage(
             step_name: approval.nodeId,
             data: { decision: 'approved', comment: message },
           });
+          // Anonymous telemetry: NL approval path inlines the approve logic
+          // (does not go through approveWorkflow), so capture here too.
+          captureApprovalResolved({ resolution: 'approved' });
           // For interactive loops, store user input; for standard approvals, mark as approved
           // and clear any rejection state.
           const metadataUpdate: Record<string, unknown> =
@@ -746,6 +966,9 @@ export async function handleMessage(
           const { workflows: discoveredWorkflows } = await discoverAllWorkflows(conversation);
           const allWorkflows: WorkflowDefinition[] = discoveredWorkflows.map(w => w.workflow);
           const workflow = findWorkflow(pausedRun.workflow_name, allWorkflows);
+          const workflowSource = workflow
+            ? discoveredWorkflows.find(w => w.workflow === workflow)?.source
+            : undefined;
           if (!workflow) {
             await platform.sendMessage(
               conversationId,
@@ -774,7 +997,8 @@ export async function handleMessage(
             workflow,
             pausedRun.user_message,
             isolationHints,
-            userId
+            userId,
+            workflowSource
           );
           getLog().info(
             { conversationId, workflowRunId: pausedRun.id, workflowName: pausedRun.workflow_name },
@@ -806,6 +1030,7 @@ export async function handleMessage(
         'register-project',
         'update-project',
         'remove-project',
+        'setproject',
         'commands',
         'init',
         'worktree',
@@ -829,6 +1054,13 @@ export async function handleMessage(
         if (command === 'remove-project') {
           getLog().debug({ command, conversationId }, 'deterministic_command');
           const result = await handleRemoveProject(message);
+          await platform.sendMessage(conversationId, result);
+          return;
+        }
+
+        if (command === 'setproject') {
+          getLog().debug({ command, conversationId }, 'deterministic_command');
+          const result = await handleSetProject(message, conversationId);
           await platform.sendMessage(conversationId, result);
           return;
         }
@@ -876,10 +1108,19 @@ export async function handleMessage(
         type: 'system',
         content: 'Sync failed \u2014 using local state',
       });
-    } else if (syncResult?.updated && platform.sendStructuredEvent) {
+    } else if (syncResult?.state === 'diverged' && platform.sendStructuredEvent) {
       await platform.sendStructuredEvent(conversationId, {
         type: 'system',
-        content: `Synced with origin/${syncResult.branch} \u2014 updated ${syncResult.previousHead} \u2192 ${syncResult.newHead}`,
+        content: `Local source/ has diverged from origin/${syncResult.branch} \u2014 manual merge or rebase needed`,
+      });
+    } else if (
+      syncResult?.state === 'in_sync' &&
+      syncResult.updated &&
+      platform.sendStructuredEvent
+    ) {
+      await platform.sendStructuredEvent(conversationId, {
+        type: 'system',
+        content: `Fast-forwarded to origin/${syncResult.branch} \u2014 ${syncResult.previousHead} \u2192 ${syncResult.newHead}`,
       });
     }
 
@@ -928,7 +1169,22 @@ export async function handleMessage(
       attachedFiles,
       workflowContext
     );
-    const cwd = await ensureArchonWorkspacesPath();
+    const scopedCodebase =
+      conversation.codebase_id !== null
+        ? codebases.find(c => c.id === conversation.codebase_id)
+        : undefined;
+    let cwd: string;
+    if (scopedCodebase !== undefined) {
+      cwd = conversation.cwd ?? scopedCodebase.default_cwd;
+    } else {
+      if (conversation.codebase_id !== null) {
+        getLog().warn(
+          { codebaseId: conversation.codebase_id },
+          'orchestrator.scoped_codebase_not_found'
+        );
+      }
+      cwd = await ensureArchonWorkspacesPath();
+    }
 
     // 4. Update activity and get/create session
     await db.touchConversation(conversation.id);
@@ -939,14 +1195,91 @@ export async function handleMessage(
       });
     }
 
-    // 5. Send to AI provider
-    const aiClient = getAgentProvider(conversation.ai_assistant_type);
-    getLog().debug({ assistantType: conversation.ai_assistant_type }, 'sending_to_ai');
-
     // Reuse the config already loaded during workflow discovery (avoids a second disk read).
     // Fall back to loadConfig only when no codebase is scoped (discoveredConfig is undefined).
     const config = discoveredConfig ?? (await loadConfig());
-    const providerKey = conversation.ai_assistant_type;
+    // Execution identity: the message sender when the adapter resolved one,
+    // else the conversation creator (solo installs / legacy rows / surfaces
+    // without auth). Sender-first mirrors the workflow executor, which
+    // resolves prefs from the run starter — without it, a multi-user thread
+    // would execute every turn on the creator's credentials (#1976).
+    const executionUserId = userId ?? conversation.user_id ?? undefined;
+    if (!userId && conversation.user_id && isPerUserProviderKeysEnabled()) {
+      // No sender identity arrived with this turn while per-user credentials
+      // are active — the turn executes (and bills) as the conversation
+      // CREATOR. Distinguishes a degraded auth resolution from the normal
+      // solo-install path (where per-user keys are off and this stays silent).
+      getLog().warn(
+        { conversationId, fallbackUserId: conversation.user_id },
+        'orchestrator.execution_identity_creator_fallback'
+      );
+    }
+    // Per-user AI prefs (Phase 3): the user's tiers/aliases/default-assistant
+    // override install config (highest precedence). `{}` (no identity, no row,
+    // or DB failure) keeps config-only behavior byte-for-byte.
+    const userAiPrefs = executionUserId ? await resolveUserAiPrefsForChat(executionUserId) : {};
+    let configuredProviderKey = userAiPrefs.defaultProvider ?? conversation.ai_assistant_type;
+    let aiProfile: ReturnType<typeof buildAiProfile>;
+    try {
+      aiProfile = buildAiProfile(configuredProviderKey, {
+        repoTiers: config.tiers,
+        repoAliases: config.aliases,
+        userTiers: userAiPrefs.tiers,
+        userAliases: userAiPrefs.aliases,
+      });
+    } catch (profileErr) {
+      // Structurally invalid STORED prefs (corrupt DB row) must not break the
+      // user's chat — degrade to config-only. A broken config layer still
+      // fails fast: the rebuild rethrows the same error.
+      getLog().error(
+        { err: profileErr as Error, userId: executionUserId },
+        'orchestrator.user_ai_prefs_profile_invalid'
+      );
+      configuredProviderKey = conversation.ai_assistant_type;
+      aiProfile = buildAiProfile(configuredProviderKey, {
+        repoTiers: config.tiers,
+        repoAliases: config.aliases,
+      });
+    }
+    const chatRequest = resolveModelRequest(aiProfile, 'large', configuredProviderKey);
+    // Tier-fallback nudge (mirrors dag.model_provider_conflict): chat asks for
+    // 'large'; when that tier is unset and a sibling preset answered, tell the
+    // user ONCE PER CONVERSATION, non-blocking — the dedup Set below is what
+    // keeps it from becoming a per-message banner (review C1). Only the main
+    // chat request nags — the background title model ('small') falls back
+    // silently. Delivery failure must never fail the chat turn.
+    if (
+      chatRequest.matchedTier !== undefined &&
+      chatRequest.matchedTier !== 'large' &&
+      !tierFallbackNudgedConversations.has(conversation.id)
+    ) {
+      // Mark BEFORE attempting delivery: a failed send shouldn't retry the
+      // nudge on every subsequent message either.
+      tierFallbackNudgedConversations.add(conversation.id);
+      getLog().warn(
+        {
+          requestedTier: 'large',
+          matchedTier: chatRequest.matchedTier,
+          provider: chatRequest.provider,
+          model: chatRequest.model,
+        },
+        'orchestrator.tier_fallback_nudge'
+      );
+      try {
+        await platform.sendMessage(
+          conversationId,
+          `ℹ️ Model tier 'large' isn't configured — using the '${chatRequest.matchedTier}' preset ` +
+            `(${chatRequest.provider}/${chatRequest.model ?? ''}). Set it in Settings → Model Tiers ` +
+            'or `archon ai tier set large <provider> <model>`.'
+        );
+      } catch (nudgeErr) {
+        getLog().warn(
+          { err: nudgeErr as Error, conversationId },
+          'orchestrator.tier_fallback_nudge_delivery_failed'
+        );
+      }
+    }
+    const providerKey = chatRequest.provider;
     let dbEnvVars: Record<string, string> = {};
     if (conversation.codebase_id) {
       try {
@@ -958,7 +1291,17 @@ export async function handleMessage(
         );
       }
     }
-    const effectiveEnv = { ...(config.envVars ?? {}), ...dbEnvVars };
+    // Per-user AI-provider credentials (Phase 2): env-only delivery in direct
+    // chat — there's no per-call artifacts directory, so deliveries that need
+    // file writes (Codex `CODEX_HOME/auth.json` for the ChatGPT subscription
+    // path) are dropped here and only apply to workflow runs. Merged LAST so
+    // a connected user's keys win over file/db env. No-op when the feature is
+    // disabled or no execution identity resolved (sender, else creator).
+    const userProviderEnv =
+      isPerUserProviderKeysEnabled() && executionUserId
+        ? await resolveUserProviderEnvForChat(executionUserId)
+        : {};
+    const effectiveEnv = { ...(config.envVars ?? {}), ...dbEnvVars, ...userProviderEnv };
 
     // Warn if provider doesn't support env injection but env vars are configured
     if (Object.keys(effectiveEnv).length > 0) {
@@ -973,17 +1316,117 @@ export async function handleMessage(
 
     // Claude supports the preset object for prompt caching; other providers
     // need a plain string (Pi coerces non-string to undefined, Codex ignores it).
-    const systemAppend = buildOrchestratorSystemAppend(conversation, codebases, workflows);
+    let systemAppend = buildOrchestratorSystemAppend(conversation, codebases, workflows);
+    // Capabilities are only consulted for project-scoped chats (both the native tool
+    // and the CLI pointer are scoped features), so look them up lazily — this also
+    // avoids a registry lookup (and a throw for an unregistered provider) on the
+    // unscoped path.
+    const scopedCaps =
+      conversation.codebase_id !== null ? getProviderCapabilities(providerKey) : null;
+    // Providers WITHOUT the in-process manage_run tool (Codex/OpenCode/Copilot) get a
+    // system-prompt pointer to the `archon workflow …` CLI so they can still manage this
+    // project's runs over bash. Claude/Pi get the native tool below and are nudged to it
+    // — adding the CLI pointer there would be redundant and steer them onto a bash path
+    // that needs `archon` on PATH. Project-scoped only: the CLI commands require a
+    // git-repo cwd, which unscoped chats (cwd ~/.archon/workspaces) don't have.
+    if (scopedCaps !== null && !scopedCaps.nativeTools) {
+      systemAppend += `\n\n${buildRunManagementSection()}`;
+    }
     const systemPrompt =
       providerKey === 'claude'
         ? { type: 'preset' as const, preset: 'claude_code' as const, append: systemAppend }
         : systemAppend;
 
     const requestOptions: SendQueryOptions = {
-      assistantConfig: config.assistants[providerKey] ?? {},
+      assistantConfig: { ...(config.assistants[providerKey] ?? {}) },
       env: Object.keys(effectiveEnv).length > 0 ? effectiveEnv : undefined,
+      model: chatRequest.model,
       systemPrompt,
     };
+    if (chatRequest.preset) {
+      applyPresetToRequestOptions(providerKey, chatRequest.preset, requestOptions);
+    }
+
+    if (!conversation.title && !message.startsWith('/')) {
+      const titleRequest = resolveModelRequest(aiProfile, 'small', configuredProviderKey);
+      const titleOptions: SendQueryOptions = {
+        model: titleRequest.model,
+        assistantConfig: { ...(config.assistants[titleRequest.provider] ?? {}) },
+        // Thread the per-user credential bag so title generation authenticates as
+        // the sender too. Without this, title-gen runs with no per-user
+        // subscription/key and fails on per-user-only installs (#1984; same family
+        // as #1794/#1855). Same env-only bag as the main chat request above.
+        env: Object.keys(effectiveEnv).length > 0 ? effectiveEnv : undefined,
+      };
+      if (titleRequest.preset) {
+        applyPresetToRequestOptions(titleRequest.provider, titleRequest.preset, titleOptions);
+      }
+      void generateAndSetTitle(
+        conversation.id,
+        message,
+        titleRequest.provider,
+        cwd,
+        undefined,
+        titleOptions.assistantConfig,
+        titleOptions
+      );
+    }
+
+    // 5. Send to AI provider
+    const aiClient = getAgentProvider(providerKey);
+    getLog().debug(
+      { assistantType: conversation.ai_assistant_type, resolvedAssistantType: providerKey },
+      'sending_to_ai'
+    );
+
+    // Project-scoped chats get the `manage_run` tool so the agent can see and
+    // launch this project's workflow runs. Only when a codebase is scoped and
+    // the provider supports in-process native tools (Claude, Pi). The explicit
+    // codebase_id check (redundant with scopedCaps !== null) narrows it to string
+    // for the block below.
+    if (conversation.codebase_id !== null && scopedCaps?.nativeTools) {
+      const scopedCodebaseId = conversation.codebase_id;
+      requestOptions.nativeTools = [
+        buildManageRunTool({
+          codebaseId: scopedCodebaseId,
+          startWorkflow: async (workflowName, msg): Promise<string> => {
+            let wf: WorkflowDefinition | undefined;
+            try {
+              wf = resolveWorkflowName(workflowName, workflows);
+            } catch (e: unknown) {
+              return toError(e).message; // ambiguous-name error is user-facing
+            }
+            if (wf === undefined) {
+              const names = workflows.map(w => w.name).join(', ');
+              return `No workflow named "${workflowName}". Available: ${names}`;
+            }
+            try {
+              await dispatchBackgroundWorkflow(
+                {
+                  platform,
+                  conversationId,
+                  cwd,
+                  originalMessage: msg.length > 0 ? msg : `Run ${wf.name}`,
+                  conversationDbId: conversation.id,
+                  codebaseId: scopedCodebaseId,
+                  availableWorkflows: workflows,
+                  userId,
+                },
+                wf
+              );
+            } catch (e: unknown) {
+              const err = toError(e);
+              getLog().error(
+                { err, workflow: wf.name, codebaseId: scopedCodebaseId, conversationId },
+                'manage_run.start_failed'
+              );
+              return `Failed to start workflow "${wf.name}": ${err.message}`;
+            }
+            return `Started workflow "${wf.name}" in the background — it'll appear in the runs list and the workflow dock shortly.`;
+          },
+        }),
+      ];
+    }
 
     const mode = platform.getStreamingMode();
     if (mode === 'stream') {
@@ -1057,6 +1500,7 @@ async function handleStreamMode(
   requestOptions?: SendQueryOptions,
   userId?: string
 ): Promise<void> {
+  const turnStartedAt = Date.now();
   const allMessages: string[] = [];
   let newSessionId: string | undefined;
   let commandDetected = false;
@@ -1156,6 +1600,14 @@ async function handleStreamMode(
         if (newSessionId) {
           await tryPersistSessionId(session.id, newSessionId);
         }
+        // Anonymous telemetry: AI returned an error result for this chat turn.
+        captureChatTurn({
+          platform: platform.getPlatformType(),
+          provider: aiClient.getType(),
+          model: requestOptions?.model,
+          durationMs: Date.now() - turnStartedAt,
+          outcome: 'failed',
+        });
         return;
       }
       if (!commandDetected && platform.sendStructuredEvent) {
@@ -1174,6 +1626,8 @@ async function handleStreamMode(
   }
 
   if (allMessages.length === 0) {
+    // Intentionally NOT counted in chat_turn_handled — an empty response is
+    // neither a completed nor a failed turn worth measuring.
     getLog().debug({ conversationId }, 'no_ai_response');
     return;
   }
@@ -1216,6 +1670,22 @@ async function handleStreamMode(
 
   // Text was already streamed — nothing more to send
   await maybeSendResultFooter(platform, conversationId, lastResult);
+  // Anonymous telemetry: one completed direct-chat turn. The workflow-invocation
+  // and project-registration paths return above without reaching this — those
+  // are covered by workflow_invoked / codebase_registered instead. Platform +
+  // provider only, never message content.
+  captureChatTurn({
+    platform: platform.getPlatformType(),
+    provider: aiClient.getType(),
+    model: requestOptions?.model,
+    // durationMs deliberately measures from mode-handler entry — it includes
+    // pre-AI setup, i.e. "time the user waited", not pure model latency.
+    durationMs: Date.now() - turnStartedAt,
+    costUsd: lastResult?.cost,
+    tokensIn: lastResult?.tokens?.input,
+    tokensOut: lastResult?.tokens?.output,
+    outcome: 'completed',
+  });
 }
 
 // ─── Batch Mode ─────────────────────────────────────────────────────────────
@@ -1240,6 +1710,7 @@ async function handleBatchMode(
   requestOptions?: SendQueryOptions,
   userId?: string
 ): Promise<void> {
+  const turnStartedAt = Date.now();
   const allChunks: { type: string; content: string }[] = [];
   const assistantMessages: string[] = [];
   let assistantChunksTruncated = false;
@@ -1343,6 +1814,14 @@ async function handleBatchMode(
         if (newSessionId) {
           await tryPersistSessionId(session.id, newSessionId);
         }
+        // Anonymous telemetry: AI returned an error result for this chat turn.
+        captureChatTurn({
+          platform: platform.getPlatformType(),
+          provider: aiClient.getType(),
+          model: requestOptions?.model,
+          durationMs: Date.now() - turnStartedAt,
+          outcome: 'failed',
+        });
         return;
       }
       lastResult = {
@@ -1385,6 +1864,8 @@ async function handleBatchMode(
   const finalMessage = filterToolIndicators(assistantMessages);
 
   if (!finalMessage) {
+    // Intentionally NOT counted in chat_turn_handled — an empty response is
+    // neither a completed nor a failed turn worth measuring.
     getLog().debug({ conversationId }, 'no_ai_response');
     return;
   }
@@ -1432,6 +1913,20 @@ async function handleBatchMode(
   getLog().debug({ messageLength: finalMessage.length }, 'sending_final_message');
   await platform.sendMessage(conversationId, finalMessage);
   await maybeSendResultFooter(platform, conversationId, lastResult);
+  // Anonymous telemetry: one completed direct-chat turn (same exclusion
+  // rationale as the stream-mode capture in handleStreamMode above).
+  captureChatTurn({
+    platform: platform.getPlatformType(),
+    provider: aiClient.getType(),
+    model: requestOptions?.model,
+    // durationMs deliberately measures from mode-handler entry — it includes
+    // pre-AI setup, i.e. "time the user waited", not pure model latency.
+    durationMs: Date.now() - turnStartedAt,
+    costUsd: lastResult?.cost,
+    tokensIn: lastResult?.tokens?.input,
+    tokensOut: lastResult?.tokens?.output,
+    outcome: 'completed',
+  });
 }
 
 /**
@@ -1597,9 +2092,11 @@ async function handleRegisterProject(
 
   // Use config default provider instead of hardcoding 'claude'
   const config = await loadConfig();
+  const detectedBranch = await detectCurrentGitBranch(projectPath);
   const codebase = await codebaseDb.createCodebase({
     name: projectName,
     default_cwd: projectPath,
+    default_branch: detectedBranch,
     ai_assistant_type: config.assistant,
   });
 
@@ -1608,6 +2105,20 @@ async function handleRegisterProject(
     'project.register_completed'
   );
   return `Project "${projectName}" registered successfully!\nPath: ${projectPath}\nID: ${codebase.id}`;
+}
+
+async function detectCurrentGitBranch(projectPath: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['-C', projectPath, 'rev-parse', '--abbrev-ref', 'HEAD'],
+      { timeout: 5000 }
+    );
+    const branch = stdout.trim();
+    return branch && branch !== 'HEAD' ? branch : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1638,7 +2149,8 @@ async function handleUpdateProject(message: string): Promise<string> {
 
   try {
     await codebaseDb.updateCodebase(codebase.id, { default_cwd: newPath });
-  } catch {
+  } catch (err) {
+    getLog().warn({ err: err as Error, codebaseId: codebase.id, newPath }, 'project.update_failed');
     return `Project "${projectName}" could not be updated — it may have been removed.`;
   }
   getLog().info(
@@ -1671,6 +2183,47 @@ async function handleRemoveProject(message: string): Promise<string> {
   await codebaseDb.deleteCodebase(codebase.id);
   getLog().info({ name: projectName, id: codebase.id }, 'project.remove_completed');
   return `Project "${projectName}" removed.\nPath was: ${codebase.default_cwd}`;
+}
+
+/**
+ * Handle /setproject command.
+ * Binds the current conversation to a registered codebase by writing
+ * `codebase_id` and `cwd` to the conversations table. Uses 4-tier fuzzy
+ * name resolution (exact → case-insensitive → prefix → substring).
+ */
+async function handleSetProject(message: string, conversationId: string): Promise<string> {
+  const { args } = commandHandler.parseCommand(message);
+  if (args.length < 1) {
+    return 'Usage: /setproject <project-name>';
+  }
+
+  const projectName = args.join(' ');
+  const codebases = await codebaseDb.listCodebases();
+
+  let codebase: Codebase | undefined;
+  try {
+    codebase = resolveCodebaseName(projectName, codebases);
+  } catch (err) {
+    return (err as Error).message;
+  }
+
+  if (!codebase) {
+    const available = codebases.map(c => c.name).join(', ');
+    return available
+      ? `Project "${projectName}" not found.\nRegistered projects: ${available}`
+      : `Project "${projectName}" not found. No projects registered — use /register-project.`;
+  }
+
+  await db.updateConversation(conversationId, {
+    codebase_id: codebase.id,
+    cwd: codebase.default_cwd,
+  });
+
+  getLog().info(
+    { conversationId, projectName: codebase.name, codebaseId: codebase.id },
+    'project.set_completed'
+  );
+  return `Project set to **${codebase.name}**\nWorking directory: ${codebase.default_cwd}`;
 }
 
 /**
@@ -1783,7 +2336,8 @@ async function handleWorkflowRunCommand(
       resolvedWorkflow,
       userMessage,
       isolationHints,
-      userId
+      userId,
+      resolvedEntry?.source
     );
     return;
   }

@@ -3,6 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createLogger } from '@archon/paths';
+// Type-only import — erased by TS, so it does NOT trigger Pi's config.js
+// package.json read at module load (see the header note below). Used only to
+// annotate the per-call ResourceLoader local.
+import type { DefaultResourceLoader } from '@earendil-works/pi-coding-agent';
 
 import type {
   IAgentProvider,
@@ -86,7 +90,7 @@ let piSemaphore: Semaphore | undefined;
  * is paid only when Pi is actually used, and (b) the env var can't get
  * clobbered between registration and invocation.
  */
-function ensurePiPackageDirShim(): void {
+export function ensurePiPackageDirShim(): void {
   const shimDir = join(tmpdir(), 'archon-pi-shim');
   const shimPkgJson = join(shimDir, 'package.json');
   if (!existsSync(shimPkgJson)) {
@@ -112,26 +116,23 @@ function ensurePiPackageDirShim(): void {
   process.env.PI_PACKAGE_DIR = shimDir;
 }
 
-/**
- * Map Pi provider id → env var name used by pi-ai's getEnvApiKey().
- * Kept small and explicit: v1 supports the most common API-key providers.
- * OAuth flows (Anthropic subscription, Google Gemini CLI, etc.) are out of
- * scope — Archon is a server-side platform and doesn't drive interactive
- * login. Extend only when a provider is actually exercised.
- *
- * Cross-reference (authoritative mapping maintained upstream in Pi):
- *   https://github.com/badlogic/pi-mono/blob/main/packages/ai/src/env-api-keys.ts
- */
-const PI_PROVIDER_ENV_VARS: Record<string, string> = {
-  anthropic: 'ANTHROPIC_API_KEY',
-  openai: 'OPENAI_API_KEY',
-  google: 'GEMINI_API_KEY',
-  groq: 'GROQ_API_KEY',
-  mistral: 'MISTRAL_API_KEY',
-  cerebras: 'CEREBRAS_API_KEY',
-  xai: 'XAI_API_KEY',
-  openrouter: 'OPENROUTER_API_KEY',
-  huggingface: 'HUGGINGFACE_API_KEY',
+// Pi provider id → env var name used by pi-ai's getEnvApiKey(). Generated
+// from the installed pi-ai SDK (full backend coverage) — see
+// scripts/generate-pi-vendor-map.ts; `bun run check:pi-vendor-map` guards drift.
+import { PI_PROVIDER_ENV_VARS } from './pi-vendor-map.generated';
+
+// Pi provider id → OAuth-subscription env var. pi-ai's getApiKeyEnvVars lists
+// the OAuth var ahead of the API-key var (e.g. anthropic →
+// ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"]). Archon delivers subscriptions
+// to env-only chat under this var (delivery.ts), but the per-user injection never
+// writes to process.env — Pi only ingests requestOptions.env via the explicit
+// bridge below, so the bridge must read the OAuth var too (#1984). github-copilot
+// delivers its single COPILOT_GITHUB_TOKEN (already the API-key var); openai is
+// shipped by delivery.ts as a CODEX_HOME/auth.json file (dropped in env-only chat),
+// never an env var — so on this env channel anthropic is the only backend that
+// needs a distinct OAuth var.
+const PI_OAUTH_ENV_VARS: Readonly<Record<string, string>> = {
+  anthropic: 'ANTHROPIC_OAUTH_TOKEN',
 };
 
 let cachedLog: ReturnType<typeof createLogger> | undefined;
@@ -176,10 +177,11 @@ export class PiProvider implements IAgentProvider {
     const [
       piCodingAgent,
       { bridgeSession },
-      { resolvePiSkills, resolvePiThinkingLevel, resolvePiTools },
-      { createNoopResourceLoader },
+      { resolvePiSkills, resolvePiThinkingLevel, resolvePiTools, buildDefaultPiTools },
+      { createNoopResourceLoader, getOrCreateReloadedExtensionLoader },
       { resolvePiSession },
       { createArchonUIBridge, createArchonUIContext },
+      { buildPiNativeToolDefinitions },
     ] = await Promise.all([
       import('@earendil-works/pi-coding-agent'),
       import('./event-bridge'),
@@ -187,6 +189,7 @@ export class PiProvider implements IAgentProvider {
       import('./resource-loader'),
       import('./session-resolver'),
       import('./ui-context-stub'),
+      import('./native-tools'),
     ]);
     const { createAgentSession } = piCodingAgent;
 
@@ -233,7 +236,17 @@ export class PiProvider implements IAgentProvider {
     let authStorage: ReturnType<typeof piCodingAgent.AuthStorage.create>;
     let modelRegistry: ReturnType<typeof piCodingAgent.ModelRegistry.create>;
     try {
-      authStorage = piCodingAgent.AuthStorage.create();
+      // Archon delivers per-user credentials (API keys + subscriptions) as a
+      // per-run auth.json and points us at it via ARCHON_PI_AUTH_PATH — using an
+      // explicit authPath (not PI_CODING_AGENT_DIR) so the user's models.json /
+      // settings.json at ~/.pi/agent/ are untouched. The path arrives on the
+      // per-call `requestOptions.env` channel (the executor's per-user injection
+      // never writes to process.env — see the piConfig.env note above), so read it
+      // there first and fall back to process.env for a shell-level override.
+      const archonAuthPath =
+        (requestOptions?.env?.ARCHON_PI_AUTH_PATH ?? process.env.ARCHON_PI_AUTH_PATH)?.trim() ||
+        undefined;
+      authStorage = piCodingAgent.AuthStorage.create(archonAuthPath);
       modelRegistry = piCodingAgent.ModelRegistry.create(authStorage);
     } catch (err) {
       const e = err as Error;
@@ -266,11 +279,17 @@ export class PiProvider implements IAgentProvider {
     }
 
     // 4. Resolve credentials. Per-request env vars override auth.json entries via
-    //    setRuntimeApiKey — codebase-scoped env vars win over the user's global Pi login.
+    //    setRuntimeApiKey — codebase-scoped env vars win over the user's global Pi
+    //    login. Subscriptions delivered to env-only chat arrive under the OAuth var
+    //    (e.g. ANTHROPIC_OAUTH_TOKEN); read it first, then the API-key var. pi-ai's
+    //    createClient discriminates OAuth vs api-key by token content (sk-ant-oat*),
+    //    so one runtime channel serves both — and setRuntimeApiKey stays runtime-only
+    //    (no auth.json disk write, unlike AuthStorage.set) (#1984).
     const envVarName = PI_PROVIDER_ENV_VARS[parsed.provider];
-    const envOverride = envVarName
-      ? (requestOptions?.env?.[envVarName] ?? process.env[envVarName])
-      : undefined;
+    const oauthVarName = PI_OAUTH_ENV_VARS[parsed.provider];
+    const readEnvOverride = (name: string | undefined): string | undefined =>
+      name ? (requestOptions?.env?.[name] ?? process.env[name]) : undefined;
+    const envOverride = readEnvOverride(oauthVarName) ?? readEnvOverride(envVarName);
     if (envOverride) {
       authStorage.setRuntimeApiKey(parsed.provider, envOverride);
     }
@@ -282,7 +301,13 @@ export class PiProvider implements IAgentProvider {
       const resolvedKey = await authStorage.getApiKey(parsed.provider);
       if (!resolvedKey) {
         if (envVarName) {
-          const envHint = `Set ${envVarName} in the environment or codebase env vars (.archon/config.yaml env: section).`;
+          // Name the OAuth var first when the backend has one — a subscription
+          // user who hits this miss must be told the var the resolver actually
+          // prefers (ANTHROPIC_OAUTH_TOKEN), not just the API-key var (#1984).
+          const varHint = oauthVarName
+            ? `${oauthVarName} (subscription) or ${envVarName}`
+            : envVarName;
+          const envHint = `Set ${varHint} in the environment or codebase env vars (.archon/config.yaml env: section).`;
           const loginHint = `Or run \`pi\` and type \`/login\` locally to authenticate '${parsed.provider}' via OAuth; credentials land in ~/.pi/agent/auth.json and are picked up automatically.`;
           throw new Error(
             `Pi auth: no credentials for provider '${parsed.provider}'. ${envHint} ${loginHint}`
@@ -435,18 +460,21 @@ export class PiProvider implements IAgentProvider {
     const enableExtensions = piConfig.enableExtensions !== false;
     // Clamp to false without extensions: nothing consumes hasUI without a runner.
     const interactive = enableExtensions && piConfig.interactive !== false;
-    const resourceLoader = createNoopResourceLoader(cwd, {
+
+    // Build the ResourceLoader. When extensions are ON we MUST reuse a
+    // process-cached, already-reloaded loader: Pi's `reload()` re-invokes every
+    // installed extension factory from scratch and the 2nd reload in a process
+    // deadlocks on the first call's never-torn-down state (issue #1877 — see the
+    // doc on getOrCreateReloadedExtensionLoader). When extensions are OFF there
+    // is no reload() and thus no re-entrancy hazard, so a fresh per-call loader
+    // is fine. Build the shared options once so the two paths can't drift.
+    const loaderOptions = {
       ...(systemPrompt !== undefined ? { systemPrompt } : {}),
       ...(skillPaths.length > 0 ? { additionalSkillPaths: skillPaths } : {}),
-      ...(enableExtensions ? { enableExtensions: true } : {}),
-    });
-
-    // Required: without reload(), session.extensionRunner is undefined and
-    // setFlagValue silently no-ops. createAgentSession skips this when a
-    // custom resource loader is supplied.
-    if (enableExtensions) {
-      await resourceLoader.reload();
-    }
+    };
+    const resourceLoader: DefaultResourceLoader = enableExtensions
+      ? await getOrCreateReloadedExtensionLoader(cwd, loaderOptions)
+      : createNoopResourceLoader(cwd, loaderOptions);
 
     getLog().info(
       {
@@ -464,6 +492,19 @@ export class PiProvider implements IAgentProvider {
       },
       'pi.session_started'
     );
+
+    // In-process native tools (e.g. manage_run) via Pi customTools. Because
+    // setting customTools forces noTools:'builtin' (dropping Pi's defaults), the
+    // base tool set must be re-supplied alongside the native defs.
+    const nativeToolDefs =
+      requestOptions?.nativeTools && requestOptions.nativeTools.length > 0
+        ? buildPiNativeToolDefinitions(requestOptions.nativeTools)
+        : [];
+    const baseTools =
+      filteredTools ??
+      (nativeToolDefs.length > 0 ? buildDefaultPiTools(cwd, requestOptions?.env) : undefined);
+    const piCustomTools =
+      nativeToolDefs.length > 0 ? [...(baseTools ?? []), ...nativeToolDefs] : filteredTools;
 
     const { session, modelFallbackMessage } = await createAgentSession({
       cwd,
@@ -489,8 +530,8 @@ export class PiProvider implements IAgentProvider {
       // pre-constructed without a spawnHook (see resolvePiTools in
       // options-translator.ts), so the env-aware bash MUST go through
       // customTools, not just for tool restriction.
-      ...(filteredTools !== undefined
-        ? { customTools: filteredTools, noTools: 'builtin' as const }
+      ...(piCustomTools !== undefined
+        ? { customTools: piCustomTools, noTools: 'builtin' as const }
         : {}),
     });
 
