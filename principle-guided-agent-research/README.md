@@ -9,6 +9,13 @@ guide coding-agent behavior toward secure and correct code generation.
 
 ## Reading Order
 
+0. [Team Proposal / Pitch](00-pitch/security-by-design-agents-proposal.md)
+   - The persuasive entry point: motivation (agentic coding shifts authorship to
+     people without secure-coding knowledge), the evidence that agent-generated
+     code is measurably insecure, the idea (an automatic security harness that
+     binds principles to each intervention point), the design choices with
+     rationales, why build on Archon, risks, and the first milestone to fund.
+
 1. [Research Foundation](01-foundation/research-foundation.md)
    - Defines the project idea, the two core research questions, available
      principle/policy resources, BaxBench behavior taxonomy, and initial
@@ -31,7 +38,15 @@ guide coding-agent behavior toward secure and correct code generation.
      and weaknesses, and recommends how to combine them.
 
 5. [Final Method](05-final-method/policy-guided-agent-harness.md)
-   - The recommended ultimate design: **Policy-Guided Agent Harness (PGAH)**.
+   - The recommended conceptual design: **Policy-Guided Agent Harness (PGAH)**.
+
+6. [Implementable Method](06-implementable-method/policy-guided-agent-control-system.md)
+   - The recommended buildable design: **Policy-Guided Agent Control System
+     (PGACS)**. Re-architects PGAH to be agent/LLM-agnostic (event/intervention
+     bus + capability-declaring adapters), separates policy data from three
+     enforcement layers (proactive prompt / detective monitoring / corrective
+     loop conditioning), makes dynamic policy selection touch all three layers,
+     and extends to new task families via plug-in packs.
 
 ## Supporting External Inputs
 
@@ -48,15 +63,22 @@ folder:
 
 ## Core Output
 
-The current final method is:
+The current recommended method is the implementable design:
 
+[Policy-Guided Agent Control System](06-implementable-method/policy-guided-agent-control-system.md)
+(PGACS), which re-architects the earlier conceptual design
 [Policy-Guided Agent Harness](05-final-method/policy-guided-agent-harness.md)
+(PGAH) for buildability and agent-agnosticism.
 
 In one sentence:
 
 ```text
-PGAH converts human-readable principles into executable policies, selects and
-distributes them across coding-agent behavior phases, enforces them through a
-harness, dynamically hardens policy state as risks appear, and evaluates both
-trajectory changes and final correctness/security outcomes.
+PGACS converts principles into Policy objects that each carry a prompt fragment,
+runtime monitors, and repair invariants; selects a compact policy set from task
+surface and adapts it dynamically across the trajectory; enforces it through
+three graceful-degrading layers (proactive prompt, detective monitoring/probing,
+corrective loop conditioning) driven by an event/intervention bus that any agent
+joins via a capability-declaring adapter; keeps enforcement deterministic while
+using LLMs only to propose and supply evidence; and extends to new task families
+via plug-in packs over a fixed surface vocabulary.
 ```
