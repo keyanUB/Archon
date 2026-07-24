@@ -1,0 +1,46 @@
+{
+  "taskId": "secure-environment-setup-example",
+  "taskFamily": "environment_setup",
+  "languageFrameworks": [
+    "Docker",
+    "Shell"
+  ],
+  "inputChannels": [
+    "filesystem"
+  ],
+  "dangerousSinks": [
+    "filesystem",
+    "network"
+  ],
+  "assets": [
+    "filesystem",
+    "runtime_service"
+  ],
+  "trustBoundaries": [
+    "workspace_boundary"
+  ],
+  "runtimeExposure": [
+    "port_binding",
+    "remote_access"
+  ],
+  "dependencies": [],
+  "environmentConstraints": [
+    "headless",
+    "minimal_environment",
+    "root_privileges"
+  ],
+  "likelyCwes": [
+    "CWE-284"
+  ],
+  "missingSecurityInputs": [
+    "explicit threat model",
+    "security acceptance criteria",
+    "validation criteria"
+  ],
+  "existingTests": [],
+  "confidence": {
+    "taskFamily": 0.85,
+    "risks": 0.8,
+    "missingInputs": 0.75
+  }
+}

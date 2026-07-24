@@ -1,0 +1,4200 @@
+[
+  {
+    "id": "CWE-049",
+    "title": "CWE-049: Run the code in a jail or similar sandbox environment that enforces stri",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "CWE_Top25",
+        "ref": "CWE-049",
+        "text": "Run the code in a jail or similar sandbox environment that enforces strict boundaries between the process and the operating system."
+      }
+    ],
+    "normativeText": "Run the code in a jail or similar sandbox environment that enforces strict boundaries between the process and the operating system.",
+    "riskTags": [
+      "filesystem_isolation",
+      "process_isolation",
+      "runtime_hardening",
+      "sandboxing"
+    ],
+    "cweTags": [
+      "CWE-22",
+      "CWE-78"
+    ],
+    "taskTriggers": [
+      "endpoint_runtime_hardening",
+      "runtime_isolation"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "endpoint_runtime_hardening",
+      "sandboxed_execution"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "disable sandboxing to make the task pass"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "CWE-067",
+    "title": "CWE-067: Use quotas or other resource-limiting settings provided by the operating",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "CWE_Top25",
+        "ref": "CWE-067",
+        "text": "Use quotas or other resource-limiting settings provided by the operating system or environment."
+      }
+    ],
+    "normativeText": "Use quotas or other resource-limiting settings provided by the operating system or environment.",
+    "riskTags": [
+      "runtime_hardening",
+      "sandboxing"
+    ],
+    "cweTags": [
+      "CWE-770"
+    ],
+    "taskTriggers": [
+      "endpoint_runtime_hardening"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "endpoint_runtime_hardening"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "CWE-079",
+    "title": "CWE-079: Use the access control capabilities of your operating system and server ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "CWE_Top25",
+        "ref": "CWE-079",
+        "text": "Use the access control capabilities of your operating system and server environment and define your access control lists accordingly. Use a default deny policy when defining these ACLs."
+      }
+    ],
+    "normativeText": "Use the access control capabilities of your operating system and server environment and define your access control lists accordingly. Use a default deny policy when defining these ACLs.",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [
+      "CWE-862",
+      "CWE-863"
+    ],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "RMF-027",
+    "title": "RMF-027: AI systems that can maintain confidentiality, integrity, and availabilit",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_AI_RMF",
+        "ref": "RMF-027",
+        "text": "AI systems that can maintain confidentiality, integrity, and availability through protection mechanisms that prevent unauthorized access and use may be said to be secure."
+      }
+    ],
+    "normativeText": "AI systems that can maintain confidentiality, integrity, and availability through protection mechanisms that prevent unauthorized access and use may be said to be secure.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "RMF-031",
+    "title": "RMF-031: Maintaining the provenance of training data and supporting attribution o",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_AI_RMF",
+        "ref": "RMF-031",
+        "text": "Maintaining the provenance of training data and supporting attribution of the AI system’s decisions to subsets of training data can assist with both transparency and accountability."
+      }
+    ],
+    "normativeText": "Maintaining the provenance of training data and supporting attribution of the AI system’s decisions to subsets of training data can assist with both transparency and accountability.",
+    "riskTags": [
+      "build_integrity",
+      "dependency_management",
+      "dependency_supply_chain",
+      "network_security",
+      "release_integrity",
+      "runtime_exposure",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "build",
+      "network",
+      "package"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "RMF-121",
+    "title": "RMF-121: MANAGE 4.2: Measurable activities for continual improvements are integra",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_AI_RMF",
+        "ref": "RMF-121",
+        "text": "MANAGE 4.2: Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors."
+      }
+    ],
+    "normativeText": "MANAGE 4.2: Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-001",
+    "title": "SSDF-001: Organizations should integrate the SSDF throughout their existing softwa",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-001",
+        "text": "Organizations should integrate the SSDF throughout their existing software development practices, express their secure software development requirements to third-party suppliers using SSDF conventions, and acquire software that meets the practices described in the SSDF."
+      }
+    ],
+    "normativeText": "Organizations should integrate the SSDF throughout their existing software development practices, express their secure software development requirements to third-party suppliers using SSDF conventions, and acquire software that meets the practices described in the SSDF.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-002",
+    "title": "SSDF-002: Organizations should ensure that their people, processes, and technology",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-002",
+        "text": "Organizations should ensure that their people, processes, and technology are prepared to perform secure software development."
+      }
+    ],
+    "normativeText": "Organizations should ensure that their people, processes, and technology are prepared to perform secure software development.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-004",
+    "title": "SSDF-004: Organizations should produce well-secured software with minimal security",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-004",
+        "text": "Organizations should produce well-secured software with minimal security vulnerabilities in its releases."
+      }
+    ],
+    "normativeText": "Organizations should produce well-secured software with minimal security vulnerabilities in its releases.",
+    "riskTags": [
+      "build_integrity",
+      "release_integrity"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "build_release_integrity"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "build_release_integrity"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "required"
+  },
+  {
+    "id": "SSDF-011",
+    "title": "SSDF-011: PO.2.2: Provide role-based training for all personnel with responsibilit",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-011",
+        "text": "PO.2.2: Provide role-based training for all personnel with responsibilities that contribute to secure development. Periodically review personnel proficiency and role-based training, and update the training as needed."
+      }
+    ],
+    "normativeText": "PO.2.2: Provide role-based training for all personnel with responsibilities that contribute to secure development. Periodically review personnel proficiency and role-based training, and update the training as needed.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-012",
+    "title": "SSDF-012: PO.2.3: Obtain upper management or authorizing official commitment to se",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-012",
+        "text": "PO.2.3: Obtain upper management or authorizing official commitment to secure development, and convey that commitment to all with development-related roles and responsibilities."
+      }
+    ],
+    "normativeText": "PO.2.3: Obtain upper management or authorizing official commitment to secure development, and convey that commitment to all with development-related roles and responsibilities.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-015",
+    "title": "SSDF-015: PO.3.3: Configure tools to generate artifacts of their support of secure",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-015",
+        "text": "PO.3.3: Configure tools to generate artifacts of their support of secure software development practices as defined by the organization."
+      }
+    ],
+    "normativeText": "PO.3.3: Configure tools to generate artifacts of their support of secure software development practices as defined by the organization.",
+    "riskTags": [
+      "build_integrity",
+      "network_security",
+      "other_setup_env",
+      "release_integrity",
+      "runtime_exposure"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-019",
+    "title": "SSDF-019: PO.5.2: Secure and harden development endpoints (i.e., endpoints for sof",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-019",
+        "text": "PO.5.2: Secure and harden development endpoints (i.e., endpoints for software designers, developers, testers, builders, etc.) to perform development-related tasks using a risk-based approach."
+      }
+    ],
+    "normativeText": "PO.5.2: Secure and harden development endpoints (i.e., endpoints for software designers, developers, testers, builders, etc.) to perform development-related tasks using a risk-based approach.",
+    "riskTags": [
+      "build_integrity",
+      "config_hardening",
+      "release_integrity"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening"
+    ],
+    "inputChannels": [
+      "build",
+      "package"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "build_artifacts"
+    ],
+    "trustBoundaryTags": [
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build",
+      "verification_test"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "required"
+  },
+  {
+    "id": "SSDF-022",
+    "title": "SSDF-022: PS.3.1: Securely archive the necessary files and supporting data (e.g., ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-022",
+        "text": "PS.3.1: Securely archive the necessary files and supporting data (e.g., integrity verification information, provenance data) to be retained for each software release."
+      }
+    ],
+    "normativeText": "PS.3.1: Securely archive the necessary files and supporting data (e.g., integrity verification information, provenance data) to be retained for each software release.",
+    "riskTags": [
+      "build_integrity",
+      "dependency_management",
+      "dependency_supply_chain",
+      "network_security",
+      "release_integrity",
+      "runtime_exposure",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "build",
+      "filesystem",
+      "network",
+      "package"
+    ],
+    "dangerousSinks": [
+      "filesystem",
+      "network"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "filesystem",
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "supply_chain_boundary",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "SSDF-023",
+    "title": "SSDF-023: PS.3.2: Collect, safeguard, maintain, and share provenance data for all ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-023",
+        "text": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM])."
+      }
+    ],
+    "normativeText": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM]).",
+    "riskTags": [
+      "build_integrity",
+      "dependency_management",
+      "dependency_supply_chain",
+      "release_integrity",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [
+      "build",
+      "package"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "build_artifacts"
+    ],
+    "trustBoundaryTags": [
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "SSDF-028",
+    "title": "SSDF-028: PW.4.1: Acquire and maintain well-secured software components (e.g., sof",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-028",
+        "text": "PW.4.1: Acquire and maintain well-secured software components (e.g., software libraries, modules, middleware, frameworks) from commercial, open-source, and other third-party developers for use by the organization\u0019s software."
+      }
+    ],
+    "normativeText": "PW.4.1: Acquire and maintain well-secured software components (e.g., software libraries, modules, middleware, frameworks) from commercial, open-source, and other third-party developers for use by the organization\u0019s software.",
+    "riskTags": [
+      "dependency_supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-029",
+    "title": "SSDF-029: PW.4.2: Create and maintain well-secured software components in-house fo",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-029",
+        "text": "PW.4.2: Create and maintain well-secured software components in-house following SDLC processes to meet common internal software development needs that cannot be better met by third-party software components."
+      }
+    ],
+    "normativeText": "PW.4.2: Create and maintain well-secured software components in-house following SDLC processes to meet common internal software development needs that cannot be better met by third-party software components.",
+    "riskTags": [
+      "dependency_supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-031",
+    "title": "SSDF-031: PW.5.1: Follow all secure coding practices that are appropriate to the d",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-031",
+        "text": "PW.5.1: Follow all secure coding practices that are appropriate to the development languages and environment to meet the organization\u0019s requirements."
+      }
+    ],
+    "normativeText": "PW.5.1: Follow all secure coding practices that are appropriate to the development languages and environment to meet the organization\u0019s requirements.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-035",
+    "title": "SSDF-035: PW.7.2: Perform the code review and/or code analysis based on the organi",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-035",
+        "text": "PW.7.2: Perform the code review and/or code analysis based on the organization\u0019s secure coding standards, and record and triage all discovered issues and recommended remediations in the development team\u0019s workflow or issue tracking system."
+      }
+    ],
+    "normativeText": "PW.7.2: Perform the code review and/or code analysis based on the organization\u0019s secure coding standards, and record and triage all discovered issues and recommended remediations in the development team\u0019s workflow or issue tracking system.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-038",
+    "title": "SSDF-038: PW.9.1: Define a secure baseline by determining how to configure each se",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-038",
+        "text": "PW.9.1: Define a secure baseline by determining how to configure each setting that has an effect on security or a security-related setting so that the default settings are secure and do not weaken the security functions provided by the platform, network infrastructure, or services."
+      }
+    ],
+    "normativeText": "PW.9.1: Define a secure baseline by determining how to configure each setting that has an effect on security or a security-related setting so that the default settings are secure and do not weaken the security functions provided by the platform, network infrastructure, or services.",
+    "riskTags": [
+      "config_hardening",
+      "network_security",
+      "runtime_exposure"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-039",
+    "title": "SSDF-039: PW.9.2: Implement the default settings (or groups of default settings, i",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-039",
+        "text": "PW.9.2: Implement the default settings (or groups of default settings, if applicable), and document each setting for software administrators."
+      }
+    ],
+    "normativeText": "PW.9.2: Implement the default settings (or groups of default settings, if applicable), and document each setting for software administrators.",
+    "riskTags": [
+      "config_hardening"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-040",
+    "title": "SSDF-040: RV.1.1: Gather information from software acquirers, users, and public so",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-040",
+        "text": "RV.1.1: Gather information from software acquirers, users, and public sources on potential vulnerabilities in the software and third-party components that the software uses, and investigate all credible reports."
+      }
+    ],
+    "normativeText": "RV.1.1: Gather information from software acquirers, users, and public sources on potential vulnerabilities in the software and third-party components that the software uses, and investigate all credible reports.",
+    "riskTags": [
+      "dependency_supply_chain",
+      "network_security",
+      "runtime_exposure"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "SSDF-046",
+    "title": "SSDF-046: RV.3.2: Analyze the root causes over time to identify patterns, such as ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-046",
+        "text": "RV.3.2: Analyze the root causes over time to identify patterns, such as a particular secure coding practice not being followed consistently."
+      }
+    ],
+    "normativeText": "RV.3.2: Analyze the root causes over time to identify patterns, such as a particular secure coding practice not being followed consistently.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "AIAS-040",
+    "title": "AIAS-040: Apply least privilege to all agent tools and permissions.",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_AI_Agent_Security",
+        "ref": "AIAS-040",
+        "text": "Apply least privilege to all agent tools and permissions."
+      }
+    ],
+    "normativeText": "Apply least privilege to all agent tools and permissions.",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-082",
+    "title": "ASVS-082: Verify that the application only uses client-side technologies which are",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-082",
+        "text": "Verify that the application only uses client-side technologies which are still supported and considered secure. Examples of technologies which do not meet this requirement include NSAPI plugins, Flash, Shockwave, ActiveX, Silverlight, NACL, or client-side Java applets."
+      }
+    ],
+    "normativeText": "Verify that the application only uses client-side technologies which are still supported and considered secure. Examples of technologies which do not meet this requirement include NSAPI plugins, Flash, Shockwave, ActiveX, Silverlight, NACL, or client-side Java applets.",
+    "riskTags": [
+      "access_control",
+      "least_privilege",
+      "network_security",
+      "other_setup_env",
+      "runtime_exposure"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics",
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network",
+      "observability"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env",
+      "runtime_network"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-092",
+    "title": "ASVS-092: Verify that all application components (including load balancers, firewa",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-092",
+        "text": "Verify that all application components (including load balancers, firewalls, and application servers) determine boundaries of incoming HTTP messages using the appropriate mechanism for the HTTP version to prevent HTTP request smuggling. In HTTP/1.x, if a Transfer-Encoding header field is present, the Content-Length header must be ignored per RFC2616. When using HTTP/2 or HTTP/3, if a Content-Length header field is present, the receiver must ensure that it is consistent with the length of the DATA frames."
+      }
+    ],
+    "normativeText": "Verify that all application components (including load balancers, firewalls, and application servers) determine boundaries of incoming HTTP messages using the appropriate mechanism for the HTTP version to prevent HTTP request smuggling. In HTTP/1.x, if a Transfer-Encoding header field is present, the Content-Length header must be ignored per RFC2616. When using HTTP/2 or HTTP/3, if a Content-Length header field is present, the receiver must ensure that it is consistent with the length of the DATA frames.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-128",
+    "title": "ASVS-128: Verify that a user’s passwords stay valid until it is discovered to be c",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-128",
+        "text": "Verify that a user’s passwords stay valid until it is discovered to be compromised or the user rotates it. The application must not require periodic credential rotation."
+      }
+    ],
+    "normativeText": "Verify that a user’s passwords stay valid until it is discovered to be compromised or the user rotates it. The application must not require periodic credential rotation.",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-139",
+    "title": "ASVS-139: Verify that system generated initial passwords or activation codes are s",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-139",
+        "text": "Verify that system generated initial passwords or activation codes are securely randomly generated, follow the existing password policy, and expire after a short period of time or after they are initially used. These initial secrets must not be permitted to become the long term password."
+      }
+    ],
+    "normativeText": "Verify that system generated initial passwords or activation codes are securely randomly generated, follow the existing password policy, and expire after a short period of time or after they are initially used. These initial secrets must not be permitted to become the long term password.",
+    "riskTags": [
+      "credential_protection",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-141",
+    "title": "ASVS-141: Verify that a secure process for resetting a forgotten password is imple",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-141",
+        "text": "Verify that a secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor authentication mechanisms."
+      }
+    ],
+    "normativeText": "Verify that a secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor authentication mechanisms.",
+    "riskTags": [
+      "credential_protection",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-166",
+    "title": "ASVS-166: Where shared or secret keys are used for cryptographic authentication, t",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-166",
+        "text": "Where shared or secret keys are used for cryptographic authentication, these should be stored using the same mechanisms as other system secrets, as documented in the 'Secret Management' section in the 'Configuration' chapter."
+      }
+    ],
+    "normativeText": "Where shared or secret keys are used for cryptographic authentication, these should be stored using the same mechanisms as other system secrets, as documented in the 'Secret Management' section in the 'Configuration' chapter.",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-198",
+    "title": "ASVS-198: Verify that the application ensures that data‑specific access is restric",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-198",
+        "text": "Verify that the application ensures that data‑specific access is restricted to consumers with explicit permissions to specific data items to mitigate insecure direct object reference (IDOR) and broken object level authorization (BOLA)."
+      }
+    ],
+    "normativeText": "Verify that the application ensures that data‑specific access is restricted to consumers with explicit permissions to specific data items to mitigate insecure direct object reference (IDOR) and broken object level authorization (BOLA).",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-208",
+    "title": "ASVS-208: Verify that key material that is used to validate self‑contained tokens ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-208",
+        "text": "Verify that key material that is used to validate self‑contained tokens is from trusted pre‑configured sources for the token issuer, preventing attackers from specifying untrusted sources and keys. For JWTs and other JWS structures, headers such as 'jku', 'x5u', and 'jwk' must be validated against an allowlist of trusted sources."
+      }
+    ],
+    "normativeText": "Verify that key material that is used to validate self‑contained tokens is from trusted pre‑configured sources for the token issuer, preventing attackers from specifying untrusted sources and keys. For JWTs and other JWS structures, headers such as 'jku', 'x5u', and 'jwk' must be validated against an allowlist of trusted sources.",
+    "riskTags": [
+      "access_control",
+      "credential_protection",
+      "least_privilege",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-214",
+    "title": "ASVS-214: Verify that the client only accepts values from the authorization server",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-214",
+        "text": "Verify that the client only accepts values from the authorization server (such as the authorization code or ID Token) if these values result from an authorization flow that was initiated by the same user agent session and transaction. This requires that client‑generated secrets, such as the proof key for code exchange (PKCE) 'code_verifier', 'state' or OIDC 'nonce', are not guessable, are specific to the transaction, and are securely bound to both the client and the user agent session in which the transaction was started."
+      }
+    ],
+    "normativeText": "Verify that the client only accepts values from the authorization server (such as the authorization code or ID Token) if these values result from an authorization flow that was initiated by the same user agent session and transaction. This requires that client‑generated secrets, such as the proof key for code exchange (PKCE) 'code_verifier', 'state' or OIDC 'nonce', are not guessable, are specific to the transaction, and are securely bound to both the client and the user agent session in which the transaction was started.",
+    "riskTags": [
+      "credential_protection",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-237",
+    "title": "ASVS-237: Verify that, for a server‑side client (which is not executed on the end‑",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-237",
+        "text": "Verify that, for a server‑side client (which is not executed on the end‑user device), the authorization server ensures that the 'authorization_details' parameter value is from the client backend and that the user has not tampered with it. For example, by requiring the usage of pushed authorization request (PAR) or JWT‑secured Authorization Request (JAR)."
+      }
+    ],
+    "normativeText": "Verify that, for a server‑side client (which is not executed on the end‑user device), the authorization server ensures that the 'authorization_details' parameter value is from the client backend and that the user has not tampered with it. For example, by requiring the usage of pushed authorization request (PAR) or JWT‑secured Authorization Request (JAR).",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [
+      "shell_command"
+    ],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-249",
+    "title": "ASVS-249: Verify that there is a documented policy for management of cryptographic",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-249",
+        "text": "Verify that there is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a key management such as NIST SP800‑57. This should include ensuring that keys are not overshared (for example, with more than two entities for shared secrets and more than one entity for private keys)."
+      }
+    ],
+    "normativeText": "Verify that there is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a key management such as NIST SP800‑57. This should include ensuring that keys are not overshared (for example, with more than two entities for shared secrets and more than one entity for private keys).",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-257",
+    "title": "ASVS-257: Verify that all cryptographic modules fail securely, and errors are hand",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-257",
+        "text": "Verify that all cryptographic modules fail securely, and errors are handled in a way that does not enable vulnerabilities, such as Padding Oracle attacks."
+      }
+    ],
+    "normativeText": "Verify that all cryptographic modules fail securely, and errors are handled in a way that does not enable vulnerabilities, such as Padding Oracle attacks.",
+    "riskTags": [
+      "access_control",
+      "least_privilege",
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-268",
+    "title": "ASVS-268: Verifythattherandomnumbergenerationmechanisminuseisdesignedto worksecure",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-268",
+        "text": "Verifythattherandomnumbergenerationmechanisminuseisdesignedto worksecurely,evenunderheavydemand."
+      }
+    ],
+    "normativeText": "Verifythattherandomnumbergenerationmechanisminuseisdesignedto worksecurely,evenunderheavydemand.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-269",
+    "title": "ASVS-269: Verifythatonlyapprovedcryptographicalgorithmsandmodesofoperation areused",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-269",
+        "text": "Verifythatonlyapprovedcryptographicalgorithmsandmodesofoperation areusedforkeygenerationandseeding,anddigitalsignaturegeneration andverification. Keygenerationalgorithmsmustnotgenerateinsecurekeys vulnerabletoknownattacks,forexample,RSAkeyswhicharevulnerableto Fermatfactorization."
+      }
+    ],
+    "normativeText": "Verifythatonlyapprovedcryptographicalgorithmsandmodesofoperation areusedforkeygenerationandseeding,anddigitalsignaturegeneration andverification. Keygenerationalgorithmsmustnotgenerateinsecurekeys vulnerabletoknownattacks,forexample,RSAkeyswhicharevulnerableto Fermatfactorization.",
+    "riskTags": [
+      "credential_protection",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-278",
+    "title": "ASVS-278: Verify that TLS is used for all connectivity between a client and extern",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-278",
+        "text": "Verify that TLS is used for all connectivity between a client and external facing, HTTP‑based services, and does not fall back to insecure or unencrypted communications."
+      }
+    ],
+    "normativeText": "Verify that TLS is used for all connectivity between a client and external facing, HTTP‑based services, and does not fall back to insecure or unencrypted communications.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "ASVS-280",
+    "title": "ASVS-280: Verify that an encrypted protocol such as TLS is used for all inbound an",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-280",
+        "text": "Verify that an encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application, including monitoring systems, management tools, remote access and SSH, middleware, databases, mainframes, partner systems, or external APIs. The server must not fall back to insecure or unencrypted protocols."
+      }
+    ],
+    "normativeText": "Verify that an encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application, including monitoring systems, management tools, remote access and SSH, middleware, databases, mainframes, partner systems, or external APIs. The server must not fall back to insecure or unencrypted protocols.",
+    "riskTags": [
+      "auditability",
+      "network_security",
+      "observability",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "observability",
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics",
+      "network"
+    ],
+    "dangerousSinks": [
+      "database",
+      "network"
+    ],
+    "assetTags": [
+      "network",
+      "observability"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "operational_observability",
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_test"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "ASVS-282",
+    "title": "ASVS-282: Verify that TLS or another appropriate transport encryption mechanism us",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-282",
+        "text": "Verify that TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP‑based services within the application, and does not fall back to insecure or unencrypted communications."
+      }
+    ],
+    "normativeText": "Verify that TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP‑based services within the application, and does not fall back to insecure or unencrypted communications.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "ASVS-284",
+    "title": "ASVS-284: Verify that services communicating internally within a system (intra‑ser",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-284",
+        "text": "Verify that services communicating internally within a system (intra‑service communications) use strong authentication to ensure that each endpoint is verified. Strong authentication methods, such as TLS client authentication, must be employed to ensure identity, using public‑key infrastructure and mechanisms that are resistant to replay attacks. For microservice architectures, consider using a service mesh to simplify certificate management and enhance security."
+      }
+    ],
+    "normativeText": "Verify that services communicating internally within a system (intra‑service communications) use strong authentication to ensure that each endpoint is verified. Strong authentication methods, such as TLS client authentication, must be employed to ensure identity, using public‑key infrastructure and mechanisms that are resistant to replay attacks. For microservice architectures, consider using a service mesh to simplify certificate management and enhance security.",
+    "riskTags": [
+      "credential_protection",
+      "network_security",
+      "runtime_exposure",
+      "secrets",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "secret_handling",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem",
+      "network"
+    ],
+    "dangerousSinks": [
+      "network",
+      "secrets"
+    ],
+    "assetTags": [
+      "network",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-289",
+    "title": "ASVS-289: Verify that communications between backend application components that d",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-289",
+        "text": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short‑term tokens, or certificate‑based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access."
+      }
+    ],
+    "normativeText": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short‑term tokens, or certificate‑based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "network_security",
+      "runtime_exposure",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem",
+      "network"
+    ],
+    "dangerousSinks": [
+      "network",
+      "secrets"
+    ],
+    "assetTags": [
+      "network",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-292",
+    "title": "ASVS-292: Verifythatanallowlistisusedtodefinetheexternalresourcesorsystems withwhi",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-292",
+        "text": "Verifythatanallowlistisusedtodefinetheexternalresourcesorsystems withwhichtheapplicationispermittedtocommunicate(e.g.,foroutbound requests,dataloads,orfileaccess). Thisallowlistcanbeimplementedatthe applicationlayer,webserver,firewall,oracombinationofdifferentlayers."
+      }
+    ],
+    "normativeText": "Verifythatanallowlistisusedtodefinetheexternalresourcesorsystems withwhichtheapplicationispermittedtocommunicate(e.g.,foroutbound requests,dataloads,orfileaccess). Thisallowlistcanbeimplementedatthe applicationlayer,webserver,firewall,oracombinationofdifferentlayers.",
+    "riskTags": [
+      "access_control",
+      "least_privilege",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "filesystem"
+    ],
+    "assetTags": [
+      "filesystem"
+    ],
+    "trustBoundaryTags": [
+      "untrusted_input",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-295",
+    "title": "ASVS-295: Verify that a secrets management solution, such as a key vault, is used ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-295",
+        "text": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third‑party systems, keys and seeds for time‑based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware‑backed solution such as an HSM."
+      }
+    ],
+    "normativeText": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third‑party systems, keys and seeds for time‑based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware‑backed solution such as an HSM.",
+    "riskTags": [
+      "build_integrity",
+      "credential_protection",
+      "key_management",
+      "release_integrity",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "build",
+      "env",
+      "filesystem",
+      "package"
+    ],
+    "dangerousSinks": [
+      "database",
+      "secrets"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary",
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-297",
+    "title": "ASVS-297: Verify that all cryptographic operations are performed using an isolated",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-297",
+        "text": "Verify that all cryptographic operations are performed using an isolated security module (such as a vault or hardware security module) to securely manage and protect key material from exposure outside of the security module."
+      }
+    ],
+    "normativeText": "Verify that all cryptographic operations are performed using an isolated security module (such as a vault or hardware security module) to securely manage and protect key material from exposure outside of the security module.",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-298",
+    "title": "ASVS-298: Verifythatsecretsareconfiguredtoexpireandberotatedbasedonthe application",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-298",
+        "text": "Verifythatsecretsareconfiguredtoexpireandberotatedbasedonthe application’sdocumentation."
+      }
+    ],
+    "normativeText": "Verifythatsecretsareconfiguredtoexpireandberotatedbasedonthe application’sdocumentation.",
+    "riskTags": [
+      "credential_protection",
+      "other_setup_env",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-307",
+    "title": "ASVS-307: Verify that communications between backend application components that d",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-307",
+        "text": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short-term tokens, or certificate-based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access."
+      }
+    ],
+    "normativeText": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short-term tokens, or certificate-based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
+    "riskTags": [
+      "credential_protection",
+      "key_management",
+      "network_security",
+      "runtime_exposure",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem",
+      "network"
+    ],
+    "dangerousSinks": [
+      "network",
+      "secrets"
+    ],
+    "assetTags": [
+      "network",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-308",
+    "title": "ASVS-308: Verify that an allowlist is used to define the external resources or sys",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-308",
+        "text": "Verify that an allowlist is used to define the external resources or systems with which the application is permitted to communicate (e.g., for outbound requests, data loads, or file access). This allowlist can be implemented at the application layer, web server, firewall, or a combination of different layers."
+      }
+    ],
+    "normativeText": "Verify that an allowlist is used to define the external resources or systems with which the application is permitted to communicate (e.g., for outbound requests, data loads, or file access). This allowlist can be implemented at the application layer, web server, firewall, or a combination of different layers.",
+    "riskTags": [
+      "access_control",
+      "least_privilege",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "filesystem"
+    ],
+    "assetTags": [
+      "filesystem"
+    ],
+    "trustBoundaryTags": [
+      "untrusted_input",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-311",
+    "title": "ASVS-311: Verify that a secrets management solution, such as a key vault, is used ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-311",
+        "text": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third-party systems, keys and seeds for time-based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware-backed solution such as an HSM."
+      }
+    ],
+    "normativeText": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third-party systems, keys and seeds for time-based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware-backed solution such as an HSM.",
+    "riskTags": [
+      "build_integrity",
+      "credential_protection",
+      "key_management",
+      "release_integrity",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "secret_handling",
+      "secrets_key_management"
+    ],
+    "inputChannels": [
+      "build",
+      "env",
+      "filesystem",
+      "package"
+    ],
+    "dangerousSinks": [
+      "database",
+      "secrets"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary",
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "secrets_key_management"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-312",
+    "title": "ASVS-312: Verify that access to secret assets adheres to the principle of least pr",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-312",
+        "text": "Verify that access to secret assets adheres to the principle of least privilege."
+      }
+    ],
+    "normativeText": "Verify that access to secret assets adheres to the principle of least privilege.",
+    "riskTags": [
+      "access_control",
+      "credential_protection",
+      "least_privilege",
+      "secrets"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access",
+      "secret_handling"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "secrets"
+    ],
+    "assetTags": [
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "secret_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization",
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-331",
+    "title": "ASVS-331: Verify that an inventory catalog, such as a software bill of materials (",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-331",
+        "text": "Verify that an inventory catalog, such as a software bill of materials (SBOM), is maintained of all third-party libraries in use, including verifying that components come from pre-defined, trusted, and continually maintained repositories."
+      }
+    ],
+    "normativeText": "Verify that an inventory catalog, such as a software bill of materials (SBOM), is maintained of all third-party libraries in use, including verifying that components come from pre-defined, trusted, and continually maintained repositories.",
+    "riskTags": [
+      "dependency_management",
+      "dependency_supply_chain",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [
+      "build",
+      "logs",
+      "metrics",
+      "package"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "build_artifacts",
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-333",
+    "title": "ASVS-333: Verify that application documentation highlights third-party libraries w",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-333",
+        "text": "Verify that application documentation highlights third-party libraries which are considered to be \"risky components\"."
+      }
+    ],
+    "normativeText": "Verify that application documentation highlights third-party libraries which are considered to be \"risky components\".",
+    "riskTags": [
+      "dependency_supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-338",
+    "title": "ASVS-338: Verify that third-party components and all of their transitive dependenc",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-338",
+        "text": "Verify that third-party components and all of their transitive dependencies are included from the expected repository, whether internally owned or an external source, and that there is no risk of a dependency confusion attack."
+      }
+    ],
+    "normativeText": "Verify that third-party components and all of their transitive dependencies are included from the expected repository, whether internally owned or an external source, and that there is no risk of a dependency confusion attack.",
+    "riskTags": [
+      "dependency_management",
+      "dependency_supply_chain",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "ASVS-339",
+    "title": "ASVS-339: Verify that the application implements additional protections around par",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-339",
+        "text": "Verify that the application implements additional protections around parts of the application which are documented as containing \"dangerous functionality\" or using third-party libraries considered to be \"risky components\". This could include techniques such as sandboxing, encapsulation, containerization or network level isolation to delay and deter attackers who compromise one part of an application from pivoting elsewhere in the application."
+      }
+    ],
+    "normativeText": "Verify that the application implements additional protections around parts of the application which are documented as containing \"dangerous functionality\" or using third-party libraries considered to be \"risky components\". This could include techniques such as sandboxing, encapsulation, containerization or network level isolation to delay and deter attackers who compromise one part of an application from pivoting elsewhere in the application.",
+    "riskTags": [
+      "dependency_supply_chain",
+      "filesystem_isolation",
+      "network_security",
+      "process_isolation",
+      "runtime_exposure",
+      "sandboxing"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_supply_chain",
+      "runtime_isolation",
+      "runtime_network"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_supply_chain",
+      "runtime_network",
+      "sandboxed_execution"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "disable sandboxing to make the task pass",
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-343",
+    "title": "ASVS-343: Verify that all proxying and middleware components transfer the user’s o",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-343",
+        "text": "Verify that all proxying and middleware components transfer the user’s original IP address correctly using trusted data fields that cannot be manipulated by the end user, and the application and web server use this correct value for logging and security decisions such as rate limiting, taking into account that even the original IP address may not be reliable due to dynamic IPs, VPNs, or corporate firewalls."
+      }
+    ],
+    "normativeText": "Verify that all proxying and middleware components transfer the user’s original IP address correctly using trusted data fields that cannot be manipulated by the end user, and the application and web server use this correct value for logging and security decisions such as rate limiting, taking into account that even the original IP address may not be reliable due to dynamic IPs, VPNs, or corporate firewalls.",
+    "riskTags": [
+      "auditability",
+      "observability",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "observability",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "operational_observability",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-363",
+    "title": "ASVS-363: Verify that logs are securely transmitted to a logically separate system",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-363",
+        "text": "Verify that logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation. The aim is to ensure that if the application is breached, the logs are not compromised."
+      }
+    ],
+    "normativeText": "Verify that logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation. The aim is to ensure that if the application is breached, the logs are not compromised.",
+    "riskTags": [
+      "auditability",
+      "logging",
+      "monitoring"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "logging_monitoring_setup"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "logging_monitoring_setup"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-365",
+    "title": "ASVS-365: Verify that the application continues to operate securely when external ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-365",
+        "text": "Verify that the application continues to operate securely when external resource access fails, for example, by using patterns such as circuit breakers or graceful degradation."
+      }
+    ],
+    "normativeText": "Verify that the application continues to operate securely when external resource access fails, for example, by using patterns such as circuit breakers or graceful degradation.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-366",
+    "title": "ASVS-366: Verify that the application fails gracefully and securely, including whe",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-366",
+        "text": "Verify that the application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions such as processing a transaction despite errors resulting from validation logic."
+      }
+    ],
+    "normativeText": "Verify that the application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions such as processing a transaction despite errors resulting from validation logic.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-371",
+    "title": "ASVS-371: Verify that the media server is configured to use and support approved D",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-371",
+        "text": "Verify that the media server is configured to use and support approved Datagram Transport Layer Security (DTLS) ciphersuites and a secure protection profile for the DTLS Extension for establishing keys for the Secure Real-time Transport Protocol (DTLS-SRTP)."
+      }
+    ],
+    "normativeText": "Verify that the media server is configured to use and support approved Datagram Transport Layer Security (DTLS) ciphersuites and a secure protection profile for the DTLS Extension for establishing keys for the Secure Real-time Transport Protocol (DTLS-SRTP).",
+    "riskTags": [
+      "credential_protection",
+      "network_security",
+      "runtime_exposure",
+      "secrets",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "secret_handling",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "env",
+      "filesystem",
+      "network"
+    ],
+    "dangerousSinks": [
+      "filesystem",
+      "network",
+      "secrets"
+    ],
+    "assetTags": [
+      "filesystem",
+      "network",
+      "secrets"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary",
+      "secret_boundary",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "static_scan"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings",
+      "hardcode secrets in source or logs"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-372",
+    "title": "ASVS-372: Verify that Secure Real-time Transport Protocol (SRTP) authentication is",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-372",
+        "text": "Verify that Secure Real-time Transport Protocol (SRTP) authentication is checked at the media server to prevent Real-time Transport Protocol (RTP) injection attacks from leading to either a Denial of Service condition or audio or video media insertion into media streams."
+      }
+    ],
+    "normativeText": "Verify that Secure Real-time Transport Protocol (SRTP) authentication is checked at the media server to prevent Real-time Transport Protocol (RTP) injection attacks from leading to either a Denial of Service condition or audio or video media insertion into media streams.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-373",
+    "title": "ASVS-373: Verify that the media server is able to continue processing incoming med",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-373",
+        "text": "Verify that the media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time Transport Protocol (SRTP) packets."
+      }
+    ],
+    "normativeText": "Verify that the media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time Transport Protocol (SRTP) packets.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-374",
+    "title": "ASVS-374: Verify that the media server is able to continue processing incoming med",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-374",
+        "text": "Verify that the media server is able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users."
+      }
+    ],
+    "normativeText": "Verify that the media server is able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-376",
+    "title": "ASVS-376: Verify that any audio or video recording mechanisms associated with the ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-376",
+        "text": "Verify that any audio or video recording mechanisms associated with the media server are able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users."
+      }
+    ],
+    "normativeText": "Verify that any audio or video recording mechanisms associated with the media server are able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
+    "riskTags": [
+      "network_security",
+      "runtime_exposure",
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "network"
+    ],
+    "dangerousSinks": [
+      "network"
+    ],
+    "assetTags": [
+      "network"
+    ],
+    "trustBoundaryTags": [
+      "network_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "runtime_network",
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "fall back to insecure transport or open bindings"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-419",
+    "title": "ASVS-419: Security controls should be centralized, simple (economy of design), ver",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-419",
+        "text": "Security controls should be centralized, simple (economy of design), verifiably secure, and reusable. This should avoid duplicate, missing, or ineffective controls."
+      }
+    ],
+    "normativeText": "Security controls should be centralized, simple (economy of design), verifiably secure, and reusable. This should avoid duplicate, missing, or ineffective controls.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-421",
+    "title": "ASVS-421: Ideally, a single access control mechanism should be used to access prot",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-421",
+        "text": "Ideally, a single access control mechanism should be used to access protected data and resources. All requests should pass through this single mechanism to avoid copy and paste or insecure alternative paths."
+      }
+    ],
+    "normativeText": "Ideally, a single access control mechanism should be used to access protected data and resources. All requests should pass through this single mechanism to avoid copy and paste or insecure alternative paths.",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [
+      "filesystem"
+    ],
+    "dangerousSinks": [
+      "filesystem"
+    ],
+    "assetTags": [
+      "filesystem"
+    ],
+    "trustBoundaryTags": [
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "ASVS-423",
+    "title": "ASVS-423: Verify the use of a secure software development lifecycle that addresses",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-423",
+        "text": "Verify the use of a secure software development lifecycle that addresses security in all stages of development."
+      }
+    ],
+    "normativeText": "Verify the use of a secure software development lifecycle that addresses security in all stages of development.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-426",
+    "title": "ASVS-426: Verify availability of a secure coding checklist, security requirements,",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-426",
+        "text": "Verify availability of a secure coding checklist, security requirements, guideline, or policy to all developers and testers."
+      }
+    ],
+    "normativeText": "Verify availability of a secure coding checklist, security requirements, guideline, or policy to all developers and testers.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_test"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-427",
+    "title": "ASVS-427: Verify that an ongoing process exists to ensure that the application sou",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-427",
+        "text": "Verify that an ongoing process exists to ensure that the application source code is free from backdoors, malicious code (e.g., salami attacks, logic bombs, time bombs), and undocumented or hidden features (e.g., Easter eggs, insecure debugging tools). Complying with this section is not possible without complete access to source code, including third‑party libraries, and is therefore probably only suitable for applications requiring the very highest levels of security."
+      }
+    ],
+    "normativeText": "Verify that an ongoing process exists to ensure that the application source code is free from backdoors, malicious code (e.g., salami attacks, logic bombs, time bombs), and undocumented or hidden features (e.g., Easter eggs, insecure debugging tools). Complying with this section is not possible without complete access to source code, including third‑party libraries, and is therefore probably only suitable for applications requiring the very highest levels of security.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-428",
+    "title": "ASVS-428: Verify that mechanisms are in place to detect and respond to configurati",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-428",
+        "text": "Verify that mechanisms are in place to detect and respond to configuration drift in deployed environments. This may include using immutable infrastructure, automated redeployment from a secure baseline, or drift detection tools that compare current state against approved configurations."
+      }
+    ],
+    "normativeText": "Verify that mechanisms are in place to detect and respond to configuration drift in deployed environments. This may include using immutable infrastructure, automated redeployment from a secure baseline, or drift detection tools that compare current state against approved configurations.",
+    "riskTags": [
+      "config_hardening"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "ASVS-429",
+    "title": "ASVS-429: Verify that configuration hardening is performed on all third‑party prod",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_ASVS",
+        "ref": "ASVS-429",
+        "text": "Verify that configuration hardening is performed on all third‑party products, libraries, frameworks, and services as per their individual recommendations."
+      }
+    ],
+    "normativeText": "Verify that configuration hardening is performed on all third‑party products, libraries, frameworks, and services as per their individual recommendations.",
+    "riskTags": [
+      "config_hardening"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening"
+    ],
+    "phaseBindings": [
+      "final_reporting",
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_runtime"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-010",
+    "title": "LLM-010: Limit access to sensitive data based on the principle of least privilege",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-010",
+        "text": "Limit access to sensitive data based on the principle of least privilege. Only grant access to data that is necessary for the specific user or process."
+      }
+    ],
+    "normativeText": "Limit access to sensitive data based on the principle of least privilege. Only grant access to data that is necessary for the specific user or process.",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "LLM-011",
+    "title": "LLM-011: Limit model access to external data sources, and ensure runtime data orc",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-011",
+        "text": "Limit model access to external data sources, and ensure runtime data orchestration is securely managed to avoid unintended data leakage."
+      }
+    ],
+    "normativeText": "Limit model access to external data sources, and ensure runtime data orchestration is securely managed to avoid unintended data leakage.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-014",
+    "title": "LLM-014: Provide guidance on avoiding the input of sensitive information. Offer t",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-014",
+        "text": "Provide guidance on avoiding the input of sensitive information. Offer training on best practices for interacting with LLMs securely."
+      }
+    ],
+    "normativeText": "Provide guidance on avoiding the input of sensitive information. Offer training on best practices for interacting with LLMs securely.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-017",
+    "title": "LLM-017: Follow guidelines like \"OWASP API8:2023 Security Misconfiguration\" to pr",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-017",
+        "text": "Follow guidelines like \"OWASP API8:2023 Security Misconfiguration\" to prevent leaking sensitive information through error messages or configuration details."
+      }
+    ],
+    "normativeText": "Follow guidelines like \"OWASP API8:2023 Security Misconfiguration\" to prevent leaking sensitive information through error messages or configuration details.",
+    "riskTags": [
+      "config_hardening"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "config_hardening"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "config_hardening"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-018",
+    "title": "LLM-018: Use homomorphic encryption to enable secure data analysis and privacy-pr",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-018",
+        "text": "Use homomorphic encryption to enable secure data analysis and privacy-preserving machine learning. This ensures data remains confidential while being processed by the model."
+      }
+    ],
+    "normativeText": "Use homomorphic encryption to enable secure data analysis and privacy-preserving machine learning. This ensures data remains confidential while being processed by the model.",
+    "riskTags": [
+      "other_setup_env"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-023",
+    "title": "LLM-023: Maintain an up-to-date inventory of components using a Software Bill of ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-023",
+        "text": "Maintain an up-to-date inventory of components using a Software Bill of Materials (SBOM) to ensure you have an up-to-date, accurate, and signed inventory, preventing tampering with deployed packages. SBOMs can be used to detect and alert for new, zero-date vulnerabilities quickly. AI BOMs and ML SBOMs are an emerging area and you should evaluate options starting with OWASP CycloneDX"
+      }
+    ],
+    "normativeText": "Maintain an up-to-date inventory of components using a Software Bill of Materials (SBOM) to ensure you have an up-to-date, accurate, and signed inventory, preventing tampering with deployed packages. SBOMs can be used to detect and alert for new, zero-date vulnerabilities quickly. AI BOMs and ML SBOMs are an emerging area and you should evaluate options starting with OWASP CycloneDX",
+    "riskTags": [
+      "dependency_management",
+      "dependency_supply_chain",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [
+      "build",
+      "package"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "build_artifacts"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-025",
+    "title": "LLM-025: Only use models from verifiable sources and use third-party model integr",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-025",
+        "text": "Only use models from verifiable sources and use third-party model integrity checks with signing and file hashes to compensate for the lack of strong model provenance. Similarly, use code signing for externally supplied code."
+      }
+    ],
+    "normativeText": "Only use models from verifiable sources and use third-party model integrity checks with signing and file hashes to compensate for the lack of strong model provenance. Similarly, use code signing for externally supplied code.",
+    "riskTags": [
+      "build_integrity",
+      "dependency_management",
+      "dependency_supply_chain",
+      "release_integrity",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [
+      "build",
+      "filesystem",
+      "package"
+    ],
+    "dangerousSinks": [
+      "filesystem"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "filesystem"
+    ],
+    "trustBoundaryTags": [
+      "untrusted_input",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-051",
+    "title": "LLM-051: Avoid open-ended extensions\nAvoid the use of open-ended extensions where",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-051",
+        "text": "Avoid open-ended extensions\nAvoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality. For example, an LLM-based app may need to write some output to a file. If this were implemented using an extension to run a shell function then the scope for undesirable actions is very large (any other shell command could be executed). A more secure alternative would be to build a specific file-writing exOtWenAsSiPo nTo tph a10t ofonrl yLL iMm Applepmliceanttios ntsh avt2 .s0pecific functionality."
+      }
+    ],
+    "normativeText": "Avoid open-ended extensions\nAvoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality. For example, an LLM-based app may need to write some output to a file. If this were implemented using an extension to run a shell function then the scope for undesirable actions is very large (any other shell command could be executed). A more secure alternative would be to build a specific file-writing exOtWenAsSiPo nTo tph a10t ofonrl yLL iMm Applepmliceanttios ntsh avt2 .s0pecific functionality.",
+    "riskTags": [
+      "access_control",
+      "build_integrity",
+      "least_privilege",
+      "release_integrity"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [
+      "build",
+      "filesystem",
+      "package"
+    ],
+    "dangerousSinks": [
+      "filesystem",
+      "shell_command"
+    ],
+    "assetTags": [
+      "build_artifacts",
+      "filesystem"
+    ],
+    "trustBoundaryTags": [
+      "supply_chain_boundary",
+      "workspace_boundary"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "LLM-056",
+    "title": "LLM-056: Sanitise LLM inputs and outputs\nFollow secure coding best practice, such",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-056",
+        "text": "Sanitise LLM inputs and outputs\nFollow secure coding best practice, such as applying OWASP’s recommendations in ASVS (Application Security Verification Standard), with a particularly strong focus on input sanitisation. Use Static Application Security Testing (SAST) and Dynamic and Interactive application testing (DAST, IAST) in development pipelines."
+      }
+    ],
+    "normativeText": "Sanitise LLM inputs and outputs\nFollow secure coding best practice, such as applying OWASP’s recommendations in ASVS (Application Security Verification Standard), with a particularly strong focus on input sanitisation. Use Static Application Security Testing (SAST) and Dynamic and Interactive application testing (DAST, IAST) in development pipelines.",
+    "riskTags": [
+      "build_integrity",
+      "other_setup_env",
+      "release_integrity"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "other_setup_env"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [
+      "untrusted_input"
+    ],
+    "dependencyTags": [],
+    "environmentTags": [
+      "other_setup_env"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_test"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-063",
+    "title": "LLM-063: Ensure that security controls are enforced independently from the LLM\nCr",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-063",
+        "text": "Ensure that security controls are enforced independently from the LLM\nCritical controls such as privilege separation, authorization bounds checks, and similar must not be delegated to the LLM, either through the system prompt or otherwise. These controls need to occur in a deterministic, auditable manner, and LLMs are not (currently) conducive to this. In cases where an agent is performing tasks, if those tasks require different levels of access, then multiple agents should be used, each configured with the least privileges needed to perform the desired tasks."
+      }
+    ],
+    "normativeText": "Ensure that security controls are enforced independently from the LLM\nCritical controls such as privilege separation, authorization bounds checks, and similar must not be delegated to the LLM, either through the system prompt or otherwise. These controls need to occur in a deterministic, auditable manner, and LLMs are not (currently) conducive to this. In cases where an agent is performing tasks, if those tasks require different levels of access, then multiple agents should be used, each configured with the least privileges needed to perform the desired tasks.",
+    "riskTags": [
+      "access_control",
+      "auditability",
+      "least_privilege",
+      "observability"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_test"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "LLM-073",
+    "title": "LLM-073: Secure Coding Practices\nEstablish secure coding practices to prevent the",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-073",
+        "text": "Secure Coding Practices\nEstablish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions."
+      }
+    ],
+    "normativeText": "Secure Coding Practices\nEstablish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
+    "riskTags": [
+      "process_lifecycle"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "process_lifecycle"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "process_lifecycle"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  },
+  {
+    "id": "LLM-088",
+    "title": "LLM-088: Access Controls\nImplement strong access controls, including role-based a",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "OWASP_LLM_Top10",
+        "ref": "LLM-088",
+        "text": "Access Controls\nImplement strong access controls, including role-based access control (RBAC) and the principle of least privilege, to limit unauthorized access to LLM model repositories and training environments."
+      }
+    ],
+    "normativeText": "Access Controls\nImplement strong access controls, including role-based access control (RBAC) and the principle of least privilege, to limit unauthorized access to LLM model repositories and training environments.",
+    "riskTags": [
+      "access_control",
+      "least_privilege"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "least_privilege_access"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "least_privilege_access"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "broaden privileges instead of fixing authorization"
+    ],
+    "severity": "fail_closed"
+  },
+  {
+    "id": "PALO-002",
+    "title": "PALO-002: Conduct a comprehensive inventory of GenAI usage across your organizatio",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "PaloAlto_GenAI_Risk",
+        "ref": "PALO-002",
+        "text": "Conduct a comprehensive inventory of GenAI usage across your organization and inspect usage analytics and firewall logs."
+      }
+    ],
+    "normativeText": "Conduct a comprehensive inventory of GenAI usage across your organization and inspect usage analytics and firewall logs.",
+    "riskTags": [
+      "transport_network_config"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "transport_network_config"
+    ],
+    "inputChannels": [
+      "logs",
+      "metrics"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "observability"
+    ],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [
+      "transport_network_config"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
+  }
+]

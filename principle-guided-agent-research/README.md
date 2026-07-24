@@ -40,13 +40,27 @@ guide coding-agent behavior toward secure and correct code generation.
 5. [Final Method](05-final-method/policy-guided-agent-harness.md)
    - The recommended conceptual design: **Policy-Guided Agent Harness (PGAH)**.
 
-6. [Implementable Method](06-implementable-method/policy-guided-agent-control-system.md)
-   - The recommended buildable design: **Policy-Guided Agent Control System
-     (PGACS)**. Re-architects PGAH to be agent/LLM-agnostic (event/intervention
-     bus + capability-declaring adapters), separates policy data from three
-     enforcement layers (proactive prompt / detective monitoring / corrective
-     loop conditioning), makes dynamic policy selection touch all three layers,
-     and extends to new task families via plug-in packs.
+6. Implementable Method: **Policy-Guided Agent Control System (PGACS)**.
+   Re-architects PGAH to be agent/LLM-agnostic (event/intervention bus +
+   capability-declaring adapters), separates policy data from three enforcement
+   layers (proactive prompt / detective monitoring / corrective loop
+   conditioning), makes dynamic policy selection touch all three layers, and
+   extends to new task families via plug-in packs. Two documents:
+   - [Milestone 1: Policy Registry and Task-Surface Extraction](06-implementable-method/01-policy-registry-and-task-surface.md)
+     — the first implementation step: normalize the policy corpus and the task
+     surface so selection has a stable input.
+   - [Method overview](06-implementable-method/policy-guided-agent-control-system.md)
+     — the design at pitch/overview altitude.
+   - [Detailed design & decision record](06-implementable-method/pgacs-detailed-design.md)
+     — the build-from engineering spec: full interfaces, runtime control flow,
+     failure modes, harness threat model, and 13 systematic decision records
+     (ADRs) with rationale.
+
+   The Archon-root prototype for this step lives in:
+   - `scripts/generate-pgacs-research-artifacts.ts`
+   - `scripts/pgacs-policy-registry.ts`
+   - `scripts/pgacs-task-surface.ts`
+   - `.archon/data/research/pgacs/`
 
 ## Supporting External Inputs
 

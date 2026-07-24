@@ -28,9 +28,12 @@ One `Policy` object carries three thin handlers — one per layer — and the wh
 system is driven by a common **event/intervention bus** that any agent joins
 through a capability-declaring **adapter**.
 
-This document is the methodology/approach. Experimental design (benchmarks,
-datasets, multi-agent/multi-LLM comparisons) is deliberately out of scope here
-and handled separately.
+This document is the methodology/approach at overview altitude. The
+build-from engineering specification — full interfaces, runtime control flow,
+and systematic decision records (ADRs) with rationale — lives in the companion
+[`pgacs-detailed-design.md`](./pgacs-detailed-design.md). Experimental design
+(benchmarks, datasets, multi-agent/multi-LLM comparisons) is deliberately out of
+scope for both and handled separately.
 
 ## Relationship to Prior Artifacts
 
@@ -380,6 +383,9 @@ plus human. The proposer and critic advise; they never decide.
 Build the thinnest slice that exercises all three layers end-to-end, then widen.
 Every later capability is an addition at a stable seam, not a redesign.
 
+0. **Policy registry + task-surface extraction** — normalize principles and
+   task features first so selection has a stable input contract. See
+   [`01-policy-registry-and-task-surface.md`](./01-policy-registry-and-task-surface.md).
 1. **Bus + `EvidenceLedger` + `PolicyState`** — pure data + a controller
    function.
 2. **One adapter** — the context+hook adapter for an agent already in use

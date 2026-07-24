@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PGACS PolicyRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "version",
+    "sourcePrinciples",
+    "normativeText",
+    "riskTags",
+    "cweTags",
+    "taskTriggers",
+    "inputChannels",
+    "dangerousSinks",
+    "assetTags",
+    "trustBoundaryTags",
+    "dependencyTags",
+    "environmentTags",
+    "phaseBindings",
+    "validators",
+    "evidenceRequirements",
+    "forbiddenWorkarounds",
+    "severity"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "sourcePrinciples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "text"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "normativeText": {
+      "type": "string"
+    },
+    "riskTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cweTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "taskTriggers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "inputChannels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dangerousSinks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assetTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "trustBoundaryTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dependencyTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "environmentTags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "phaseBindings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validators": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidenceRequirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "forbiddenWorkarounds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "severity": {
+      "enum": [
+        "advisory",
+        "required",
+        "fail_closed"
+      ]
+    }
+  }
+}

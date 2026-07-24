@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PGACS TaskSurface",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "taskId",
+    "taskFamily",
+    "languageFrameworks",
+    "inputChannels",
+    "dangerousSinks",
+    "assets",
+    "trustBoundaries",
+    "runtimeExposure",
+    "dependencies",
+    "environmentConstraints",
+    "likelyCwes",
+    "missingSecurityInputs",
+    "existingTests",
+    "confidence"
+  ],
+  "properties": {
+    "taskId": {
+      "type": "string"
+    },
+    "taskFamily": {
+      "enum": [
+        "web_api",
+        "file_parser",
+        "database",
+        "auth_session",
+        "environment_setup",
+        "cli_tool",
+        "dependency_build",
+        "agent_tooling",
+        "unknown"
+      ]
+    },
+    "languageFrameworks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "inputChannels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dangerousSinks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "trustBoundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runtimeExposure": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "environmentConstraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "likelyCwes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missingSecurityInputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "existingTests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskFamily",
+        "risks",
+        "missingInputs"
+      ],
+      "properties": {
+        "taskFamily": {
+          "type": "number"
+        },
+        "risks": {
+          "type": "number"
+        },
+        "missingInputs": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
