@@ -151,13 +151,14 @@ Line 3`;
 
   describe('logTool', () => {
     it('should log tool call with name and input', async () => {
-      await logTool(testDir, 'tool-test', 'Read', { file_path: '/src/index.ts' });
+      await logTool(testDir, 'tool-test', 'Read', { file_path: '/src/index.ts' }, 'inspect');
 
       const events = await readLogFile('tool-test');
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('tool');
       expect(events[0].tool_name).toBe('Read');
       expect(events[0].tool_input).toEqual({ file_path: '/src/index.ts' });
+      expect(events[0].step).toBe('inspect');
     });
 
     it('should handle complex tool input', async () => {

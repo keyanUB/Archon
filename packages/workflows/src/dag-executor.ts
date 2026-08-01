@@ -1026,7 +1026,7 @@ async function executeNodeInternal(
             await platform.sendStructuredEvent(conversationId, msg);
           }
         }
-        await logTool(logDir, workflowRun.id, msg.toolName, msg.toolInput ?? {});
+        await logTool(logDir, workflowRun.id, msg.toolName, msg.toolInput ?? {}, node.id);
 
         // Persist tool_called event for ALL adapters (fire-and-forget)
         deps.store
@@ -2323,7 +2323,7 @@ async function executeLoopNode(
                 )
               )
             : {};
-          await logTool(logDir, workflowRun.id, msg.toolName, toolInput);
+          await logTool(logDir, workflowRun.id, msg.toolName, toolInput, node.id);
 
           // Persist tool_called event
           deps.store

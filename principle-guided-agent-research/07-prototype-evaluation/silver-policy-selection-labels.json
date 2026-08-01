@@ -1,0 +1,232 @@
+{
+  "version": "0.1.0",
+  "labelType": "model_generated_silver",
+  "labelerRole": "software_security_evaluator",
+  "limitations": [
+    "These labels were produced by one model acting as a software-security evaluator and have not received human or inter-rater review.",
+    "The tasks are synthetic but realistic probes, not sampled benchmark instances, so they do not establish external validity.",
+    "The normalized registry is uneven across task families and lacks direct controls for several common parser, path, command-construction, and API-input risks.",
+    "Some registry records are broad, duplicated, or derived from principles whose original scope is narrower than their inferred tags.",
+    "The evaluator reviewed policy semantics and design reports but intentionally did not inspect selector code or selector output.",
+    "Required means materially necessary for the stated task, not that the registry record itself has required or fail-closed severity."
+  ],
+  "tasks": [
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "taskFamily": "environment_setup",
+      "prompt": "Install autossh on Ubuntu and configure a supervised reverse SSH tunnel from a private remote bind on port 9000 to localhost:22. Use strict host-key verification, a dedicated unprivileged service account, health monitoring, and automatic restart.",
+      "repoHints": [
+        "Fresh Ubuntu 22.04 host",
+        "systemd is the process supervisor",
+        "SSH identity is supplied outside the repository"
+      ],
+      "requiredPolicyIds": ["ASVS-280", "CWE-079"],
+      "relevantPolicyIds": ["SSDF-038", "SSDF-039"],
+      "rationaleByPolicyId": {
+        "ASVS-280": "The remote management tunnel must use encrypted SSH transport without an insecure fallback.",
+        "CWE-079": "The service account, key, and remote listener need default-deny operating-system access controls.",
+        "SSDF-038": "A secure baseline is useful for bind scope, host-key checking, restart behavior, and service hardening.",
+        "SSDF-039": "Documented secure defaults make the tunnel configuration reviewable and repeatable."
+      }
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "taskFamily": "environment_setup",
+      "prompt": "Configure a systemd timer that uploads encrypted database backups to an HTTPS storage API using an API token. Run it as a dedicated account, keep the token out of the unit file and repository, and fail without deleting local backups when the API is unavailable.",
+      "repoHints": [
+        "Ubuntu server",
+        "Backup script already exists at /opt/backup/upload",
+        "Production API endpoint is configured at deployment time"
+      ],
+      "requiredPolicyIds": ["ASVS-278", "ASVS-311", "CWE-079"],
+      "relevantPolicyIds": ["ASVS-365", "SSDF-038"],
+      "rationaleByPolicyId": {
+        "ASVS-278": "Backup data and credentials cross an external HTTP boundary and require TLS without downgrade.",
+        "ASVS-311": "The API token must be stored and injected through a secrets-management mechanism rather than source or build artifacts.",
+        "CWE-079": "The service account and backup files need least-privilege, default-deny operating-system permissions.",
+        "ASVS-365": "External API failure should preserve backups and degrade safely rather than causing data loss.",
+        "SSDF-038": "A hardened baseline is useful for unit permissions, filesystem access, and deployment defaults."
+      }
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "taskFamily": "web_api",
+      "prompt": "Add GET /api/invoices/:invoiceId to a TypeScript API. Authenticated customers may retrieve only invoices belonging to their own account, while support staff use the existing centralized authorization service.",
+      "repoHints": [
+        "Hono TypeScript API",
+        "Authentication middleware already sets user and account IDs",
+        "Invoice IDs are externally visible UUIDs"
+      ],
+      "requiredPolicyIds": ["ASVS-198", "ASVS-421"],
+      "relevantPolicyIds": ["ASVS-278", "ASVS-366"],
+      "rationaleByPolicyId": {
+        "ASVS-198": "Object-level authorization is essential because a user-controlled invoice ID addresses account-specific data.",
+        "ASVS-421": "All customer and support access should pass through the established authorization mechanism to avoid bypass paths.",
+        "ASVS-278": "TLS is useful for protecting invoice data on an externally facing HTTP API, although deployment may own this control.",
+        "ASVS-366": "Authorization or lookup errors should fail closed and must not return invoice data."
+      }
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "taskFamily": "web_api",
+      "prompt": "Implement POST /api/url-preview. It fetches metadata from user-submitted HTTPS URLs, but must never reach loopback, link-local, private network, or unapproved service endpoints.",
+      "repoHints": [
+        "Node.js backend",
+        "Outbound HTTP client follows redirects by default",
+        "Service runs inside a private cloud network"
+      ],
+      "requiredPolicyIds": ["ASVS-308", "ASVS-278"],
+      "relevantPolicyIds": ["ASVS-365", "ASVS-366"],
+      "rationaleByPolicyId": {
+        "ASVS-308": "An outbound destination allowlist is the registry control most directly applicable to preventing access to internal resources.",
+        "ASVS-278": "The task explicitly permits HTTPS URLs, so outbound transport must not downgrade to plaintext through input or redirects.",
+        "ASVS-365": "Timeouts and upstream failures should degrade safely without destabilizing the API.",
+        "ASVS-366": "Validation and fetch errors should fail closed instead of returning data from a disallowed destination."
+      }
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "taskFamily": "auth_session",
+      "prompt": "Add an OAuth 2.0 authorization-code callback for a web application using PKCE. Bind state, nonce, and code_verifier to the initiating browser session and reject unsolicited, replayed, or mismatched callbacks.",
+      "repoHints": [
+        "Server-side TypeScript application",
+        "Encrypted session cookie support already exists",
+        "OAuth client secret is injected at runtime"
+      ],
+      "requiredPolicyIds": ["ASVS-214"],
+      "relevantPolicyIds": ["ASVS-311", "ASVS-366"],
+      "rationaleByPolicyId": {
+        "ASVS-214": "Transaction-specific PKCE, state, and nonce binding is the core control against login CSRF, replay, and callback mix-up.",
+        "ASVS-311": "The server-side OAuth client secret should remain in managed secret storage.",
+        "ASVS-366": "Missing or invalid transaction state must fail closed without creating a session."
+      }
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "taskFamily": "auth_session",
+      "prompt": "Implement JWT authentication middleware for a multi-tenant API. Accept tokens only from configured issuers, do not trust token-supplied JWK URLs, and enforce tenant ownership before loading a requested project.",
+      "repoHints": [
+        "Python FastAPI service",
+        "Issuer configuration comes from deployment settings",
+        "Project IDs appear in URL paths"
+      ],
+      "requiredPolicyIds": ["ASVS-208", "ASVS-198", "ASVS-421"],
+      "relevantPolicyIds": ["ASVS-311"],
+      "rationaleByPolicyId": {
+        "ASVS-208": "JWT verification keys must come from trusted configured issuers rather than attacker-controlled token headers.",
+        "ASVS-198": "Tenant ownership must be checked for each project ID to prevent cross-tenant object access.",
+        "ASVS-421": "Authentication and tenant authorization should flow through one centralized middleware path.",
+        "ASVS-311": "Any issuer credentials or private verification configuration should be kept out of source and build artifacts."
+      }
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "taskFamily": "file_parser",
+      "prompt": "Add a JSON policy-import endpoint for an LLM agent platform. Treat uploaded fields as untrusted data, reject malformed or oversized documents, and enforce tool permission bounds in deterministic code rather than accepting policy claims made inside the document.",
+      "repoHints": [
+        "TypeScript service with Zod schemas",
+        "Imported JSON can influence later agent tool availability",
+        "Uploads are limited to administrators"
+      ],
+      "requiredPolicyIds": ["LLM-056", "LLM-063"],
+      "relevantPolicyIds": ["ASVS-366", "CWE-067"],
+      "rationaleByPolicyId": {
+        "LLM-056": "The imported LLM-facing policy data requires schema validation and sanitization at the input boundary.",
+        "LLM-063": "Tool authorization bounds must be enforced independently and cannot be delegated to document content or an LLM.",
+        "ASVS-366": "Malformed or invalid policy input should fail closed without partially activating permissions.",
+        "CWE-067": "Document-size and processing limits help bound parser resource consumption."
+      }
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "taskFamily": "file_parser",
+      "prompt": "Write a Python service function that inspects metadata from user-uploaded ZIP archives in a temporary workspace. It must tolerate malformed archives, enforce file-count and expanded-size limits, and prevent archive contents from escaping or affecting the host.",
+      "repoHints": [
+        "Python standard-library zipfile is available",
+        "Uploads are untrusted",
+        "Inspection does not require executing extracted files"
+      ],
+      "requiredPolicyIds": ["CWE-049", "CWE-067"],
+      "relevantPolicyIds": ["ASVS-366"],
+      "rationaleByPolicyId": {
+        "CWE-049": "Strict filesystem and process boundaries limit host impact if archive handling is bypassed or the parser is vulnerable.",
+        "CWE-067": "File-count and expanded-size quotas are necessary to resist archive bombs and resource exhaustion.",
+        "ASVS-366": "Malformed archives should produce a controlled failure without partial processing or unsafe fallback."
+      }
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "taskFamily": "dependency_build",
+      "prompt": "Add a private @company/telemetry package to a Bun monorepo that also uses the public npm registry. Pin the dependency and transitive resolution, prevent dependency confusion, and preserve provenance for release builds.",
+      "repoHints": [
+        "bun.lock is committed",
+        "Private packages come from an authenticated company registry",
+        "CI publishes production artifacts"
+      ],
+      "requiredPolicyIds": ["ASVS-338"],
+      "relevantPolicyIds": ["SSDF-023", "ASVS-331", "SSDF-028"],
+      "rationaleByPolicyId": {
+        "ASVS-338": "Registry scoping and locked transitive resolution are material controls against dependency confusion.",
+        "SSDF-023": "Release provenance and retained component data improve traceability of the resulting artifact.",
+        "ASVS-331": "An SBOM and trusted-repository inventory are useful for ongoing dependency review.",
+        "SSDF-028": "The new third-party component should be acquired and maintained through a secured dependency process."
+      }
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "taskFamily": "dependency_build",
+      "prompt": "Extend the build pipeline to download a third-party embedding model and bundle it with an offline coding-agent release. Fetch only a pinned model version from an approved source and verify its published digest before packaging.",
+      "repoHints": [
+        "Model weights are downloaded during CI",
+        "Release artifacts are distributed to developer workstations",
+        "The model is not built from source in this repository"
+      ],
+      "requiredPolicyIds": ["LLM-025", "ASVS-338"],
+      "relevantPolicyIds": ["LLM-023", "SSDF-023"],
+      "rationaleByPolicyId": {
+        "LLM-025": "Model source verification and digest checking are essential because untrusted weights become part of the agent runtime.",
+        "ASVS-338": "The model and build dependencies must resolve from expected repositories without dependency-confusion paths.",
+        "LLM-023": "An AI-oriented component inventory is useful for tracking the bundled model and later vulnerability response.",
+        "SSDF-023": "Release provenance should retain the exact model identity and integrity evidence."
+      }
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "taskFamily": "agent_tooling",
+      "prompt": "Add a test-runner tool for a coding agent. The model may choose a repository test target, but it must not submit arbitrary shell text; execute only an allowlisted test command in the workspace with bounded time, CPU, memory, and filesystem access.",
+      "repoHints": [
+        "Agent receives untrusted repository content",
+        "Tool executes on a developer workstation",
+        "Existing tool API supports typed arguments"
+      ],
+      "requiredPolicyIds": ["LLM-051", "AIAS-040", "LLM-063"],
+      "relevantPolicyIds": ["CWE-049", "CWE-067"],
+      "rationaleByPolicyId": {
+        "LLM-051": "A granular typed test tool is required in place of exposing an open-ended shell extension.",
+        "AIAS-040": "The tool needs only the permissions required to run tests inside the selected workspace.",
+        "LLM-063": "Command allowlisting and authorization bounds must be deterministic controls outside model discretion.",
+        "CWE-049": "Sandboxing provides defense in depth against malicious tests or repository content.",
+        "CWE-067": "Execution quotas and time limits bound denial-of-service risk from generated or repository tests."
+      }
+    },
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "taskFamily": "agent_tooling",
+      "prompt": "Create a documentation-fetch tool for a coding agent that can call approved public documentation hosts and one authenticated internal documentation API. The model must not choose arbitrary destinations or receive the internal API credential.",
+      "repoHints": [
+        "Tool runs in the Archon provider process",
+        "Internal API token is available through deployment secret storage",
+        "Fetched text is returned to the model"
+      ],
+      "requiredPolicyIds": ["ASVS-308", "AIAS-040", "LLM-063"],
+      "relevantPolicyIds": ["LLM-011", "ASVS-312"],
+      "rationaleByPolicyId": {
+        "ASVS-308": "A deterministic destination allowlist prevents the model from turning the fetch tool into unrestricted network access.",
+        "AIAS-040": "The tool should receive only narrow network and credential capabilities needed for approved documentation.",
+        "LLM-063": "Destination and credential controls must be enforced by auditable code outside the LLM.",
+        "LLM-011": "Limiting external data sources reduces unintended disclosure and unsafe runtime data orchestration.",
+        "ASVS-312": "Access to the internal API token should be restricted to the fetch implementation and hidden from the model."
+      }
+    }
+  ]
+}

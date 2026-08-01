@@ -123,12 +123,14 @@ export async function logTool(
   logDir: string,
   workflowRunId: string,
   toolName: string,
-  toolInput: Record<string, unknown>
+  toolInput: Record<string, unknown>,
+  step?: string
 ): Promise<void> {
   await logWorkflowEvent(logDir, workflowRunId, {
     type: 'tool',
     tool_name: toolName,
     tool_input: toolInput,
+    ...(step !== undefined ? { step } : {}),
   });
 }
 

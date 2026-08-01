@@ -154,7 +154,7 @@
     ],
     "normativeText": "AI systems that can maintain confidentiality, integrity, and availability through protection mechanisms that prevent unauthorized access and use may be said to be secure.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -195,46 +195,36 @@
     "normativeText": "Maintaining the provenance of training data and supporting attribution of the AI system’s decisions to subsets of training data can assist with both transparency and accountability.",
     "riskTags": [
       "build_integrity",
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
-      "network_security",
       "release_integrity",
-      "runtime_exposure",
       "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
       "dependency_change",
-      "dependency_supply_chain",
-      "runtime_network"
+      "dependency_supply_chain"
     ],
     "inputChannels": [
       "build",
-      "network",
       "package"
     ],
-    "dangerousSinks": [
-      "network"
-    ],
+    "dangerousSinks": [],
     "assetTags": [
-      "build_artifacts",
-      "network"
+      "build_artifacts"
     ],
-    "trustBoundaryTags": [
-      "network_boundary"
+    "trustBoundaryTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
     ],
-    "dependencyTags": [],
     "environmentTags": [
       "dependency_management",
-      "dependency_supply_chain",
-      "runtime_network"
+      "dependency_supply_chain"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
-      "verification",
-      "verification_runtime"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -242,7 +232,6 @@
       "diff"
     ],
     "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings",
       "install unpinned or untrusted dependencies"
     ],
     "severity": "advisory"
@@ -260,7 +249,7 @@
     ],
     "normativeText": "MANAGE 4.2: Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -300,6 +289,7 @@
     ],
     "normativeText": "Organizations should integrate the SSDF throughout their existing software development practices, express their secure software development requirements to third-party suppliers using SSDF conventions, and acquire software that meets the practices described in the SSDF.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -340,20 +330,15 @@
     ],
     "normativeText": "Organizations should ensure that their people, processes, and technology are prepared to perform secure software development.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "other_setup_env"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -395,9 +380,7 @@
     "inputChannels": [],
     "dangerousSinks": [],
     "assetTags": [],
-    "trustBoundaryTags": [
-      "supply_chain_boundary"
-    ],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "build_release_integrity"
@@ -405,17 +388,15 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification",
-      "verification_build"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
-      "build",
       "command",
       "diff"
     ],
     "forbiddenWorkarounds": [],
-    "severity": "required"
+    "severity": "advisory"
   },
   {
     "id": "SSDF-011",
@@ -430,6 +411,7 @@
     ],
     "normativeText": "PO.2.2: Provide role-based training for all personnel with responsibilities that contribute to secure development. Periodically review personnel proficiency and role-based training, and update the training as needed.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -470,6 +452,7 @@
     ],
     "normativeText": "PO.2.3: Obtain upper management or authorizing official commitment to secure development, and convey that commitment to all with development-related roles and responsibilities.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -510,50 +493,31 @@
     ],
     "normativeText": "PO.3.3: Configure tools to generate artifacts of their support of secure software development practices as defined by the organization.",
     "riskTags": [
-      "build_integrity",
-      "network_security",
-      "other_setup_env",
-      "release_integrity",
-      "runtime_exposure"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "other_setup_env",
-      "runtime_network"
+      "other_setup_env"
     ],
-    "inputChannels": [
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary",
-      "supply_chain_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "other_setup_env",
-      "runtime_network"
+      "other_setup_env"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
-      "verification",
-      "verification_runtime"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -569,25 +533,17 @@
     ],
     "normativeText": "PO.5.2: Secure and harden development endpoints (i.e., endpoints for software designers, developers, testers, builders, etc.) to perform development-related tasks using a risk-based approach.",
     "riskTags": [
-      "build_integrity",
-      "config_hardening",
-      "release_integrity"
+      "configuration_hardening",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
       "config_hardening"
     ],
-    "inputChannels": [
-      "build",
-      "package"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "build_artifacts"
-    ],
-    "trustBoundaryTags": [
-      "supply_chain_boundary"
-    ],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "config_hardening"
@@ -595,19 +551,15 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification",
-      "verification_build",
-      "verification_test"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
-      "build",
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [],
-    "severity": "required"
+    "severity": "advisory"
   },
   {
     "id": "SSDF-022",
@@ -623,81 +575,8 @@
     "normativeText": "PS.3.1: Securely archive the necessary files and supporting data (e.g., integrity verification information, provenance data) to be retained for each software release.",
     "riskTags": [
       "build_integrity",
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
-      "network_security",
-      "release_integrity",
-      "runtime_exposure",
-      "supply_chain"
-    ],
-    "cweTags": [],
-    "taskTriggers": [
-      "dependency_change",
-      "dependency_supply_chain",
-      "runtime_network"
-    ],
-    "inputChannels": [
-      "build",
-      "filesystem",
-      "network",
-      "package"
-    ],
-    "dangerousSinks": [
-      "filesystem",
-      "network"
-    ],
-    "assetTags": [
-      "build_artifacts",
-      "filesystem",
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary",
-      "supply_chain_boundary",
-      "workspace_boundary"
-    ],
-    "dependencyTags": [],
-    "environmentTags": [
-      "dependency_management",
-      "dependency_supply_chain",
-      "runtime_network"
-    ],
-    "phaseBindings": [
-      "final_reporting",
-      "implementation",
-      "inspection",
-      "verification",
-      "verification_build",
-      "verification_runtime"
-    ],
-    "validators": [],
-    "evidenceRequirements": [
-      "build",
-      "command",
-      "diff"
-    ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings",
-      "install unpinned or untrusted dependencies"
-    ],
-    "severity": "required"
-  },
-  {
-    "id": "SSDF-023",
-    "title": "SSDF-023: PS.3.2: Collect, safeguard, maintain, and share provenance data for all ",
-    "version": "1.0.0",
-    "sourcePrinciples": [
-      {
-        "source": "NIST_SP800218",
-        "ref": "SSDF-023",
-        "text": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM])."
-      }
-    ],
-    "normativeText": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM]).",
-    "riskTags": [
-      "build_integrity",
-      "dependency_management",
-      "dependency_supply_chain",
       "release_integrity",
       "supply_chain"
     ],
@@ -717,7 +596,68 @@
     "trustBoundaryTags": [
       "supply_chain_boundary"
     ],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
+    "environmentTags": [
+      "dependency_management",
+      "dependency_supply_chain"
+    ],
+    "phaseBindings": [
+      "implementation",
+      "inspection",
+      "verification",
+      "verification_build"
+    ],
+    "validators": [],
+    "evidenceRequirements": [
+      "build",
+      "command",
+      "diff"
+    ],
+    "forbiddenWorkarounds": [
+      "install unpinned or untrusted dependencies"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "SSDF-023",
+    "title": "SSDF-023: PS.3.2: Collect, safeguard, maintain, and share provenance data for all ",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "NIST_SP800218",
+        "ref": "SSDF-023",
+        "text": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM])."
+      }
+    ],
+    "normativeText": "PS.3.2: Collect, safeguard, maintain, and share provenance data for all components of each software release (e.g., in a software bill of materials [SBOM]).",
+    "riskTags": [
+      "build_integrity",
+      "dependency_integrity",
+      "dependency_management",
+      "release_integrity",
+      "supply_chain"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "dependency_change",
+      "dependency_supply_chain"
+    ],
+    "inputChannels": [
+      "build",
+      "package"
+    ],
+    "dangerousSinks": [],
+    "assetTags": [
+      "build_artifacts"
+    ],
+    "trustBoundaryTags": [
+      "supply_chain_boundary"
+    ],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_management",
       "dependency_supply_chain"
@@ -752,7 +692,8 @@
     ],
     "normativeText": "PW.4.1: Acquire and maintain well-secured software components (e.g., software libraries, modules, middleware, frameworks) from commercial, open-source, and other third-party developers for use by the organization\u0019s software.",
     "riskTags": [
-      "dependency_supply_chain"
+      "dependency_integrity",
+      "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -762,7 +703,9 @@
     "dangerousSinks": [],
     "assetTags": [],
     "trustBoundaryTags": [],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_supply_chain"
     ],
@@ -792,7 +735,8 @@
     ],
     "normativeText": "PW.4.2: Create and maintain well-secured software components in-house following SDLC processes to meet common internal software development needs that cannot be better met by third-party software components.",
     "riskTags": [
-      "dependency_supply_chain"
+      "dependency_integrity",
+      "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -802,7 +746,9 @@
     "dangerousSinks": [],
     "assetTags": [],
     "trustBoundaryTags": [],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_supply_chain"
     ],
@@ -832,6 +778,7 @@
     ],
     "normativeText": "PW.5.1: Follow all secure coding practices that are appropriate to the development languages and environment to meet the organization\u0019s requirements.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -872,7 +819,7 @@
     ],
     "normativeText": "PW.7.2: Perform the code review and/or code analysis based on the organization\u0019s secure coding standards, and record and triage all discovered issues and recommended remediations in the development team\u0019s workflow or issue tracking system.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -912,9 +859,10 @@
     ],
     "normativeText": "PW.9.1: Define a secure baseline by determining how to configure each setting that has an effect on security or a security-related setting so that the default settings are secure and do not weaken the security functions provided by the platform, network infrastructure, or services.",
     "riskTags": [
-      "config_hardening",
+      "configuration_hardening",
       "network_security",
-      "runtime_exposure"
+      "runtime_exposure",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -969,7 +917,8 @@
     ],
     "normativeText": "PW.9.2: Implement the default settings (or groups of default settings, if applicable), and document each setting for software administrators.",
     "riskTags": [
-      "config_hardening"
+      "configuration_hardening",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1009,47 +958,34 @@
     ],
     "normativeText": "RV.1.1: Gather information from software acquirers, users, and public sources on potential vulnerabilities in the software and third-party components that the software uses, and investigate all credible reports.",
     "riskTags": [
-      "dependency_supply_chain",
-      "network_security",
-      "runtime_exposure"
+      "dependency_integrity",
+      "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "dependency_supply_chain",
-      "runtime_network"
+      "dependency_supply_chain"
     ],
-    "inputChannels": [
-      "network"
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
     ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
-    "dependencyTags": [],
     "environmentTags": [
-      "dependency_supply_chain",
-      "runtime_network"
+      "dependency_supply_chain"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
-      "verification",
-      "verification_runtime"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -1065,6 +1001,7 @@
     ],
     "normativeText": "RV.3.2: Analyze the root causes over time to identify patterns, such as a particular secure coding practice not being followed consistently.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -1148,52 +1085,31 @@
     ],
     "normativeText": "Verify that the application only uses client-side technologies which are still supported and considered secure. Examples of technologies which do not meet this requirement include NSAPI plugins, Flash, Shockwave, ActiveX, Silverlight, NACL, or client-side Java applets.",
     "riskTags": [
-      "access_control",
-      "least_privilege",
-      "network_security",
-      "other_setup_env",
-      "runtime_exposure"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "other_setup_env",
-      "runtime_network"
+      "other_setup_env"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics",
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network",
-      "observability"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "other_setup_env",
-      "runtime_network"
+      "other_setup_env"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
-      "verification",
-      "verification_runtime"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -1209,9 +1125,10 @@
     ],
     "normativeText": "Verify that all application components (including load balancers, firewalls, and application servers) determine boundaries of incoming HTTP messages using the appropriate mechanism for the HTTP version to prevent HTTP request smuggling. In HTTP/1.x, if a Transfer-Encoding header field is present, the Content-Length header must be ignored per RFC2616. When using HTTP/2 or HTTP/3, if a Content-Length header field is present, the receiver must ensure that it is consistent with the length of the DATA frames.",
     "riskTags": [
+      "network_hardening",
       "network_security",
       "runtime_exposure",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1237,7 +1154,8 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification"
+      "verification",
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -1313,27 +1231,17 @@
     "normativeText": "Verify that system generated initial passwords or activation codes are securely randomly generated, follow the existing password policy, and expire after a short period of time or after they are initially used. These initial secrets must not be permitted to become the long term password.",
     "riskTags": [
       "credential_protection",
-      "other_setup_env",
-      "secrets"
+      "secrets",
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "other_setup_env",
-      "secret_handling"
+      "other_setup_env"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem"
-    ],
-    "dangerousSinks": [
-      "secrets"
-    ],
-    "assetTags": [
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "secret_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "other_setup_env"
@@ -1346,13 +1254,10 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "static_scan"
+      "diff"
     ],
-    "forbiddenWorkarounds": [
-      "hardcode secrets in source or logs"
-    ],
-    "severity": "fail_closed"
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
   },
   {
     "id": "ASVS-141",
@@ -1368,8 +1273,8 @@
     "normativeText": "Verify that a secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor authentication mechanisms.",
     "riskTags": [
       "credential_protection",
-      "other_setup_env",
-      "secrets"
+      "secrets",
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1508,8 +1413,8 @@
       "access_control",
       "credential_protection",
       "least_privilege",
-      "other_setup_env",
-      "secrets"
+      "secrets",
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1563,8 +1468,8 @@
     "normativeText": "Verify that the client only accepts values from the authorization server (such as the authorization code or ID Token) if these values result from an authorization flow that was initiated by the same user agent session and transaction. This requires that client‑generated secrets, such as the proof key for code exchange (PKCE) 'code_verifier', 'state' or OIDC 'nonce', are not guessable, are specific to the transaction, and are securely bound to both the client and the user agent session in which the transaction was started.",
     "riskTags": [
       "credential_protection",
-      "other_setup_env",
-      "secrets"
+      "secrets",
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1617,16 +1522,14 @@
     ],
     "normativeText": "Verify that, for a server‑side client (which is not executed on the end‑user device), the authorization server ensures that the 'authorization_details' parameter value is from the client backend and that the user has not tampered with it. For example, by requiring the usage of pushed authorization request (PAR) or JWT‑secured Authorization Request (JAR).",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "other_setup_env"
     ],
     "inputChannels": [],
-    "dangerousSinks": [
-      "shell_command"
-    ],
+    "dangerousSinks": [],
     "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
@@ -1665,6 +1568,7 @@
     ],
     "cweTags": [],
     "taskTriggers": [
+      "process_lifecycle",
       "secret_handling",
       "secrets_key_management"
     ],
@@ -1714,9 +1618,7 @@
     ],
     "normativeText": "Verify that all cryptographic modules fail securely, and errors are handled in a way that does not enable vulnerabilities, such as Padding Oracle attacks.",
     "riskTags": [
-      "access_control",
-      "least_privilege",
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1756,7 +1658,7 @@
     ],
     "normativeText": "Verifythattherandomnumbergenerationmechanisminuseisdesignedto worksecurely,evenunderheavydemand.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1796,28 +1698,16 @@
     ],
     "normativeText": "Verifythatonlyapprovedcryptographicalgorithmsandmodesofoperation areusedforkeygenerationandseeding,anddigitalsignaturegeneration andverification. Keygenerationalgorithmsmustnotgenerateinsecurekeys vulnerabletoknownattacks,forexample,RSAkeyswhicharevulnerableto Fermatfactorization.",
     "riskTags": [
-      "credential_protection",
-      "other_setup_env",
-      "secrets"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "other_setup_env",
-      "secret_handling"
+      "other_setup_env"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem"
-    ],
-    "dangerousSinks": [
-      "secrets"
-    ],
-    "assetTags": [
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "secret_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "other_setup_env"
@@ -1830,13 +1720,10 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "static_scan"
+      "diff"
     ],
-    "forbiddenWorkarounds": [
-      "hardcode secrets in source or logs"
-    ],
-    "severity": "fail_closed"
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
   },
   {
     "id": "ASVS-278",
@@ -1851,9 +1738,10 @@
     ],
     "normativeText": "Verify that TLS is used for all connectivity between a client and external facing, HTTP‑based services, and does not fall back to insecure or unencrypted communications.",
     "riskTags": [
+      "network_hardening",
       "network_security",
       "runtime_exposure",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1879,7 +1767,6 @@
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -1888,8 +1775,7 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [
       "fall back to insecure transport or open bindings"
@@ -1910,10 +1796,11 @@
     "normativeText": "Verify that an encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application, including monitoring systems, management tools, remote access and SSH, middleware, databases, mainframes, partner systems, or external APIs. The server must not fall back to insecure or unencrypted protocols.",
     "riskTags": [
       "auditability",
+      "network_hardening",
       "network_security",
       "observability",
       "runtime_exposure",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -1922,17 +1809,13 @@
       "transport_network_config"
     ],
     "inputChannels": [
-      "logs",
-      "metrics",
       "network"
     ],
     "dangerousSinks": [
-      "database",
       "network"
     ],
     "assetTags": [
-      "network",
-      "observability"
+      "network"
     ],
     "trustBoundaryTags": [
       "network_boundary",
@@ -1948,13 +1831,12 @@
       "implementation",
       "inspection",
       "verification",
-      "verification_test"
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [
       "fall back to insecure transport or open bindings"
@@ -1974,9 +1856,10 @@
     ],
     "normativeText": "Verify that TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP‑based services within the application, and does not fall back to insecure or unencrypted communications.",
     "riskTags": [
+      "network_hardening",
       "network_security",
       "runtime_exposure",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2001,7 +1884,6 @@
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -2010,8 +1892,7 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [
       "fall back to insecure transport or open bindings"
@@ -2032,10 +1913,11 @@
     "normativeText": "Verify that services communicating internally within a system (intra‑service communications) use strong authentication to ensure that each endpoint is verified. Strong authentication methods, such as TLS client authentication, must be employed to ensure identity, using public‑key infrastructure and mechanisms that are resistant to replay attacks. For microservice architectures, consider using a service mesh to simplify certificate management and enhance security.",
     "riskTags": [
       "credential_protection",
+      "network_hardening",
       "network_security",
       "runtime_exposure",
       "secrets",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2097,38 +1979,19 @@
     ],
     "normativeText": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short‑term tokens, or certificate‑based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
     "riskTags": [
-      "credential_protection",
       "key_management",
-      "network_security",
-      "runtime_exposure",
       "secrets"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
-      "secret_handling",
       "secrets_key_management"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem",
-      "network"
-    ],
-    "dangerousSinks": [
-      "network",
-      "secrets"
-    ],
-    "assetTags": [
-      "network",
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary",
-      "secret_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "secrets_key_management"
     ],
     "phaseBindings": [
@@ -2142,13 +2005,9 @@
     "evidenceRequirements": [
       "command",
       "diff",
-      "probe",
-      "static_scan"
+      "probe"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings",
-      "hardcode secrets in source or logs"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "fail_closed"
   },
   {
@@ -2164,27 +2023,17 @@
     ],
     "normativeText": "Verifythatanallowlistisusedtodefinetheexternalresourcesorsystems withwhichtheapplicationispermittedtocommunicate(e.g.,foroutbound requests,dataloads,orfileaccess). Thisallowlistcanbeimplementedatthe applicationlayer,webserver,firewall,oracombinationofdifferentlayers.",
     "riskTags": [
-      "access_control",
-      "least_privilege",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "transport_network_config"
     ],
-    "inputChannels": [
-      "filesystem"
-    ],
-    "dangerousSinks": [
-      "filesystem"
-    ],
-    "assetTags": [
-      "filesystem"
-    ],
-    "trustBoundaryTags": [
-      "untrusted_input",
-      "workspace_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "transport_network_config"
@@ -2192,7 +2041,8 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification"
+      "verification",
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -2233,7 +2083,6 @@
       "package"
     ],
     "dangerousSinks": [
-      "database",
       "secrets"
     ],
     "assetTags": [
@@ -2334,28 +2183,16 @@
     ],
     "normativeText": "Verifythatsecretsareconfiguredtoexpireandberotatedbasedonthe application’sdocumentation.",
     "riskTags": [
-      "credential_protection",
-      "other_setup_env",
-      "secrets"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "other_setup_env",
-      "secret_handling"
+      "other_setup_env"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem"
-    ],
-    "dangerousSinks": [
-      "secrets"
-    ],
-    "assetTags": [
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "secret_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "other_setup_env"
@@ -2368,13 +2205,10 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "static_scan"
+      "diff"
     ],
-    "forbiddenWorkarounds": [
-      "hardcode secrets in source or logs"
-    ],
-    "severity": "fail_closed"
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
   },
   {
     "id": "ASVS-307",
@@ -2389,38 +2223,19 @@
     ],
     "normativeText": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short-term tokens, or certificate-based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
     "riskTags": [
-      "credential_protection",
       "key_management",
-      "network_security",
-      "runtime_exposure",
       "secrets"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
-      "secret_handling",
       "secrets_key_management"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem",
-      "network"
-    ],
-    "dangerousSinks": [
-      "network",
-      "secrets"
-    ],
-    "assetTags": [
-      "network",
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary",
-      "secret_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "secrets_key_management"
     ],
     "phaseBindings": [
@@ -2434,13 +2249,9 @@
     "evidenceRequirements": [
       "command",
       "diff",
-      "probe",
-      "static_scan"
+      "probe"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings",
-      "hardcode secrets in source or logs"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "fail_closed"
   },
   {
@@ -2458,7 +2269,8 @@
     "riskTags": [
       "access_control",
       "least_privilege",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2484,7 +2296,8 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification"
+      "verification",
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -2525,7 +2338,6 @@
       "package"
     ],
     "dangerousSinks": [
-      "database",
       "secrets"
     ],
     "assetTags": [
@@ -2628,8 +2440,8 @@
     ],
     "normativeText": "Verify that an inventory catalog, such as a software bill of materials (SBOM), is maintained of all third-party libraries in use, including verifying that components come from pre-defined, trusted, and continually maintained repositories.",
     "riskTags": [
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
       "supply_chain"
     ],
     "cweTags": [],
@@ -2639,17 +2451,16 @@
     ],
     "inputChannels": [
       "build",
-      "logs",
-      "metrics",
       "package"
     ],
     "dangerousSinks": [],
     "assetTags": [
-      "build_artifacts",
-      "observability"
+      "build_artifacts"
     ],
     "trustBoundaryTags": [],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_supply_chain"
     ],
@@ -2679,7 +2490,8 @@
     ],
     "normativeText": "Verify that application documentation highlights third-party libraries which are considered to be \"risky components\".",
     "riskTags": [
-      "dependency_supply_chain"
+      "dependency_integrity",
+      "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2689,7 +2501,9 @@
     "dangerousSinks": [],
     "assetTags": [],
     "trustBoundaryTags": [],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_supply_chain"
     ],
@@ -2719,8 +2533,8 @@
     ],
     "normativeText": "Verify that third-party components and all of their transitive dependencies are included from the expected repository, whether internally owned or an external source, and that there is no risk of a dependency confusion attack.",
     "riskTags": [
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
       "supply_chain"
     ],
     "cweTags": [],
@@ -2734,7 +2548,9 @@
     "trustBoundaryTags": [
       "untrusted_input"
     ],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_management",
       "dependency_supply_chain"
@@ -2769,12 +2585,13 @@
     ],
     "normativeText": "Verify that the application implements additional protections around parts of the application which are documented as containing \"dangerous functionality\" or using third-party libraries considered to be \"risky components\". This could include techniques such as sandboxing, encapsulation, containerization or network level isolation to delay and deter attackers who compromise one part of an application from pivoting elsewhere in the application.",
     "riskTags": [
-      "dependency_supply_chain",
+      "dependency_integrity",
       "filesystem_isolation",
       "network_security",
       "process_isolation",
       "runtime_exposure",
-      "sandboxing"
+      "sandboxing",
+      "supply_chain"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2794,11 +2611,12 @@
     "trustBoundaryTags": [
       "network_boundary"
     ],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_supply_chain",
-      "runtime_network",
-      "sandboxed_execution"
+      "runtime_network"
     ],
     "phaseBindings": [
       "final_reporting",
@@ -2817,7 +2635,7 @@
       "disable sandboxing to make the task pass",
       "fall back to insecure transport or open bindings"
     ],
-    "severity": "fail_closed"
+    "severity": "advisory"
   },
   {
     "id": "ASVS-343",
@@ -2833,22 +2651,18 @@
     "normativeText": "Verify that all proxying and middleware components transfer the user’s original IP address correctly using trusted data fields that cannot be manipulated by the end user, and the application and web server use this correct value for logging and security decisions such as rate limiting, taking into account that even the original IP address may not be reliable due to dynamic IPs, VPNs, or corporate firewalls.",
     "riskTags": [
       "auditability",
+      "network_hardening",
       "observability",
-      "transport_network_config"
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "observability",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -2858,7 +2672,8 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification"
+      "verification",
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -2889,14 +2704,9 @@
     "taskTriggers": [
       "logging_monitoring_setup"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -2928,7 +2738,7 @@
     ],
     "normativeText": "Verify that the application continues to operate securely when external resource access fails, for example, by using patterns such as circuit breakers or graceful degradation.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -2970,20 +2780,15 @@
     ],
     "normativeText": "Verify that the application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions such as processing a transaction despite errors resulting from validation logic.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "other_setup_env"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -3015,45 +2820,22 @@
     ],
     "normativeText": "Verify that the media server is configured to use and support approved Datagram Transport Layer Security (DTLS) ciphersuites and a secure protection profile for the DTLS Extension for establishing keys for the Secure Real-time Transport Protocol (DTLS-SRTP).",
     "riskTags": [
-      "credential_protection",
-      "network_security",
-      "runtime_exposure",
-      "secrets",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
-      "secret_handling",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "env",
-      "filesystem",
-      "network"
-    ],
-    "dangerousSinks": [
-      "filesystem",
-      "network",
-      "secrets"
-    ],
-    "assetTags": [
-      "filesystem",
-      "network",
-      "secrets"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary",
-      "secret_boundary",
-      "workspace_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -3062,14 +2844,10 @@
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "static_scan"
+      "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings",
-      "hardcode secrets in source or logs"
-    ],
-    "severity": "fail_closed"
+    "forbiddenWorkarounds": [],
+    "severity": "advisory"
   },
   {
     "id": "ASVS-372",
@@ -3084,30 +2862,19 @@
     ],
     "normativeText": "Verify that Secure Real-time Transport Protocol (SRTP) authentication is checked at the media server to prevent Real-time Transport Protocol (RTP) injection attacks from leading to either a Denial of Service condition or audio or video media insertion into media streams.",
     "riskTags": [
-      "network_security",
-      "runtime_exposure",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "transport_network_config"
     ],
     "phaseBindings": [
@@ -3123,9 +2890,7 @@
       "diff",
       "probe"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -3141,34 +2906,22 @@
     ],
     "normativeText": "Verify that the media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time Transport Protocol (SRTP) packets.",
     "riskTags": [
-      "network_security",
-      "runtime_exposure",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -3179,9 +2932,7 @@
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -3197,34 +2948,22 @@
     ],
     "normativeText": "Verify that the media server is able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
     "riskTags": [
-      "network_security",
-      "runtime_exposure",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -3235,9 +2974,7 @@
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -3253,34 +2990,22 @@
     ],
     "normativeText": "Verify that any audio or video recording mechanisms associated with the media server are able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
     "riskTags": [
-      "network_security",
-      "runtime_exposure",
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
-      "runtime_network",
       "transport_network_config"
     ],
-    "inputChannels": [
-      "network"
-    ],
-    "dangerousSinks": [
-      "network"
-    ],
-    "assetTags": [
-      "network"
-    ],
-    "trustBoundaryTags": [
-      "network_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
-      "runtime_network",
       "transport_network_config"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
       "verification",
@@ -3291,9 +3016,7 @@
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "fall back to insecure transport or open bindings"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "advisory"
   },
   {
@@ -3309,7 +3032,7 @@
     ],
     "normativeText": "Security controls should be centralized, simple (economy of design), verifiably secure, and reusable. This should avoid duplicate, missing, or ineffective controls.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3356,18 +3079,10 @@
     "taskTriggers": [
       "least_privilege_access"
     ],
-    "inputChannels": [
-      "filesystem"
-    ],
-    "dangerousSinks": [
-      "filesystem"
-    ],
-    "assetTags": [
-      "filesystem"
-    ],
-    "trustBoundaryTags": [
-      "workspace_boundary"
-    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
       "least_privilege_access"
@@ -3400,6 +3115,7 @@
     ],
     "normativeText": "Verify the use of a secure software development lifecycle that addresses security in all stages of development.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -3440,6 +3156,7 @@
     ],
     "normativeText": "Verify availability of a secure coding checklist, security requirements, guideline, or policy to all developers and testers.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -3457,14 +3174,12 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification",
-      "verification_test"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [],
     "severity": "advisory"
@@ -3482,20 +3197,16 @@
     ],
     "normativeText": "Verify that an ongoing process exists to ensure that the application source code is free from backdoors, malicious code (e.g., salami attacks, logic bombs, time bombs), and undocumented or hidden features (e.g., Easter eggs, insecure debugging tools). Complying with this section is not possible without complete access to source code, including third‑party libraries, and is therefore probably only suitable for applications requiring the very highest levels of security.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
     "taskTriggers": [
       "process_lifecycle"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -3527,7 +3238,8 @@
     ],
     "normativeText": "Verify that mechanisms are in place to detect and respond to configuration drift in deployed environments. This may include using immutable infrastructure, automated redeployment from a secure baseline, or drift detection tools that compare current state against approved configurations.",
     "riskTags": [
-      "config_hardening"
+      "configuration_hardening",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3567,7 +3279,8 @@
     ],
     "normativeText": "Verify that configuration hardening is performed on all third‑party products, libraries, frameworks, and services as per their individual recommendations.",
     "riskTags": [
-      "config_hardening"
+      "configuration_hardening",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3582,17 +3295,14 @@
       "config_hardening"
     ],
     "phaseBindings": [
-      "final_reporting",
       "implementation",
       "inspection",
-      "verification",
-      "verification_runtime"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [],
     "severity": "advisory"
@@ -3653,7 +3363,7 @@
     ],
     "normativeText": "Limit model access to external data sources, and ensure runtime data orchestration is securely managed to avoid unintended data leakage.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3696,7 +3406,7 @@
     ],
     "normativeText": "Provide guidance on avoiding the input of sensitive information. Offer training on best practices for interacting with LLMs securely.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3738,7 +3448,8 @@
     ],
     "normativeText": "Follow guidelines like \"OWASP API8:2023 Security Misconfiguration\" to prevent leaking sensitive information through error messages or configuration details.",
     "riskTags": [
-      "config_hardening"
+      "configuration_hardening",
+      "secure_defaults"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3778,7 +3489,7 @@
     ],
     "normativeText": "Use homomorphic encryption to enable secure data analysis and privacy-preserving machine learning. This ensures data remains confidential while being processed by the model.",
     "riskTags": [
-      "other_setup_env"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -3818,8 +3529,8 @@
     ],
     "normativeText": "Maintain an up-to-date inventory of components using a Software Bill of Materials (SBOM) to ensure you have an up-to-date, accurate, and signed inventory, preventing tampering with deployed packages. SBOMs can be used to detect and alert for new, zero-date vulnerabilities quickly. AI BOMs and ML SBOMs are an emerging area and you should evaluate options starting with OWASP CycloneDX",
     "riskTags": [
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
       "supply_chain"
     ],
     "cweTags": [],
@@ -3836,9 +3547,10 @@
       "build_artifacts"
     ],
     "trustBoundaryTags": [],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
-      "dependency_management",
       "dependency_supply_chain"
     ],
     "phaseBindings": [
@@ -3868,8 +3580,8 @@
     "normativeText": "Only use models from verifiable sources and use third-party model integrity checks with signing and file hashes to compensate for the lack of strong model provenance. Similarly, use code signing for externally supplied code.",
     "riskTags": [
       "build_integrity",
+      "dependency_integrity",
       "dependency_management",
-      "dependency_supply_chain",
       "release_integrity",
       "supply_chain"
     ],
@@ -3891,10 +3603,11 @@
       "filesystem"
     ],
     "trustBoundaryTags": [
-      "untrusted_input",
       "workspace_boundary"
     ],
-    "dependencyTags": [],
+    "dependencyTags": [
+      "dependency_integrity"
+    ],
     "environmentTags": [
       "dependency_management",
       "dependency_supply_chain"
@@ -3985,9 +3698,7 @@
     ],
     "normativeText": "Sanitise LLM inputs and outputs\nFollow secure coding best practice, such as applying OWASP’s recommendations in ASVS (Application Security Verification Standard), with a particularly strong focus on input sanitisation. Use Static Application Security Testing (SAST) and Dynamic and Interactive application testing (DAST, IAST) in development pipelines.",
     "riskTags": [
-      "build_integrity",
-      "other_setup_env",
-      "release_integrity"
+      "setup_security"
     ],
     "cweTags": [],
     "taskTriggers": [
@@ -4006,14 +3717,12 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification",
-      "verification_test"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
-      "diff",
-      "probe"
+      "diff"
     ],
     "forbiddenWorkarounds": [],
     "severity": "advisory"
@@ -4032,22 +3741,15 @@
     "normativeText": "Ensure that security controls are enforced independently from the LLM\nCritical controls such as privilege separation, authorization bounds checks, and similar must not be delegated to the LLM, either through the system prompt or otherwise. These controls need to occur in a deterministic, auditable manner, and LLMs are not (currently) conducive to this. In cases where an agent is performing tasks, if those tasks require different levels of access, then multiple agents should be used, each configured with the least privileges needed to perform the desired tasks.",
     "riskTags": [
       "access_control",
-      "auditability",
-      "least_privilege",
-      "observability"
+      "least_privilege"
     ],
     "cweTags": [],
     "taskTriggers": [
       "least_privilege_access"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -4056,17 +3758,14 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification",
-      "verification_test"
+      "verification"
     ],
     "validators": [],
     "evidenceRequirements": [
       "command",
       "diff"
     ],
-    "forbiddenWorkarounds": [
-      "broaden privileges instead of fixing authorization"
-    ],
+    "forbiddenWorkarounds": [],
     "severity": "fail_closed"
   },
   {
@@ -4082,6 +3781,7 @@
     ],
     "normativeText": "Secure Coding Practices\nEstablish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
     "riskTags": [
+      "process_controls",
       "process_lifecycle"
     ],
     "cweTags": [],
@@ -4165,20 +3865,16 @@
     ],
     "normativeText": "Conduct a comprehensive inventory of GenAI usage across your organization and inspect usage analytics and firewall logs.",
     "riskTags": [
-      "transport_network_config"
+      "network_hardening",
+      "transport_security"
     ],
     "cweTags": [],
     "taskTriggers": [
       "transport_network_config"
     ],
-    "inputChannels": [
-      "logs",
-      "metrics"
-    ],
+    "inputChannels": [],
     "dangerousSinks": [],
-    "assetTags": [
-      "observability"
-    ],
+    "assetTags": [],
     "trustBoundaryTags": [],
     "dependencyTags": [],
     "environmentTags": [
@@ -4187,7 +3883,8 @@
     "phaseBindings": [
       "implementation",
       "inspection",
-      "verification"
+      "verification",
+      "verification_runtime"
     ],
     "validators": [],
     "evidenceRequirements": [
@@ -4196,5 +3893,140 @@
     ],
     "forbiddenWorkarounds": [],
     "severity": "advisory"
+  },
+  {
+    "id": "core:security-surface-discovery",
+    "title": "Security surface discovery",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "PGACS core research policy",
+        "ref": "security-surface-discovery",
+        "text": "Identify external inputs, sensitive assets, dangerous operations, trust boundaries, and unresolved failure behavior before claiming the task is secure."
+      }
+    ],
+    "normativeText": "Identify external inputs, sensitive assets, dangerous operations, trust boundaries, and unresolved failure behavior. Treat unresolved external data as untrusted.",
+    "riskTags": [
+      "security_surface_discovery"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "insufficient_surface",
+      "ambiguous_surface"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [],
+    "phaseBindings": [
+      "orientation",
+      "inspection",
+      "planning",
+      "final_reporting"
+    ],
+    "validators": [
+      "task_surface_evidence"
+    ],
+    "evidenceRequirements": [
+      "task_surface",
+      "unresolved_questions"
+    ],
+    "forbiddenWorkarounds": [
+      "treat missing security evidence as evidence that the task is safe"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "core:fail-safe-implementation",
+    "title": "Fail-safe implementation",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "PGACS core research policy",
+        "ref": "fail-safe-implementation",
+        "text": "Use secure defaults, least privilege, explicit rejection, and fail-closed behavior when security-relevant task behavior is uncertain."
+      }
+    ],
+    "normativeText": "Use secure defaults, least privilege, explicit rejection behavior, and fail-closed handling where task behavior is uncertain. Do not weaken controls to obtain a passing result.",
+    "riskTags": [
+      "fail_safe_defaults"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "insufficient_surface",
+      "ambiguous_surface"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [],
+    "phaseBindings": [
+      "implementation",
+      "adaptation",
+      "final_reporting"
+    ],
+    "validators": [
+      "diff_review",
+      "forbidden_workaround_check"
+    ],
+    "evidenceRequirements": [
+      "diff",
+      "repair_delta"
+    ],
+    "forbiddenWorkarounds": [
+      "remove validation or broaden permissions to make checks pass"
+    ],
+    "severity": "required"
+  },
+  {
+    "id": "core:evidence-based-validation",
+    "title": "Evidence-based validation",
+    "version": "1.0.0",
+    "sourcePrinciples": [
+      {
+        "source": "PGACS core research policy",
+        "ref": "evidence-based-validation",
+        "text": "Validate expected and rejected behavior with harness-observed tests, static checks, or bounded runtime probes; model prose is not proof."
+      }
+    ],
+    "normativeText": "Validate expected and rejected behavior using tests, static checks, or bounded runtime evidence appropriate to the implementation. Derive completion claims from recorded evidence, not model prose.",
+    "riskTags": [
+      "evidence_based_validation"
+    ],
+    "cweTags": [],
+    "taskTriggers": [
+      "insufficient_surface",
+      "ambiguous_surface"
+    ],
+    "inputChannels": [],
+    "dangerousSinks": [],
+    "assetTags": [],
+    "trustBoundaryTags": [],
+    "dependencyTags": [],
+    "environmentTags": [],
+    "phaseBindings": [
+      "planning",
+      "verification_test",
+      "verification_runtime",
+      "final_reporting"
+    ],
+    "validators": [
+      "functional_test",
+      "negative_test",
+      "bounded_probe"
+    ],
+    "evidenceRequirements": [
+      "command",
+      "test",
+      "probe"
+    ],
+    "forbiddenWorkarounds": [
+      "treat an agent statement as evidence that a control passed"
+    ],
+    "severity": "required"
   }
 ]

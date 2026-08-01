@@ -1,0 +1,86 @@
+{
+  "version": "0.1.0",
+  "policies": [
+    {
+      "id": "core:security-surface-discovery",
+      "title": "Security surface discovery",
+      "version": "1.0.0",
+      "sourcePrinciples": [
+        {
+          "source": "PGACS core research policy",
+          "ref": "security-surface-discovery",
+          "text": "Identify external inputs, sensitive assets, dangerous operations, trust boundaries, and unresolved failure behavior before claiming the task is secure."
+        }
+      ],
+      "normativeText": "Identify external inputs, sensitive assets, dangerous operations, trust boundaries, and unresolved failure behavior. Treat unresolved external data as untrusted.",
+      "riskTags": ["security_surface_discovery"],
+      "cweTags": [],
+      "taskTriggers": ["insufficient_surface", "ambiguous_surface"],
+      "inputChannels": [],
+      "dangerousSinks": [],
+      "assetTags": [],
+      "trustBoundaryTags": [],
+      "dependencyTags": [],
+      "environmentTags": [],
+      "phaseBindings": ["orientation", "inspection", "planning", "final_reporting"],
+      "validators": ["task_surface_evidence"],
+      "evidenceRequirements": ["task_surface", "unresolved_questions"],
+      "forbiddenWorkarounds": ["treat missing security evidence as evidence that the task is safe"],
+      "severity": "required"
+    },
+    {
+      "id": "core:fail-safe-implementation",
+      "title": "Fail-safe implementation",
+      "version": "1.0.0",
+      "sourcePrinciples": [
+        {
+          "source": "PGACS core research policy",
+          "ref": "fail-safe-implementation",
+          "text": "Use secure defaults, least privilege, explicit rejection, and fail-closed behavior when security-relevant task behavior is uncertain."
+        }
+      ],
+      "normativeText": "Use secure defaults, least privilege, explicit rejection behavior, and fail-closed handling where task behavior is uncertain. Do not weaken controls to obtain a passing result.",
+      "riskTags": ["fail_safe_defaults"],
+      "cweTags": [],
+      "taskTriggers": ["insufficient_surface", "ambiguous_surface"],
+      "inputChannels": [],
+      "dangerousSinks": [],
+      "assetTags": [],
+      "trustBoundaryTags": [],
+      "dependencyTags": [],
+      "environmentTags": [],
+      "phaseBindings": ["implementation", "adaptation", "final_reporting"],
+      "validators": ["diff_review", "forbidden_workaround_check"],
+      "evidenceRequirements": ["diff", "repair_delta"],
+      "forbiddenWorkarounds": ["remove validation or broaden permissions to make checks pass"],
+      "severity": "required"
+    },
+    {
+      "id": "core:evidence-based-validation",
+      "title": "Evidence-based validation",
+      "version": "1.0.0",
+      "sourcePrinciples": [
+        {
+          "source": "PGACS core research policy",
+          "ref": "evidence-based-validation",
+          "text": "Validate expected and rejected behavior with harness-observed tests, static checks, or bounded runtime probes; model prose is not proof."
+        }
+      ],
+      "normativeText": "Validate expected and rejected behavior using tests, static checks, or bounded runtime evidence appropriate to the implementation. Derive completion claims from recorded evidence, not model prose.",
+      "riskTags": ["evidence_based_validation"],
+      "cweTags": [],
+      "taskTriggers": ["insufficient_surface", "ambiguous_surface"],
+      "inputChannels": [],
+      "dangerousSinks": [],
+      "assetTags": [],
+      "trustBoundaryTags": [],
+      "dependencyTags": [],
+      "environmentTags": [],
+      "phaseBindings": ["planning", "verification_test", "verification_runtime", "final_reporting"],
+      "validators": ["functional_test", "negative_test", "bounded_probe"],
+      "evidenceRequirements": ["command", "test", "probe"],
+      "forbiddenWorkarounds": ["treat an agent statement as evidence that a control passed"],
+      "severity": "required"
+    }
+  ]
+}

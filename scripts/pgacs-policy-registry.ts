@@ -1,6 +1,14 @@
 import { readFile } from 'fs/promises';
 
-import type { PolicyRecord, PolicySelection, TaskSurface } from './pgacs-types.ts';
+import type {
+  PolicyProposal,
+  PolicyRecord,
+  PolicySelectionBudget,
+  PolicySelectionDecision,
+  PolicySelectionDelta,
+  SelectedPolicyDecision,
+  TaskSurface,
+} from './pgacs-types.ts';
 
 interface RawPolicy {
   policy_id: string;
@@ -17,16 +25,45 @@ interface RawPolicyCorpus {
   policies: RawPolicy[];
 }
 
+interface CoreSecurityFloorCorpus {
+  version: string;
+  policies: PolicyRecord[];
+}
+
+const POLICY_RECORD_ARRAY_FIELDS = [
+  'sourcePrinciples',
+  'riskTags',
+  'cweTags',
+  'taskTriggers',
+  'inputChannels',
+  'dangerousSinks',
+  'assetTags',
+  'trustBoundaryTags',
+  'dependencyTags',
+  'environmentTags',
+  'phaseBindings',
+  'validators',
+  'evidenceRequirements',
+  'forbiddenWorkarounds',
+] as const;
+
+export const CORE_SECURITY_FLOOR_POLICY_IDS = [
+  'core:security-surface-discovery',
+  'core:fail-safe-implementation',
+  'core:evidence-based-validation',
+] as const;
+
 const THEME_TAGS: Record<string, string[]> = {
-  dependency_integrity: ['supply_chain', 'dependency_integrity'],
+  dependency_supply_chain: ['supply_chain', 'dependency_integrity'],
   build_release_integrity: ['build_integrity', 'release_integrity'],
-  configuration_hardening: ['configuration_hardening', 'secure_defaults'],
+  config_hardening: ['configuration_hardening', 'secure_defaults'],
   secrets_key_management: ['secrets', 'key_management'],
   least_privilege_access: ['least_privilege', 'access_control'],
-  transport_network_configuration: ['network_hardening', 'transport_security'],
+  transport_network_config: ['network_hardening', 'transport_security'],
   endpoint_runtime_hardening: ['runtime_hardening', 'sandboxing'],
   logging_monitoring_setup: ['logging', 'monitoring', 'auditability'],
-  secure_sdld_process: ['secure_sdlc', 'process_controls'],
+  process_lifecycle: ['process_controls', 'process_lifecycle'],
+  other_setup_env: ['setup_security'],
 };
 
 const KEYWORD_TAGS: { keywords: string[]; tags: string[] }[] = [
@@ -66,19 +103,106 @@ const TASK_FAMILY_TRIGGER_HINTS: Partial<Record<TaskSurface['taskFamily'], strin
   environment_setup: [
     'endpoint_runtime_hardening',
     'least_privilege_access',
-    'transport_network_configuration',
-    'configuration_hardening',
-    'dependency_integrity',
+    'transport_network_config',
+    'config_hardening',
+    'dependency_supply_chain',
     'secrets_key_management',
     'logging_monitoring_setup',
     'build_release_integrity',
-    'secure_sdld_process',
+    'process_lifecycle',
   ],
-  dependency_build: ['dependency_integrity', 'build_release_integrity', 'secure_sdld_process'],
-  web_api: ['configuration_hardening', 'transport_network_configuration', 'least_privilege_access'],
-  auth_session: ['secrets_key_management', 'least_privilege_access', 'configuration_hardening'],
-  agent_tooling: ['endpoint_runtime_hardening', 'least_privilege_access', 'secure_sdld_process'],
+  dependency_build: ['dependency_supply_chain', 'build_release_integrity', 'process_lifecycle'],
+  web_api: ['config_hardening', 'transport_network_config', 'least_privilege_access'],
+  auth_session: ['secrets_key_management', 'least_privilege_access', 'config_hardening'],
+  agent_tooling: ['endpoint_runtime_hardening', 'least_privilege_access', 'process_lifecycle'],
 };
+
+const SELECTOR_VERSION = '0.2.0';
+
+const REASSESSMENT_TRIGGERS = [
+  'authentication_or_secret_handling_observed',
+  'dependency_added',
+  'filesystem_operation_observed',
+  'network_request_observed',
+  'service_exposure_observed',
+  'shell_or_process_execution_observed',
+  'sql_or_database_operation_observed',
+];
+
+interface MandatoryRule {
+  id: string;
+  applies: (surface: TaskSurface) => boolean;
+  policyMatches: (policy: PolicyRecord) => boolean;
+  rationale: string;
+}
+
+interface ScoredPolicy {
+  policy: PolicyRecord;
+  score: number;
+  matchedSurface: string[];
+  rationale: string[];
+}
+
+const MANDATORY_RULES: MandatoryRule[] = [
+  {
+    id: 'untrusted-shell-command',
+    applies: surface =>
+      surface.trustBoundaries.includes('untrusted_input') &&
+      surface.dangerousSinks.includes('shell_command'),
+    policyMatches: policy =>
+      policy.riskTags.includes('command_injection') || policy.cweTags.includes('CWE-78'),
+    rationale: 'untrusted input reaches a shell-command sink',
+  },
+  {
+    id: 'untrusted-filesystem',
+    applies: surface =>
+      surface.trustBoundaries.includes('untrusted_input') &&
+      surface.dangerousSinks.includes('filesystem'),
+    policyMatches: policy =>
+      policy.riskTags.includes('path_traversal') || policy.cweTags.includes('CWE-22'),
+    rationale: 'untrusted input reaches a filesystem sink',
+  },
+  {
+    id: 'runtime-network-exposure',
+    applies: surface =>
+      surface.runtimeExposure.some(value =>
+        ['port_binding', 'remote_access', 'service_start'].includes(value)
+      ),
+    policyMatches: policy =>
+      policy.taskTriggers.includes('runtime_network') ||
+      policy.riskTags.some(tag =>
+        [
+          'network_hardening',
+          'network_security',
+          'runtime_hardening',
+          'transport_security',
+        ].includes(tag)
+      ),
+    rationale: 'the task starts or exposes a network-accessible runtime service',
+  },
+  {
+    id: 'secret-boundary',
+    applies: surface =>
+      surface.assets.includes('secrets') || surface.trustBoundaries.includes('secret_boundary'),
+    policyMatches: policy =>
+      policy.riskTags.some(tag =>
+        ['credential_protection', 'key_management', 'secrets'].includes(tag)
+      ),
+    rationale: 'the task handles credentials or crosses a secret boundary',
+  },
+  {
+    id: 'dependency-integrity',
+    applies: surface =>
+      surface.taskFamily === 'dependency_build' ||
+      surface.assets.includes('dependencies') ||
+      surface.dependencies.length > 0,
+    policyMatches: policy =>
+      policy.riskTags.some(tag =>
+        ['dependency_integrity', 'dependency_management', 'supply_chain'].includes(tag)
+      ),
+    rationale: 'the task changes or builds dependencies',
+  },
+];
 
 function unique(values: string[]): string[] {
   return [...new Set(values.filter(value => value.length > 0))].sort();
@@ -89,7 +213,8 @@ function normalizeText(text: string): string {
 }
 
 function keywordMatches(text: string, keywords: string[]): boolean {
-  return keywords.some(keyword => text.includes(keyword));
+  const paddedText = ` ${normalizeText(text)} `;
+  return keywords.some(keyword => paddedText.includes(` ${normalizeText(keyword)} `));
 }
 
 function inferThemeTags(theme: string | undefined): string[] {
@@ -166,6 +291,9 @@ function inferTaskTriggers(description: string, theme: string | undefined): stri
   if (keywordMatches(lower, ['port', 'network', 'ssh', 'http', 'tls']))
     triggers.push('runtime_network');
   if (keywordMatches(lower, ['logging', 'monitoring'])) triggers.push('observability');
+  if (keywordMatches(lower, ['restart', 'persistent', 'supervised', 'lifecycle'])) {
+    triggers.push('process_lifecycle');
+  }
   return unique(triggers);
 }
 
@@ -233,7 +361,7 @@ function inferPhaseBindings(description: string, theme: string | undefined): str
   if (keywordMatches(lower, ['test', 'monitor', 'audit'])) {
     phases.add('verification_test');
   }
-  if (theme === 'endpoint_runtime_hardening' || theme === 'transport_network_configuration') {
+  if (theme === 'endpoint_runtime_hardening' || theme === 'transport_network_config') {
     phases.add('verification_runtime');
   }
   return [...phases].sort();
@@ -246,6 +374,47 @@ export async function loadPolicyCorpus(filePath: string): Promise<RawPolicyCorpu
     throw new Error(`Invalid policy corpus at ${filePath}: expected { policies: [] }`);
   }
   return parsed;
+}
+
+export async function loadCoreSecurityFloor(filePath: string): Promise<PolicyRecord[]> {
+  const raw = await readFile(filePath, 'utf-8');
+  const parsed = JSON.parse(raw) as Partial<CoreSecurityFloorCorpus>;
+  if (!parsed || typeof parsed.version !== 'string' || !Array.isArray(parsed.policies)) {
+    throw new Error(`Invalid core security floor at ${filePath}`);
+  }
+  for (const [index, policy] of parsed.policies.entries()) {
+    const validScalarFields =
+      typeof policy?.id === 'string' &&
+      typeof policy.title === 'string' &&
+      typeof policy.version === 'string' &&
+      typeof policy.normativeText === 'string' &&
+      ['advisory', 'required', 'fail_closed'].includes(policy.severity);
+    const validArrayFields = POLICY_RECORD_ARRAY_FIELDS.every(field =>
+      Array.isArray(policy?.[field])
+    );
+    const validSources =
+      Array.isArray(policy?.sourcePrinciples) &&
+      policy.sourcePrinciples.length > 0 &&
+      policy.sourcePrinciples.every(
+        source => typeof source.source === 'string' && typeof source.text === 'string'
+      );
+    if (!validScalarFields || !validArrayFields || !validSources) {
+      throw new Error(`Invalid core security-floor policy at index ${index} in ${filePath}`);
+    }
+  }
+  const ids = new Set(parsed.policies.map(policy => policy.id));
+  for (const policyId of CORE_SECURITY_FLOOR_POLICY_IDS) {
+    if (!ids.has(policyId)) {
+      throw new Error(`Core security floor is missing policy ${policyId}`);
+    }
+  }
+  if (
+    parsed.policies.length !== CORE_SECURITY_FLOOR_POLICY_IDS.length ||
+    ids.size !== CORE_SECURITY_FLOOR_POLICY_IDS.length
+  ) {
+    throw new Error('Core security floor must contain exactly the three required policies');
+  }
+  return parsed.policies;
 }
 
 export function normalizePolicyRegistry(corpus: RawPolicyCorpus): PolicyRecord[] {
@@ -297,7 +466,7 @@ export function normalizePolicyRegistry(corpus: RawPolicyCorpus): PolicyRecord[]
       assetTags: inferAssetTags(description),
       trustBoundaryTags: inferTrustBoundaries(description),
       dependencyTags:
-        policy.setup_env_theme === 'dependency_integrity' ? ['dependency_integrity'] : [],
+        policy.setup_env_theme === 'dependency_supply_chain' ? ['dependency_integrity'] : [],
       environmentTags: inferEnvironmentTags(description, policy.setup_env_theme),
       phaseBindings: inferPhaseBindings(description, policy.setup_env_theme),
       validators: [],
@@ -308,73 +477,284 @@ export function normalizePolicyRegistry(corpus: RawPolicyCorpus): PolicyRecord[]
   });
 }
 
-function scoreOverlap(values: string[], surfaceValues: string[], weight: number): number {
-  const surface = new Set(surfaceValues);
-  return values.reduce((score, value) => (surface.has(value) ? score + weight : score), 0);
+function addOverlap(
+  label: string,
+  policyValues: string[],
+  surfaceValues: string[],
+  weight: number,
+  matchedSurface: string[],
+  rationale: string[]
+): number {
+  const matches = unique(policyValues.filter(value => surfaceValues.includes(value)));
+  if (matches.length === 0) return 0;
+  matchedSurface.push(...matches.map(value => `${label}:${value}`));
+  rationale.push(`${label} match: ${matches.join(', ')}`);
+  return matches.length * weight;
 }
 
-export function selectPolicies(
+function scorePolicy(
+  policy: PolicyRecord,
+  surface: TaskSurface,
+  proposal: PolicyProposal | undefined
+): ScoredPolicy {
+  const familyHints = TASK_FAMILY_TRIGGER_HINTS[surface.taskFamily] ?? [];
+  const matchedSurface: string[] = [];
+  const rationale: string[] = [];
+  let score = 0;
+
+  score += addOverlap('cwe', policy.cweTags, surface.likelyCwes, 8, matchedSurface, rationale);
+  score += addOverlap(
+    'sink',
+    policy.dangerousSinks,
+    surface.dangerousSinks,
+    6,
+    matchedSurface,
+    rationale
+  );
+  score += addOverlap(
+    'trust_boundary',
+    policy.trustBoundaryTags,
+    surface.trustBoundaries,
+    5,
+    matchedSurface,
+    rationale
+  );
+  score += addOverlap('asset', policy.assetTags, surface.assets, 4, matchedSurface, rationale);
+  score += addOverlap(
+    'input_channel',
+    policy.inputChannels,
+    surface.inputChannels,
+    3,
+    matchedSurface,
+    rationale
+  );
+  score += addOverlap(
+    'environment',
+    [...policy.taskTriggers, ...policy.environmentTags],
+    [...surface.environmentConstraints, ...surface.runtimeExposure],
+    3,
+    matchedSurface,
+    rationale
+  );
+  score += addOverlap(
+    'task_family',
+    [...policy.riskTags, ...policy.taskTriggers, ...policy.environmentTags],
+    familyHints,
+    4,
+    matchedSurface,
+    rationale
+  );
+
+  if (policy.phaseBindings.includes('verification_runtime') && surface.runtimeExposure.length > 0) {
+    score += 2;
+    matchedSurface.push('phase:verification_runtime');
+    rationale.push('runtime exposure requires runtime verification');
+  }
+  if (
+    policy.phaseBindings.includes('verification_build') &&
+    surface.taskFamily === 'dependency_build'
+  ) {
+    score += 2;
+    matchedSurface.push('phase:verification_build');
+    rationale.push('dependency/build task requires build verification');
+  }
+  if (proposal) {
+    const boundedConfidence = Math.max(0, Math.min(1, proposal.confidence));
+    score += boundedConfidence * 2;
+    rationale.push(
+      `LLM proposed candidate (${boundedConfidence.toFixed(2)}): ${proposal.rationale}`
+    );
+  }
+
+  return {
+    policy,
+    score,
+    matchedSurface: unique(matchedSurface),
+    rationale,
+  };
+}
+
+function validateSelectionInputs(
+  policies: PolicyRecord[],
+  budget: PolicySelectionBudget
+): Map<string, PolicyRecord> {
+  if (!Number.isInteger(budget.maxPolicies) || budget.maxPolicies < 1) {
+    throw new Error('Policy selection maxPolicies must be a positive integer');
+  }
+  const registry = new Map<string, PolicyRecord>();
+  for (const policy of policies) {
+    if (registry.has(policy.id)) {
+      throw new Error(`Duplicate policy id in registry: ${policy.id}`);
+    }
+    registry.set(policy.id, policy);
+  }
+  for (const policyId of CORE_SECURITY_FLOOR_POLICY_IDS) {
+    if (!registry.has(policyId)) {
+      throw new Error(`Policy registry is missing core security-floor policy ${policyId}`);
+    }
+  }
+  return registry;
+}
+
+export function selectPolicyDecision(
   policies: PolicyRecord[],
   surface: TaskSurface,
-  maxPolicies = 8
-): PolicySelection[] {
-  const familyHints = TASK_FAMILY_TRIGGER_HINTS[surface.taskFamily] ?? [];
-  const ranked = policies
-    .map(policy => {
-      const rationale: string[] = [];
-      let score = 0;
+  budget: PolicySelectionBudget = { maxPolicies: 8 },
+  proposals: PolicyProposal[] = []
+): PolicySelectionDecision {
+  const registry = validateSelectionInputs(policies, budget);
+  const fallbackPolicies = CORE_SECURITY_FLOOR_POLICY_IDS.map(policyId => {
+    const policy = registry.get(policyId);
+    if (!policy)
+      throw new Error(`Policy registry is missing core security-floor policy ${policyId}`);
+    return policy;
+  });
+  const specificPolicies = policies.filter(
+    policy =>
+      !CORE_SECURITY_FLOOR_POLICY_IDS.includes(
+        policy.id as (typeof CORE_SECURITY_FLOOR_POLICY_IDS)[number]
+      )
+  );
+  const proposalById = new Map<string, PolicyProposal>();
+  const rejected: PolicySelectionDecision['rejected'] = [];
 
-      score += scoreOverlap(policy.riskTags, surface.likelyCwes, 4);
-      score += scoreOverlap(policy.cweTags, surface.likelyCwes, 5);
-      score += scoreOverlap(policy.assetTags, surface.assets, 3);
-      score += scoreOverlap(policy.trustBoundaryTags, surface.trustBoundaries, 3);
-      score += scoreOverlap(policy.dangerousSinks, surface.dangerousSinks, 5);
-      score += scoreOverlap(policy.taskTriggers, surface.environmentConstraints, 2);
-      score += scoreOverlap(policy.environmentTags, surface.environmentConstraints, 2);
-      score += scoreOverlap(policy.taskTriggers, familyHints, 4);
+  for (const proposal of proposals) {
+    if (!registry.has(proposal.policyId)) {
+      rejected.push({ policyId: proposal.policyId, score: 0, reason: 'invalid_proposal' });
+      continue;
+    }
+    const existing = proposalById.get(proposal.policyId);
+    if (!existing || proposal.confidence > existing.confidence) {
+      proposalById.set(proposal.policyId, proposal);
+    }
+  }
 
-      if (
-        policy.phaseBindings.includes('verification_runtime') &&
-        surface.runtimeExposure.length > 0
-      ) {
-        score += 2;
-      }
-      if (
-        policy.phaseBindings.includes('verification_build') &&
-        surface.taskFamily === 'dependency_build'
-      ) {
-        score += 2;
-      }
-      if (policy.severity === 'fail_closed') score += 1;
-
-      if (score > 0) {
-        const matchedTags = unique([
-          ...policy.riskTags.filter(tag => surface.likelyCwes.includes(tag)),
-          ...policy.cweTags.filter(tag => surface.likelyCwes.includes(tag)),
-          ...policy.assetTags.filter(tag => surface.assets.includes(tag)),
-          ...policy.trustBoundaryTags.filter(tag => surface.trustBoundaries.includes(tag)),
-          ...policy.dangerousSinks.filter(tag => surface.dangerousSinks.includes(tag)),
-        ]);
-        if (matchedTags.length > 0) {
-          rationale.push(`matched tags: ${matchedTags.join(', ')}`);
-        }
-        if (policy.severity === 'fail_closed') {
-          rationale.push('policy severity is fail_closed');
-        }
-        if (
-          policy.phaseBindings.includes('verification_runtime') &&
-          surface.runtimeExposure.length > 0
-        ) {
-          rationale.push('runtime exposure requires runtime verification');
-        }
-      }
-
-      return { policy, score, rationale };
-    })
-    .filter(selection => selection.score > 0)
+  const scored = specificPolicies
+    .map(policy => scorePolicy(policy, surface, proposalById.get(policy.id)))
     .sort(
       (left, right) => right.score - left.score || left.policy.id.localeCompare(right.policy.id)
     );
+  const scoredById = new Map(scored.map(candidate => [candidate.policy.id, candidate]));
+  const mandatoryRationales = new Map<string, string[]>();
 
-  return ranked.slice(0, maxPolicies);
+  for (const rule of MANDATORY_RULES) {
+    if (!rule.applies(surface)) continue;
+    const matches = scored.filter(candidate => rule.policyMatches(candidate.policy));
+    if (matches.length === 0) {
+      throw new Error(`Mandatory policy coverage gap for rule ${rule.id}: ${rule.rationale}`);
+    }
+    const winner = matches[0];
+    const reasons = mandatoryRationales.get(winner.policy.id) ?? [];
+    reasons.push(`mandatory rule ${rule.id}: ${rule.rationale}`);
+    mandatoryRationales.set(winner.policy.id, reasons);
+  }
+
+  const mandatorySelected: SelectedPolicyDecision[] = [...mandatoryRationales.entries()]
+    .map(([policyId, mandatoryReasons]) => {
+      const candidate = scoredById.get(policyId);
+      if (!candidate) throw new Error(`Selected policy is missing from registry: ${policyId}`);
+      return {
+        policyId,
+        score: candidate.score,
+        disposition: 'mandatory' as const,
+        matchedSurface: candidate.matchedSurface,
+        rationale: [...mandatoryReasons, ...candidate.rationale],
+      };
+    })
+    .sort((left, right) => right.score - left.score || left.policyId.localeCompare(right.policyId));
+
+  const hasSpecificCandidate =
+    mandatorySelected.length > 0 || scored.some(candidate => candidate.score > 0);
+  const selectionMode = !hasSpecificCandidate
+    ? 'fallback'
+    : surface.surfaceStatus === 'sufficient'
+      ? 'explicit'
+      : 'hybrid';
+  const usesFallback = selectionMode !== 'explicit';
+  const fallbackSelected: SelectedPolicyDecision[] = usesFallback
+    ? fallbackPolicies.map(policy => ({
+        policyId: policy.id,
+        score: 0,
+        disposition: 'fallback' as const,
+        matchedSurface: [`surface_status:${surface.surfaceStatus}`],
+        rationale: [
+          selectionMode === 'fallback'
+            ? 'no reliable task-specific policy match exists'
+            : 'material task-surface uncertainty remains',
+        ],
+      }))
+    : [];
+  const selected = [...mandatorySelected, ...fallbackSelected];
+  const selectedIds = new Set(selected.map(selection => selection.policyId));
+  const remainingSlots = Math.max(0, budget.maxPolicies - selected.length);
+  const rankedCandidates = scored.filter(candidate => !selectedIds.has(candidate.policy.id));
+  const rankedSelected = rankedCandidates
+    .filter(candidate => candidate.score > 0)
+    .slice(0, remainingSlots);
+
+  selected.push(
+    ...rankedSelected.map(candidate => ({
+      policyId: candidate.policy.id,
+      score: candidate.score,
+      disposition: 'ranked' as const,
+      matchedSurface: candidate.matchedSurface,
+      rationale: candidate.rationale,
+    }))
+  );
+  rankedSelected.forEach(candidate => selectedIds.add(candidate.policy.id));
+
+  for (const candidate of rankedCandidates) {
+    if (selectedIds.has(candidate.policy.id)) continue;
+    rejected.push({
+      policyId: candidate.policy.id,
+      score: candidate.score,
+      reason: candidate.score > 0 ? 'budget' : 'no_match',
+    });
+  }
+
+  return {
+    taskId: surface.taskId,
+    selectionMode,
+    surfaceStatus: surface.surfaceStatus,
+    selected,
+    rejected,
+    coverageGaps:
+      selectionMode === 'fallback' ? ['No reliable task-specific policy match was found.'] : [],
+    unresolved: surface.unresolved,
+    reassessmentTriggers: usesFallback ? REASSESSMENT_TRIGGERS : [],
+    budget: {
+      ...budget,
+      mandatoryPolicies: mandatoryRationales.size,
+      rankedPolicies: rankedSelected.length,
+      fallbackPolicies: fallbackSelected.length,
+      budgetExceededByMandatory: mandatoryRationales.size > budget.maxPolicies,
+      budgetExceededBySafetyFloor:
+        mandatoryRationales.size + fallbackSelected.length > budget.maxPolicies,
+    },
+    selectorVersion: SELECTOR_VERSION,
+  };
+}
+
+export function createPolicySelectionDelta(
+  previous: PolicySelectionDecision,
+  current: PolicySelectionDecision,
+  trigger: string
+): PolicySelectionDelta {
+  if (previous.taskId !== current.taskId) {
+    throw new Error('Cannot create a policy delta for different tasks');
+  }
+
+  const previousIds = new Set(previous.selected.map(selection => selection.policyId));
+  const currentIds = new Set(current.selected.map(selection => selection.policyId));
+  const addedPolicies = [...currentIds].filter(policyId => !previousIds.has(policyId)).sort();
+
+  return {
+    trigger,
+    addedPolicies,
+    retainedPolicies: [...previousIds].sort(),
+    rationale:
+      addedPolicies.length > 0
+        ? `new surface evidence selected: ${addedPolicies.join(', ')}`
+        : 'new surface evidence did not require additional policies',
+  };
 }

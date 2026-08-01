@@ -1,0 +1,549 @@
+{
+  "version": "0.1.0",
+  "adjudicatorRole": "original_independent_expanded_corpus_labeler",
+  "labelsSha256": "fd9b8466bca30b8bd3222e4d0239ac8bf918af1db4897abb532fcda7053e4f71",
+  "selectionFingerprint": "9c271a2335493e6761b2b00d1ae43e1db8d582d640ba50d0eb692445d9627aa5",
+  "limitations": [
+    "This adjudication was produced by one model and has not received human or inter-rater review.",
+    "Equivalence judgments are task-specific and assess concrete security obligations rather than general conceptual similarity.",
+    "Some corpus records overlap or differ mainly in scope, so another qualified evaluator may reasonably classify a small number of borderline equivalents differently.",
+    "The frozen silver labels remain model-generated reference judgments rather than authoritative ground truth.",
+    "Coverage-gap statements from the selector were available as context but were not treated as evidence that a required control was covered."
+  ],
+  "tasks": [
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-280",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "None of the selected policies requires encrypted SSH transport or prohibits fallback to an unencrypted protocol; endpoint authentication and patching do not satisfy this transport obligation."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_034",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-284"],
+          "rationale": "For this task, ASVS-284 imposes strong endpoint authentication, which is the same concrete obligation served by strict SSH host-key verification."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_099",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_099"],
+          "rationale": "The selected policy exactly requires least privilege for service accounts used for external connections."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_154",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_099"],
+          "rationale": "It independently imposes the same least-privilege obligation on the autossh service process and account, although OWASP_099 is the more task-specific labeled control."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_099",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_099"],
+          "rationale": "It is the exact required least-privilege control for an external-connection service account."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-284",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_034"],
+          "rationale": "Its strong endpoint-authentication requirement covers the strict host-identity verification obligation for this SSH connection."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_151",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Keeping autossh and system components patched is genuinely useful hardening, but it does not replace transport encryption, endpoint authentication, or least privilege."
+        }
+      ]
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-311",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-295", "grasp-scp:OWASP_035"],
+          "rationale": "Both selected controls require server-side secret storage and prohibit hardcoding the API credential, satisfying the task-specific secret-management obligation."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_143",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_146"],
+          "rationale": "OWASP_146 imposes TLS for sensitive communication, the same concrete transport-protection obligation for uploading the backup and API credential."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_133",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "No selected policy requires encryption of the locally retained database backup at rest."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-365",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "No selected policy requires safe behavior when the storage API is unavailable or preservation of the local backup on failure."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:ASVS-295",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-311"],
+          "rationale": "This is a near-identical secret-management requirement that keeps the API token out of source, artifacts, and the unit configuration."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_035",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-311"],
+          "rationale": "Secure server-side credential storage and the prohibition on hardcoding satisfy the API-token handling obligation."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_146",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_143"],
+          "rationale": "It requires TLS for the sensitive backup upload and therefore covers the labeled transport control."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_154",
+          "verdict": "covers_relevant",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_099"],
+          "rationale": "It applies least privilege to the dedicated uploader process and service account, matching the relevant labeled control."
+        }
+      ]
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-198",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-198"],
+          "rationale": "The exact object-level authorization policy was selected for account-owned invoice data."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-421",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_078"],
+          "rationale": "OWASP_078 requires a single centralized authorization component, the same concrete obligation as routing all invoice access through the existing authorization service."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_086",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-198"],
+          "rationale": "Restricting direct object references to authorized users directly covers ownership enforcement for externally visible invoice IDs."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_078",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-421"],
+          "rationale": "It requires the centralized authorization mechanism specified by the task."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_077",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Basing authorization on trusted middleware-provided account and user identifiers is useful support for the ownership check, but it is not itself the complete BOLA control."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-198",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-198"],
+          "rationale": "It is the exact labeled object-level authorization requirement."
+        }
+      ]
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-308",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-308"],
+          "rationale": "The exact outbound destination allowlist control was selected."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-278",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "No selected policy requires HTTPS for all outbound requests and redirects or prohibits downgrade to plaintext."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_010",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_010"],
+          "rationale": "The selected policy exactly requires validation of redirect-derived input, closing the redirect-based SSRF bypass."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_002",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Classifying user URLs as untrusted and validating them before use is genuinely useful, but this generic rule does not replace destination allowlisting, redirect revalidation, or HTTPS enforcement."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-308",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-308"],
+          "rationale": "It is the exact required destination allowlist control for blocking loopback, link-local, private, and unapproved endpoints."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_010",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_010"],
+          "rationale": "It is the exact required redirect-validation control."
+        }
+      ]
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-214",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-214"],
+          "rationale": "The exact policy for binding PKCE, state, and nonce to the initiating user-agent session and transaction was selected."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:ASVS-214",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-214"],
+          "rationale": "It exactly covers the callback transaction-binding requirement."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_066",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Rotating the pre-login session after successful OAuth authentication is useful protection against session fixation, though it is distinct from callback transaction binding."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_073",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Strong per-operation anti-CSRF tokens are useful defense in depth, but the generic control does not replace the OAuth-specific state, nonce, and PKCE binding."
+        }
+      ]
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-208",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-208"],
+          "rationale": "The exact control preventing token-supplied JWK sources and requiring trusted configured issuers was selected."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-198",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-198"],
+          "rationale": "The exact object-level authorization control was selected for tenant-owned projects."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-421",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_078"],
+          "rationale": "OWASP_078 requires the same centralized authorization component needed to avoid endpoint-specific tenant-check bypasses."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:ASVS-208",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-208"],
+          "rationale": "It exactly covers trusted issuer and verification-key sourcing."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_077",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Requiring trusted server-side authorization objects is useful to prevent tenant decisions based only on token or path claims, but it is not the full ownership check."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-198",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-198"],
+          "rationale": "It exactly covers per-project tenant ownership enforcement."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_078",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-421"],
+          "rationale": "It imposes the same centralized authorization architecture as the labeled requirement."
+        }
+      ]
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_003",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_002"],
+          "rationale": "For this endpoint, strict validation of every untrusted uploaded field before processing imposes the same concrete server-side schema-validation obligation, although OWASP_003 states the dimensions more explicitly."
+        },
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_013",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_013"],
+          "rationale": "The exact input-length and resource-exhaustion control was selected for oversized JSON documents."
+        },
+        {
+          "labeledPolicyId": "setup:LLM-063",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:LLM-063"],
+          "rationale": "The exact requirement to enforce authorization bounds deterministically outside the LLM was selected."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_002",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_003"],
+          "rationale": "Strictly validating all untrusted uploaded fields before processing covers the task's required schema-validation boundary."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_006",
+          "verdict": "covers_relevant",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_006"],
+          "rationale": "It exactly matches the relevant fail-closed rejection control for malformed or invalid documents."
+        },
+        {
+          "selectedPolicyId": "setup:LLM-063",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:LLM-063"],
+          "rationale": "It exactly covers deterministic tool-permission enforcement."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_013",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_013"],
+          "rationale": "It exactly covers document-size validation and resource-exhaustion prevention."
+        }
+      ]
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "grasp-scp:OWASP_016",
+          "status": "covered_equivalent",
+          "coveredBySelectedPolicyIds": ["grasp-scp:OWASP_188"],
+          "rationale": "For ZIP entries, whitelisting and validating member file names to prevent unauthorized file access imposes the same concrete path-confinement obligation, though OWASP_016 is more explicit about canonicalization and obfuscation."
+        },
+        {
+          "labeledPolicyId": "setup:CWE-067",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "Generic input-length validation does not require file-count and aggregate expanded-size quotas, so it does not fully cover archive-bomb resource limits."
+        },
+        {
+          "labeledPolicyId": "setup:CWE-049",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:CWE-049"],
+          "rationale": "The exact sandbox boundary control was selected for isolating archive inspection from the host."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_188",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["grasp-scp:OWASP_016"],
+          "rationale": "Validating archive member names against an allowed form covers the required prevention of paths escaping the workspace."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_013",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Input-size validation is useful for individual archive inputs, but it does not impose the file-count and expanded-size quotas needed to cover the required resource-limiting control."
+        },
+        {
+          "selectedPolicyId": "setup:CWE-049",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:CWE-049"],
+          "rationale": "It is the exact required sandboxing control."
+        }
+      ]
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-338",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-338"],
+          "rationale": "The exact expected-registry and dependency-confusion control was selected."
+        },
+        {
+          "labeledPolicyId": "setup:SSDF-023",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:SSDF-023"],
+          "rationale": "The exact release-component provenance control was selected."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:ASVS-338",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-338"],
+          "rationale": "It exactly covers trusted registry resolution and dependency-confusion prevention."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-331",
+          "verdict": "covers_relevant",
+          "matchedLabeledPolicyIds": ["setup:ASVS-331"],
+          "rationale": "It exactly matches the relevant component-inventory and trusted-repository control."
+        },
+        {
+          "selectedPolicyId": "setup:SSDF-023",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:SSDF-023"],
+          "rationale": "It exactly covers preservation of release provenance."
+        }
+      ]
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:LLM-025",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:LLM-025"],
+          "rationale": "The exact model-source and model-integrity verification control was selected."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-338",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-338"],
+          "rationale": "The exact expected-source and substitution-prevention control was selected."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:LLM-025",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:LLM-025"],
+          "rationale": "It exactly covers verifiable model sourcing and digest or signature checks."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_205",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:LLM-025"],
+          "rationale": "Its checksum or cryptographic-hash verification requirement independently covers the integrity-check portion of the required model control."
+        },
+        {
+          "selectedPolicyId": "setup:ASVS-338",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-338"],
+          "rationale": "It exactly covers pinned resolution from the expected approved source."
+        }
+      ]
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:LLM-051",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:LLM-051"],
+          "rationale": "The exact policy preferring a granular typed tool over open-ended shell execution was selected."
+        },
+        {
+          "labeledPolicyId": "setup:LLM-063",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "The selected input and tool-granularity controls do not explicitly require authorization bounds to be enforced deterministically and independently from the LLM."
+        },
+        {
+          "labeledPolicyId": "setup:CWE-067",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:CWE-067"],
+          "rationale": "The exact resource-quota control was selected for time, CPU, and memory bounds."
+        },
+        {
+          "labeledPolicyId": "setup:CWE-049",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:CWE-049"],
+          "rationale": "The exact process and filesystem sandbox control was selected."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:LLM-051",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:LLM-051"],
+          "rationale": "It exactly covers replacing an open-ended shell with a granular test-runner tool."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_211",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Prohibiting direct passage of model-selected data to dynamic execution is useful command-injection protection, but it does not by itself require deterministic authorization enforcement."
+        },
+        {
+          "selectedPolicyId": "setup:CWE-067",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:CWE-067"],
+          "rationale": "It exactly covers bounded CPU, memory, and execution time."
+        },
+        {
+          "selectedPolicyId": "setup:CWE-049",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:CWE-049"],
+          "rationale": "It exactly covers workspace and host isolation."
+        }
+      ]
+    },
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "requiredAssessments": [
+        {
+          "labeledPolicyId": "setup:ASVS-308",
+          "status": "covered_exact",
+          "coveredBySelectedPolicyIds": ["setup:ASVS-308"],
+          "rationale": "The exact outbound destination allowlist policy was selected."
+        },
+        {
+          "labeledPolicyId": "setup:LLM-063",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "A granular fetch tool reduces capability breadth, but no selected policy requires destination and credential authorization controls to be deterministic and independent from the model."
+        },
+        {
+          "labeledPolicyId": "setup:ASVS-312",
+          "status": "missing",
+          "coveredBySelectedPolicyIds": [],
+          "rationale": "Secure server-side credential storage does not itself impose least-privilege access or explicitly prevent the model-facing component from receiving the internal API token."
+        }
+      ],
+      "selectedAssessments": [
+        {
+          "selectedPolicyId": "setup:ASVS-308",
+          "verdict": "covers_required",
+          "matchedLabeledPolicyIds": ["setup:ASVS-308"],
+          "rationale": "It exactly covers the approved-host destination allowlist."
+        },
+        {
+          "selectedPolicyId": "setup:LLM-051",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "A purpose-built documentation fetcher is genuinely safer than an open-ended URL-fetch tool, but granularity alone does not establish deterministic authorization or secret isolation."
+        },
+        {
+          "selectedPolicyId": "grasp-scp:OWASP_035",
+          "verdict": "additional_relevant",
+          "matchedLabeledPolicyIds": [],
+          "rationale": "Trusted server-side storage and no hardcoding are useful protections for the API credential, but the policy does not fully cover least-privilege access or model non-disclosure."
+        }
+      ]
+    }
+  ]
+}

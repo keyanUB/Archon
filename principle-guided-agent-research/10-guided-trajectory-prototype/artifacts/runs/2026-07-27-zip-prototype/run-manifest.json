@@ -1,0 +1,19 @@
+{
+  "artifactFormatVersion": "0.2.0",
+  "runId": "2026-07-27-zip-prototype",
+  "historicalMigration": true,
+  "taskId": "file-parser-untrusted-archive",
+  "codexVersion": "codex-cli 0.145.0",
+  "inputHashes": {
+    "taskSha256": "064759185e510b1425ace0a845234c5e4b8f8c63006f5cc788f1c16226e2a8e6",
+    "corpusSha256": "6bf154e00bf58af8641f9608d19a1613a95295d1732f16ad80b0ee4ce339713e",
+    "semanticSelectionFingerprint": "9c271a2335493e6761b2b00d1ae43e1db8d582d640ba50d0eb692445d9627aa5"
+  },
+  "conditions": {
+    "baseline": { "exitCode": 0 },
+    "guided": {
+      "exitCode": 0,
+      "selectedPolicyIds": ["grasp-scp:OWASP_188", "grasp-scp:OWASP_013", "setup:CWE-049"]
+    }
+  }
+}

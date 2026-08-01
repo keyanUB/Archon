@@ -108,8 +108,25 @@ type TaskSurface = {
     risks: number;
     missingInputs: number;
   };
+  surfaceStatus: 'sufficient' | 'ambiguous' | 'insufficient';
+  evidence: Array<{
+    field: string;
+    value: string;
+    source: 'task_prompt' | 'repo_hint' | 'repo_scan' | 'semantic_proposal';
+    evidence: string;
+  }>;
+  unresolved: Array<{
+    field: string;
+    question: string;
+    reason: string;
+  }>;
 };
 ```
+
+The status/evidence fields were added after prototype evaluation showed that a
+structurally complete surface can still be semantically empty or incorrect.
+Downstream selection must treat insufficient evidence as uncertainty, not as
+evidence that no security risk exists.
 
 ### Extraction inputs
 
@@ -172,6 +189,8 @@ This step is complete when the system can:
 3. explain why each policy was selected;
 4. avoid selecting irrelevant policies by default;
 5. preserve provenance from source principle to policy record.
+6. mark insufficient or ambiguous extraction explicitly and provide evidence
+   for populated security-bearing fields.
 
 ## Why This Is the Right First Step
 
@@ -179,6 +198,10 @@ Without the registry and surface, the harness has nothing stable to select
 from. Every other layer would collapse back into ad hoc prompting.
 
 This step creates the shared vocabulary that the rest of PGACS depends on.
+
+When the vocabulary cannot support a reliable specific match, milestone 2.1
+activates a compact generic security floor. See
+[`04-generic-security-floor-and-implementation-plan.md`](./04-generic-security-floor-and-implementation-plan.md).
 
 ## Current Implementation Status
 
@@ -192,3 +215,8 @@ The Archon repo now has a working prototype for this step:
   a prompt plus repo hints;
 - `.archon/data/research/pgacs/` stores the generated registry, schemas, and an
   example task surface.
+
+The current implementation includes `surfaceStatus`, source evidence, unresolved
+questions, explicit/hybrid/fallback selection modes, and the three-policy core
+security floor. Generated schemas and examples under
+`.archon/data/research/pgacs/` exercise the same contract.

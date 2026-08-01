@@ -1,0 +1,205 @@
+{
+  "caution": [
+    "Both reference sets use independent model-generated silver labels, not expert ground truth.",
+    "The baseline and expanded selector use different corpora and separately adapted labels, so the comparison demonstrates prototype progression rather than a controlled selector-only ablation.",
+    "The preserved semantic selection received reference task-family metadata; rerun the corrected selector before making classification-independent performance claims.",
+    "Exact policy-ID scoring does not credit an unlabelled but semantically equivalent policy."
+  ],
+  "deterministicBaseline": {
+    "taskCount": 12,
+    "selectorCompletedTasks": 12,
+    "familyClassificationAccuracy": 0.8333,
+    "requiredPolicyRecall": 0.2692,
+    "acceptableSelectionPrecision": 0.1563,
+    "averageSelectedPolicies": 8
+  },
+  "semanticExpanded": {
+    "configuredModel": "sonnet",
+    "reportedModelIds": ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
+    "catalogSize": 298,
+    "labelVersion": "0.1.0",
+    "labelType": "model_generated_silver",
+    "strictIdMetrics": {
+      "taskCount": 12,
+      "requiredPolicyRecall": 0.5455,
+      "acceptableSelectionPrecision": 0.4762,
+      "averageSelectedPolicies": 3.5,
+      "tasksReportingCoverageGaps": 3
+    },
+    "adjudicatedControlMetrics": {
+      "adjudicationVersion": "0.1.0",
+      "adjudicatorRole": "original_independent_expanded_corpus_labeler",
+      "requiredControlRecall": 0.7576,
+      "relevantControlPrecision": 1,
+      "exactRequiredMatches": 18,
+      "equivalentRequiredMatches": 7,
+      "missingRequiredControls": 8,
+      "irrelevantSelections": 0
+    }
+  },
+  "tasks": [
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "selectedPolicyIds": [
+        "grasp-scp:OWASP_154",
+        "grasp-scp:OWASP_099",
+        "setup:ASVS-284",
+        "grasp-scp:OWASP_151"
+      ],
+      "foundRequiredPolicyIds": ["grasp-scp:OWASP_099"],
+      "missingRequiredPolicyIds": ["grasp-scp:OWASP_034", "setup:ASVS-280"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_151", "grasp-scp:OWASP_154", "setup:ASVS-284"],
+      "coverageGaps": [
+        {
+          "control": "SSH known_hosts pinning",
+          "reason": "Catalog lacks a specific control for strict SSH host-key verification workflows."
+        }
+      ]
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "selectedPolicyIds": [
+        "setup:ASVS-295",
+        "grasp-scp:OWASP_035",
+        "grasp-scp:OWASP_146",
+        "grasp-scp:OWASP_154"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": [
+        "grasp-scp:OWASP_133",
+        "grasp-scp:OWASP_143",
+        "setup:ASVS-311",
+        "setup:ASVS-365"
+      ],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "grasp-scp:OWASP_035",
+        "grasp-scp:OWASP_146",
+        "grasp-scp:OWASP_154",
+        "setup:ASVS-295"
+      ],
+      "coverageGaps": [
+        {
+          "control": "Fail-safe local retention on remote failure",
+          "reason": "No catalog policy addresses preserving local backups on upload failure."
+        }
+      ]
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "selectedPolicyIds": [
+        "grasp-scp:OWASP_086",
+        "grasp-scp:OWASP_078",
+        "grasp-scp:OWASP_077",
+        "setup:ASVS-198"
+      ],
+      "foundRequiredPolicyIds": ["setup:ASVS-198"],
+      "missingRequiredPolicyIds": ["setup:ASVS-421"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_077", "grasp-scp:OWASP_078", "grasp-scp:OWASP_086"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "selectedPolicyIds": ["grasp-scp:OWASP_002", "setup:ASVS-308", "grasp-scp:OWASP_010"],
+      "foundRequiredPolicyIds": ["grasp-scp:OWASP_010", "setup:ASVS-308"],
+      "missingRequiredPolicyIds": ["setup:ASVS-278"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_002"],
+      "coverageGaps": [
+        {
+          "control": "SSRF-specific network segmentation",
+          "reason": "Catalog has no dedicated SSRF/DNS-rebinding control for blocking loopback/link-local ranges."
+        }
+      ]
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "selectedPolicyIds": ["setup:ASVS-214", "grasp-scp:OWASP_066", "grasp-scp:OWASP_073"],
+      "foundRequiredPolicyIds": ["setup:ASVS-214"],
+      "missingRequiredPolicyIds": [],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_066", "grasp-scp:OWASP_073"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "selectedPolicyIds": [
+        "setup:ASVS-208",
+        "grasp-scp:OWASP_077",
+        "setup:ASVS-198",
+        "grasp-scp:OWASP_078"
+      ],
+      "foundRequiredPolicyIds": ["setup:ASVS-198", "setup:ASVS-208"],
+      "missingRequiredPolicyIds": ["setup:ASVS-421"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_077", "grasp-scp:OWASP_078"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "selectedPolicyIds": [
+        "grasp-scp:OWASP_002",
+        "grasp-scp:OWASP_006",
+        "setup:LLM-063",
+        "grasp-scp:OWASP_013"
+      ],
+      "foundRequiredPolicyIds": ["grasp-scp:OWASP_013", "setup:LLM-063"],
+      "missingRequiredPolicyIds": ["grasp-scp:OWASP_003"],
+      "foundRelevantPolicyIds": ["grasp-scp:OWASP_006"],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_002"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "selectedPolicyIds": ["grasp-scp:OWASP_188", "grasp-scp:OWASP_013", "setup:CWE-049"],
+      "foundRequiredPolicyIds": ["setup:CWE-049"],
+      "missingRequiredPolicyIds": ["grasp-scp:OWASP_016", "setup:CWE-067"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_013", "grasp-scp:OWASP_188"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "selectedPolicyIds": ["setup:ASVS-338", "setup:ASVS-331", "setup:SSDF-023"],
+      "foundRequiredPolicyIds": ["setup:ASVS-338", "setup:SSDF-023"],
+      "missingRequiredPolicyIds": [],
+      "foundRelevantPolicyIds": ["setup:ASVS-331"],
+      "unexpectedPolicyIds": [],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "selectedPolicyIds": ["setup:LLM-025", "grasp-scp:OWASP_205", "setup:ASVS-338"],
+      "foundRequiredPolicyIds": ["setup:ASVS-338", "setup:LLM-025"],
+      "missingRequiredPolicyIds": [],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_205"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "selectedPolicyIds": [
+        "setup:LLM-051",
+        "grasp-scp:OWASP_211",
+        "setup:CWE-067",
+        "setup:CWE-049"
+      ],
+      "foundRequiredPolicyIds": ["setup:CWE-049", "setup:CWE-067", "setup:LLM-051"],
+      "missingRequiredPolicyIds": ["setup:LLM-063"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_211"],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "selectedPolicyIds": ["setup:ASVS-308", "setup:LLM-051", "grasp-scp:OWASP_035"],
+      "foundRequiredPolicyIds": ["setup:ASVS-308"],
+      "missingRequiredPolicyIds": ["setup:ASVS-312", "setup:LLM-063"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": ["grasp-scp:OWASP_035", "setup:LLM-051"],
+      "coverageGaps": []
+    }
+  ]
+}

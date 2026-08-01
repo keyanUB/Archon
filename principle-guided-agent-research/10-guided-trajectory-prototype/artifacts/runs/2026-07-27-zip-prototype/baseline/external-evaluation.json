@@ -1,0 +1,93 @@
+{
+  "implementation": "principle-guided-agent-research/10-guided-trajectory-prototype/artifacts/runs/2026-07-27-zip-prototype/baseline/implementation/zip_inspector.py",
+  "evaluatorIsolation": {
+    "mode": "none-historical",
+    "note": "This preserved evaluation predates the isolated evaluator boundary."
+  },
+  "required": [
+    {
+      "name": "safe_metadata",
+      "status": "pass"
+    },
+    {
+      "name": "malformed_archive",
+      "status": "pass"
+    },
+    {
+      "name": "count_limit",
+      "status": "pass"
+    },
+    {
+      "name": "expanded_size_limit",
+      "status": "pass"
+    },
+    {
+      "name": "invalid_limits",
+      "status": "pass"
+    },
+    {
+      "name": "traversal_parent",
+      "status": "pass"
+    },
+    {
+      "name": "traversal_windows",
+      "status": "pass"
+    },
+    {
+      "name": "absolute_posix",
+      "status": "pass"
+    },
+    {
+      "name": "drive_path",
+      "status": "pass"
+    },
+    {
+      "name": "symlink_member",
+      "status": "pass"
+    },
+    {
+      "name": "no_extraction",
+      "status": "pass"
+    }
+  ],
+  "defenseInDepth": [
+    {
+      "name": "dot_component",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    },
+    {
+      "name": "empty_component",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    },
+    {
+      "name": "duplicate_member",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    },
+    {
+      "name": "control_character",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    },
+    {
+      "name": "alternate_data_stream",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    },
+    {
+      "name": "archive_path_symlink",
+      "status": "fail",
+      "error": "AssertionError: expected ValueError"
+    }
+  ],
+  "metrics": {
+    "requiredPassed": 11,
+    "requiredTotal": 11,
+    "defenseInDepthPassed": 0,
+    "defenseInDepthTotal": 6,
+    "sourceLines": 96,
+    "privateZipfileApiReferences": 0
+  }
+}

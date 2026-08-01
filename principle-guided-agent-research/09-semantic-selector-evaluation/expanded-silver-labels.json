@@ -1,0 +1,245 @@
+{
+  "version": "0.1.0",
+  "labelType": "model_generated_silver",
+  "labelerRole": "independent_expanded_corpus_security_evaluator",
+  "limitations": [
+    "These labels were produced by one model acting as an independent software-security evaluator and have not received human or inter-rater review.",
+    "The tasks are synthetic probes rather than sampled benchmark instances, so the labels do not establish external validity.",
+    "The expanded corpus contains overlapping controls from multiple sources; this reference favors the most semantically direct selectable record and does not claim that omitted near-equivalents are incorrect.",
+    "Required means omission leaves a material security failure for the stated task, while relevant means useful defense in depth or supporting assurance.",
+    "The evaluator reviewed only the frozen task labels, expanded corpus, and expanded-corpus documentation and did not inspect selector implementation or semantic-selector output."
+  ],
+  "tasks": [
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "taskFamily": "environment_setup",
+      "prompt": "Install autossh on Ubuntu and configure a supervised reverse SSH tunnel from a private remote bind on port 9000 to localhost:22. Use strict host-key verification, a dedicated unprivileged service account, health monitoring, and automatic restart.",
+      "repoHints": [
+        "Fresh Ubuntu 22.04 host",
+        "systemd is the process supervisor",
+        "SSH identity is supplied outside the repository"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-280", "grasp-scp:OWASP_034", "grasp-scp:OWASP_099"],
+      "relevantPolicyIds": ["setup:SSDF-038", "setup:ASVS-365"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-280": "The reverse tunnel is a remote-management connection and must use encrypted SSH without an insecure fallback.",
+        "grasp-scp:OWASP_034": "Strict host-key verification authenticates the remote SSH endpoint before the tunnel exposes local SSH access.",
+        "grasp-scp:OWASP_099": "The supervised tunnel must run through a dedicated service account with only the privileges required to connect and forward traffic.",
+        "setup:SSDF-038": "A secure configuration baseline supports a private bind, strict host checking, service hardening, and predictable restart behavior.",
+        "setup:ASVS-365": "Supervision and health monitoring help the tunnel recover in a controlled way when the remote connection fails."
+      }
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "taskFamily": "environment_setup",
+      "prompt": "Configure a systemd timer that uploads encrypted database backups to an HTTPS storage API using an API token. Run it as a dedicated account, keep the token out of the unit file and repository, and fail without deleting local backups when the API is unavailable.",
+      "repoHints": [
+        "Ubuntu server",
+        "Backup script already exists at /opt/backup/upload",
+        "Production API endpoint is configured at deployment time"
+      ],
+      "requiredPolicyIds": [
+        "setup:ASVS-311",
+        "grasp-scp:OWASP_143",
+        "grasp-scp:OWASP_133",
+        "setup:ASVS-365"
+      ],
+      "relevantPolicyIds": ["grasp-scp:OWASP_099", "setup:SSDF-038"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-311": "The API token must be supplied through secret management rather than embedded in the unit file, repository, or build artifacts.",
+        "grasp-scp:OWASP_143": "Backups and the API token are sensitive data that must remain protected while crossing the external network boundary.",
+        "grasp-scp:OWASP_133": "The backup content must remain encrypted at rest before and after an unsuccessful upload attempt.",
+        "setup:ASVS-365": "An unavailable storage API must lead to safe degradation that preserves the local backup instead of deleting it.",
+        "grasp-scp:OWASP_099": "A dedicated uploader account limits filesystem and network privileges to those needed for backup delivery.",
+        "setup:SSDF-038": "A hardened systemd baseline supports secure defaults for credentials, file permissions, and timer execution."
+      }
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "taskFamily": "web_api",
+      "prompt": "Add GET /api/invoices/:invoiceId to a TypeScript API. Authenticated customers may retrieve only invoices belonging to their own account, while support staff use the existing centralized authorization service.",
+      "repoHints": [
+        "Hono TypeScript API",
+        "Authentication middleware already sets user and account IDs",
+        "Invoice IDs are externally visible UUIDs"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-198", "setup:ASVS-421"],
+      "relevantPolicyIds": ["grasp-scp:OWASP_079", "grasp-scp:OWASP_123"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-198": "Every externally supplied invoice ID requires an ownership or explicit-permission check to prevent cross-account object access.",
+        "setup:ASVS-421": "Customer and support access must both pass through the existing centralized authorization service so no alternate path bypasses policy.",
+        "grasp-scp:OWASP_079": "Authorization lookup or policy failures should deny invoice access without disclosing protected data.",
+        "grasp-scp:OWASP_123": "Logging denied access attempts provides an audit trail for attempted cross-account invoice access."
+      }
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "taskFamily": "web_api",
+      "prompt": "Implement POST /api/url-preview. It fetches metadata from user-submitted HTTPS URLs, but must never reach loopback, link-local, private network, or unapproved service endpoints.",
+      "repoHints": [
+        "Node.js backend",
+        "Outbound HTTP client follows redirects by default",
+        "Service runs inside a private cloud network"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-308", "setup:ASVS-278", "grasp-scp:OWASP_010"],
+      "relevantPolicyIds": ["setup:ASVS-365", "grasp-scp:OWASP_006"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-308": "A destination allowlist is the primary control preventing user-selected URLs from reaching internal or otherwise unapproved systems.",
+        "setup:ASVS-278": "The fetcher must preserve HTTPS across initial requests and redirects rather than downgrading to plaintext transport.",
+        "grasp-scp:OWASP_010": "Redirect destinations are additional untrusted inputs and must be revalidated so an approved public URL cannot redirect into a private network.",
+        "setup:ASVS-365": "Timeouts and upstream failures should degrade safely without destabilizing the preview API.",
+        "grasp-scp:OWASP_006": "URLs or redirect targets that fail destination validation must be rejected rather than fetched through a fallback path."
+      }
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "taskFamily": "auth_session",
+      "prompt": "Add an OAuth 2.0 authorization-code callback for a web application using PKCE. Bind state, nonce, and code_verifier to the initiating browser session and reject unsolicited, replayed, or mismatched callbacks.",
+      "repoHints": [
+        "Server-side TypeScript application",
+        "Encrypted session cookie support already exists",
+        "OAuth client secret is injected at runtime"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-214"],
+      "relevantPolicyIds": ["grasp-scp:OWASP_028", "grasp-scp:OWASP_125"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-214": "This directly requires transaction-specific PKCE, state, and nonce values bound to the initiating user-agent session, preventing unsolicited, replayed, and mismatched callbacks.",
+        "grasp-scp:OWASP_028": "A callback with absent or invalid transaction binding should fail closed and must never create an authenticated session.",
+        "grasp-scp:OWASP_125": "Logging invalid or expired transaction attempts without recording secret token values supports detection of callback replay and tampering."
+      }
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "taskFamily": "auth_session",
+      "prompt": "Implement JWT authentication middleware for a multi-tenant API. Accept tokens only from configured issuers, do not trust token-supplied JWK URLs, and enforce tenant ownership before loading a requested project.",
+      "repoHints": [
+        "Python FastAPI service",
+        "Issuer configuration comes from deployment settings",
+        "Project IDs appear in URL paths"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-208", "setup:ASVS-198", "setup:ASVS-421"],
+      "relevantPolicyIds": ["grasp-scp:OWASP_028", "grasp-scp:OWASP_123"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-208": "JWT verification keys must come from trusted configured issuers rather than attacker-controlled jku, x5u, or jwk token headers.",
+        "setup:ASVS-198": "Tenant ownership must be checked for every requested project ID to prevent cross-tenant object access.",
+        "setup:ASVS-421": "Token authentication and tenant authorization should flow through one centralized middleware path without endpoint-specific bypasses.",
+        "grasp-scp:OWASP_028": "Unknown issuers, invalid signatures, and failed token validation must deny authentication by default.",
+        "grasp-scp:OWASP_123": "Logging tenant-authorization failures supports detection and investigation of attempted cross-tenant access."
+      }
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "taskFamily": "file_parser",
+      "prompt": "Add a JSON policy-import endpoint for an LLM agent platform. Treat uploaded fields as untrusted data, reject malformed or oversized documents, and enforce tool permission bounds in deterministic code rather than accepting policy claims made inside the document.",
+      "repoHints": [
+        "TypeScript service with Zod schemas",
+        "Imported JSON can influence later agent tool availability",
+        "Uploads are limited to administrators"
+      ],
+      "requiredPolicyIds": ["grasp-scp:OWASP_003", "grasp-scp:OWASP_013", "setup:LLM-063"],
+      "relevantPolicyIds": ["grasp-scp:OWASP_006", "setup:LLM-056"],
+      "rationaleByPolicyId": {
+        "grasp-scp:OWASP_003": "A centralized server-side schema must consistently enforce field types, formats, lengths, and allowed values before imported policy data is used.",
+        "grasp-scp:OWASP_013": "A strict document-size limit is necessary to bound parser resource use before fully processing an upload.",
+        "setup:LLM-063": "Tool authorization bounds must be deterministic and auditable rather than delegated to claims in an imported document or to an LLM.",
+        "grasp-scp:OWASP_006": "Malformed or out-of-policy documents must be rejected without partially activating their contents.",
+        "setup:LLM-056": "LLM-facing imported data benefits from security-focused sanitization and downstream input/output review in addition to schema validation."
+      }
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "taskFamily": "file_parser",
+      "prompt": "Write a Python service function that inspects metadata from user-uploaded ZIP archives in a temporary workspace. It must tolerate malformed archives, enforce file-count and expanded-size limits, and prevent archive contents from escaping or affecting the host.",
+      "repoHints": [
+        "Python standard-library zipfile is available",
+        "Uploads are untrusted",
+        "Inspection does not require executing extracted files"
+      ],
+      "requiredPolicyIds": ["grasp-scp:OWASP_016", "setup:CWE-067", "setup:CWE-049"],
+      "relevantPolicyIds": ["grasp-scp:OWASP_006", "grasp-scp:OWASP_186"],
+      "rationaleByPolicyId": {
+        "grasp-scp:OWASP_016": "Archive member names must be canonicalized and rejected when they contain direct or encoded traversal paths that escape the workspace.",
+        "setup:CWE-067": "File-count and expanded-size quotas are necessary to limit archive bombs and parser resource exhaustion.",
+        "setup:CWE-049": "A jail or equivalent sandbox provides a hard boundary between untrusted archive processing and the host operating system.",
+        "grasp-scp:OWASP_006": "Malformed archives and members that fail validation should terminate inspection without partial unsafe processing.",
+        "grasp-scp:OWASP_186": "Removing execution privileges from the temporary upload workspace reduces impact if malicious archive contents are materialized."
+      }
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "taskFamily": "dependency_build",
+      "prompt": "Add a private @company/telemetry package to a Bun monorepo that also uses the public npm registry. Pin the dependency and transitive resolution, prevent dependency confusion, and preserve provenance for release builds.",
+      "repoHints": [
+        "bun.lock is committed",
+        "Private packages come from an authenticated company registry",
+        "CI publishes production artifacts"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-338", "setup:SSDF-023"],
+      "relevantPolicyIds": ["setup:ASVS-331", "setup:SSDF-028"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-338": "Registry scoping and locked direct and transitive resolution are material controls against dependency confusion.",
+        "setup:SSDF-023": "Release provenance must retain the exact private package and resolved dependency identities used to build artifacts.",
+        "setup:ASVS-331": "A maintained inventory records the package and confirms that it came from the intended trusted registry.",
+        "setup:SSDF-028": "The private package should be acquired and maintained through the secured third-party component process."
+      }
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "taskFamily": "dependency_build",
+      "prompt": "Extend the build pipeline to download a third-party embedding model and bundle it with an offline coding-agent release. Fetch only a pinned model version from an approved source and verify its published digest before packaging.",
+      "repoHints": [
+        "Model weights are downloaded during CI",
+        "Release artifacts are distributed to developer workstations",
+        "The model is not built from source in this repository"
+      ],
+      "requiredPolicyIds": ["setup:LLM-025", "setup:ASVS-338"],
+      "relevantPolicyIds": ["setup:SSDF-023", "setup:LLM-023"],
+      "rationaleByPolicyId": {
+        "setup:LLM-025": "The bundled model must come from a verifiable source and pass the published digest or signing check before packaging.",
+        "setup:ASVS-338": "Pinned resolution from an expected approved repository prevents substitution through an unintended model or dependency source.",
+        "setup:SSDF-023": "Release provenance should preserve the exact model version, source, and integrity evidence used in each artifact.",
+        "setup:LLM-023": "An AI component inventory supports tracking the bundled model and responding to later integrity or vulnerability findings."
+      }
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "taskFamily": "agent_tooling",
+      "prompt": "Add a test-runner tool for a coding agent. The model may choose a repository test target, but it must not submit arbitrary shell text; execute only an allowlisted test command in the workspace with bounded time, CPU, memory, and filesystem access.",
+      "repoHints": [
+        "Agent receives untrusted repository content",
+        "Tool executes on a developer workstation",
+        "Existing tool API supports typed arguments"
+      ],
+      "requiredPolicyIds": ["setup:LLM-051", "setup:LLM-063", "setup:CWE-067", "setup:CWE-049"],
+      "relevantPolicyIds": ["setup:AIAS-040", "grasp-scp:OWASP_204"],
+      "rationaleByPolicyId": {
+        "setup:LLM-051": "A typed test-target tool is a granular replacement for exposing an open-ended shell extension to the model.",
+        "setup:LLM-063": "The command allowlist and authorization bounds must be enforced in deterministic code outside model discretion.",
+        "setup:CWE-067": "Time, CPU, and memory quotas bound denial-of-service risk from generated tests and untrusted repository content.",
+        "setup:CWE-049": "A workspace-confined sandbox limits filesystem and host impact from malicious test execution.",
+        "setup:AIAS-040": "The tool should receive only the permissions needed to invoke approved tests in the selected workspace.",
+        "grasp-scp:OWASP_204": "Task-specific process APIs reduce the need to construct and interpret shell command text."
+      }
+    },
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "taskFamily": "agent_tooling",
+      "prompt": "Create a documentation-fetch tool for a coding agent that can call approved public documentation hosts and one authenticated internal documentation API. The model must not choose arbitrary destinations or receive the internal API credential.",
+      "repoHints": [
+        "Tool runs in the Archon provider process",
+        "Internal API token is available through deployment secret storage",
+        "Fetched text is returned to the model"
+      ],
+      "requiredPolicyIds": ["setup:ASVS-308", "setup:LLM-063", "setup:ASVS-312"],
+      "relevantPolicyIds": ["setup:AIAS-040", "setup:LLM-011", "setup:ASVS-278"],
+      "rationaleByPolicyId": {
+        "setup:ASVS-308": "A deterministic destination allowlist prevents the model from converting the documentation tool into unrestricted network access.",
+        "setup:LLM-063": "Destination and credential restrictions must be enforced by auditable code independently of model instructions.",
+        "setup:ASVS-312": "Least-privilege access to the internal API token keeps it inside the fetch implementation and unavailable to the model.",
+        "setup:AIAS-040": "The fetch tool should receive only the network and secret capabilities needed for its approved documentation endpoints.",
+        "setup:LLM-011": "Restricting external data sources reduces unintended data disclosure and unsafe runtime data orchestration.",
+        "setup:ASVS-278": "Approved documentation requests should use HTTPS without fallback to insecure transport."
+      }
+    }
+  ]
+}

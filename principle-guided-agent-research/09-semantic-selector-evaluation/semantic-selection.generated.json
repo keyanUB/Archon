@@ -1,0 +1,318 @@
+{
+  "selector": "llm_semantic_proposal",
+  "configuredModel": "sonnet",
+  "reportedModelIds": ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
+  "corpusVersion": "0.1.0",
+  "catalogSize": 298,
+  "sourceHashes": {
+    "corpusSha256": "6bf154e00bf58af8641f9608d19a1613a95295d1732f16ad80b0ee4ce339713e",
+    "labelsSha256": "fd9b8466bca30b8bd3222e4d0239ac8bf918af1db4897abb532fcda7053e4f71"
+  },
+  "selectionFingerprint": "9c271a2335493e6761b2b00d1ae43e1db8d582d640ba50d0eb692445d9627aa5",
+  "constraints": {
+    "toolsEnabled": false,
+    "structuredOutput": true,
+    "maxPoliciesPerTask": 6,
+    "unknownPolicyIdsRejected": true,
+    "taskFamilyProvided": true
+  },
+  "tasks": [
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "selected": [
+        {
+          "policyId": "setup:ASVS-308",
+          "importance": "required",
+          "reason": "Allowlist of approved documentation hosts/APIs prevents the model from choosing arbitrary destinations."
+        },
+        {
+          "policyId": "setup:LLM-051",
+          "importance": "required",
+          "reason": "Granular fetch tool avoids open-ended URL fetching functionality."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_035",
+          "importance": "required",
+          "reason": "Internal API credential must be securely stored server-side, never exposed to the model."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "selected": [
+        {
+          "policyId": "setup:LLM-051",
+          "importance": "required",
+          "reason": "Avoid open-ended shell execution; restrict to allowlisted, granular test commands."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_211",
+          "importance": "required",
+          "reason": "Model-selected input must never be passed directly to dynamic command execution."
+        },
+        {
+          "policyId": "setup:CWE-067",
+          "importance": "required",
+          "reason": "Resource quotas (CPU, memory, time) must bound tool execution."
+        },
+        {
+          "policyId": "setup:CWE-049",
+          "importance": "relevant",
+          "reason": "Sandboxing the test execution enforces filesystem boundary controls."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "selected": [
+        {
+          "policyId": "setup:ASVS-208",
+          "importance": "required",
+          "reason": "Token issuer/key material must come from trusted pre-configured sources, not token-supplied JWK URLs."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_077",
+          "importance": "required",
+          "reason": "Tenant ownership checks must rely on trusted server-side data, not client-supplied claims."
+        },
+        {
+          "policyId": "setup:ASVS-198",
+          "importance": "required",
+          "reason": "Project access must be restricted to tenants with explicit permission to prevent BOLA."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_078",
+          "importance": "relevant",
+          "reason": "Centralized authorization check for tenant/project ownership improves consistency."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "selected": [
+        {
+          "policyId": "setup:ASVS-214",
+          "importance": "required",
+          "reason": "State, nonce, and PKCE code_verifier must be bound to the initiating session per this control."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_066",
+          "importance": "required",
+          "reason": "New session must be established after successful authentication to prevent fixation."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_073",
+          "importance": "relevant",
+          "reason": "CSRF-style random tokens reinforce protection against forged callback requests."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "selected": [
+        {
+          "policyId": "setup:LLM-025",
+          "importance": "required",
+          "reason": "Model must be verified via signing/hash checks from a verifiable source before bundling."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_205",
+          "importance": "required",
+          "reason": "Verify integrity of downloaded model files via checksums/cryptographic hashes before use."
+        },
+        {
+          "policyId": "setup:ASVS-338",
+          "importance": "relevant",
+          "reason": "Ensures pinned version comes from the expected approved source, avoiding substitution attacks."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "selected": [
+        {
+          "policyId": "setup:ASVS-338",
+          "importance": "required",
+          "reason": "Prevents dependency confusion by ensuring package resolves from the expected private registry."
+        },
+        {
+          "policyId": "setup:ASVS-331",
+          "importance": "relevant",
+          "reason": "SBOM/inventory helps verify component provenance and trusted sources."
+        },
+        {
+          "policyId": "setup:SSDF-023",
+          "importance": "required",
+          "reason": "Provenance data must be collected and preserved for release artifacts."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_154",
+          "importance": "required",
+          "reason": "Service account running the tunnel must operate with least privilege."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_099",
+          "importance": "relevant",
+          "reason": "Service accounts used for external connections should have minimal privileges."
+        },
+        {
+          "policyId": "setup:ASVS-284",
+          "importance": "required",
+          "reason": "Strong authentication (host-key verification) required for inter-service SSH connections."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_151",
+          "importance": "relevant",
+          "reason": "Keep autossh and system packages patched to reduce known vulnerabilities."
+        }
+      ],
+      "coverageGaps": [
+        {
+          "control": "SSH known_hosts pinning",
+          "reason": "Catalog lacks a specific control for strict SSH host-key verification workflows."
+        }
+      ]
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "selected": [
+        {
+          "policyId": "setup:ASVS-295",
+          "importance": "required",
+          "reason": "API token must be stored in a secrets management solution, not in the unit file or repo."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_035",
+          "importance": "required",
+          "reason": "Credentials must be encrypted/stored securely and never hardcoded."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_146",
+          "importance": "required",
+          "reason": "Backup uploads over HTTPS require TLS for sensitive data in transit."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_154",
+          "importance": "relevant",
+          "reason": "Dedicated unprivileged account should follow least privilege."
+        }
+      ],
+      "coverageGaps": [
+        {
+          "control": "Fail-safe local retention on remote failure",
+          "reason": "No catalog policy addresses preserving local backups on upload failure."
+        }
+      ]
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_002",
+          "importance": "required",
+          "reason": "Uploaded JSON fields are untrusted and must be validated before processing."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_006",
+          "importance": "required",
+          "reason": "Malformed or invalid policy documents must be rejected outright."
+        },
+        {
+          "policyId": "setup:LLM-063",
+          "importance": "required",
+          "reason": "Tool-permission enforcement must occur in deterministic code, not be delegated to claims within the imported document."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_013",
+          "importance": "relevant",
+          "reason": "Oversized documents should be rejected via length/size validation."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_188",
+          "importance": "required",
+          "reason": "File names/paths from archive entries must be validated to prevent path traversal (zip-slip)."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_013",
+          "importance": "required",
+          "reason": "File-count and expanded-size limits directly enforce input length/size validation to prevent resource exhaustion (zip bombs)."
+        },
+        {
+          "policyId": "setup:CWE-049",
+          "importance": "relevant",
+          "reason": "Sandboxing the inspection process limits impact of malicious archive content."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_086",
+          "importance": "required",
+          "reason": "Direct object reference (invoice ID) must be restricted to the owning account to prevent IDOR."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_078",
+          "importance": "required",
+          "reason": "Support staff access must go through the centralized authorization service."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_077",
+          "importance": "required",
+          "reason": "Authorization decisions must rely on trusted server-side account/user identifiers, not client input."
+        },
+        {
+          "policyId": "setup:ASVS-198",
+          "importance": "relevant",
+          "reason": "Explicit object-level access control mitigates BOLA/IDOR."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_002",
+          "importance": "required",
+          "reason": "User-submitted URLs are untrusted and must be strictly validated before use."
+        },
+        {
+          "policyId": "setup:ASVS-308",
+          "importance": "required",
+          "reason": "Allowlist of permitted external destinations is essential to prevent SSRF to internal/private endpoints."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_010",
+          "importance": "relevant",
+          "reason": "Redirects followed by the HTTP client must also be validated to prevent SSRF bypass."
+        }
+      ],
+      "coverageGaps": [
+        {
+          "control": "SSRF-specific network segmentation",
+          "reason": "Catalog has no dedicated SSRF/DNS-rebinding control for blocking loopback/link-local ranges."
+        }
+      ]
+    }
+  ]
+}

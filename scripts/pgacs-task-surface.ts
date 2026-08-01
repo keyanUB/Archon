@@ -1,4 +1,10 @@
-import type { TaskFamily, TaskSurface } from './pgacs-types.ts';
+import type {
+  SurfaceEvidence,
+  SurfaceStatus,
+  TaskFamily,
+  TaskSurface,
+  UnresolvedSurfaceQuestion,
+} from './pgacs-types.ts';
 
 const LANGUAGE_HINTS: [RegExp, string][] = [
   [/package\.json|bun\.lock|tsconfig\.json|\.tsx?$/i, 'TypeScript'],
@@ -50,7 +56,14 @@ function inferLanguageFrameworks(prompt: string, repoHints: string[]): string[] 
 function inferInputChannels(prompt: string): string[] {
   const lower = normalize(prompt);
   const channels: string[] = [];
-  if (lower.includes('http') || lower.includes('api') || lower.includes('webhook'))
+  if (
+    lower.includes('http') ||
+    lower.includes('api') ||
+    lower.includes('webhook') ||
+    lower.includes('ssh') ||
+    lower.includes('tunnel') ||
+    lower.includes('port')
+  )
     channels.push('network');
   if (lower.includes('file') || lower.includes('directory') || lower.includes('path'))
     channels.push('filesystem');
@@ -82,7 +95,11 @@ function inferAssets(prompt: string): string[] {
   if (lower.includes('file') || lower.includes('path')) assets.push('filesystem');
   if (lower.includes('service') || lower.includes('port') || lower.includes('ssh'))
     assets.push('runtime_service');
-  if (lower.includes('dependency') || lower.includes('package')) assets.push('dependencies');
+  if (lower.includes('service') || lower.includes('port') || lower.includes('ssh'))
+    assets.push('network');
+  if (lower.includes('dependency') || lower.includes('package') || lower.includes('install'))
+    assets.push('dependencies');
+  if (lower.includes('log')) assets.push('observability');
   return unique(assets);
 }
 
@@ -91,9 +108,17 @@ function inferTrustBoundaries(prompt: string): string[] {
   const boundaries: string[] = [];
   if (lower.includes('user input') || lower.includes('untrusted'))
     boundaries.push('untrusted_input');
-  if (lower.includes('network') || lower.includes('http')) boundaries.push('network_boundary');
+  if (
+    lower.includes('network') ||
+    lower.includes('http') ||
+    lower.includes('ssh') ||
+    lower.includes('tunnel') ||
+    lower.includes('port')
+  )
+    boundaries.push('network_boundary');
   if (lower.includes('file') || lower.includes('path')) boundaries.push('workspace_boundary');
   if (lower.includes('secret') || lower.includes('credential')) boundaries.push('secret_boundary');
+  if (lower.includes('root') || lower.includes('privilege')) boundaries.push('privilege_boundary');
   return unique(boundaries);
 }
 
@@ -116,6 +141,12 @@ function inferEnvironmentConstraints(prompt: string, repoHints: string[]): strin
   if (text.includes('no network')) constraints.push('no_network');
   if (text.includes('no human gate')) constraints.push('fully_automated');
   if (text.includes('root')) constraints.push('root_privileges');
+  if (text.includes('install') || text.includes('package')) constraints.push('dependency_change');
+  if (text.includes('ssh') || text.includes('tunnel') || text.includes('port'))
+    constraints.push('runtime_network');
+  if (text.includes('log') || text.includes('monitor')) constraints.push('observability');
+  if (text.includes('restart') || text.includes('persistent') || text.includes('supervised'))
+    constraints.push('process_lifecycle');
   return unique(constraints);
 }
 
@@ -151,6 +182,87 @@ function inferExistingTests(repoHints: string[]): string[] {
   return unique(tests);
 }
 
+function determineSurfaceStatus(surface: {
+  inputChannels: string[];
+  dangerousSinks: string[];
+  assets: string[];
+  trustBoundaries: string[];
+  runtimeExposure: string[];
+  likelyCwes: string[];
+}): SurfaceStatus {
+  const hasInputToSinkRelation =
+    surface.dangerousSinks.length > 0 &&
+    (surface.inputChannels.length > 0 || surface.trustBoundaries.length > 0);
+  const hasExplicitRisk =
+    surface.likelyCwes.length > 0 &&
+    (surface.dangerousSinks.length > 0 || surface.runtimeExposure.length > 0);
+  const hasRuntimeRelation =
+    surface.runtimeExposure.length > 0 &&
+    (surface.inputChannels.includes('network') ||
+      surface.trustBoundaries.includes('network_boundary'));
+
+  if (hasInputToSinkRelation || hasExplicitRisk || hasRuntimeRelation) return 'sufficient';
+
+  const factCount =
+    surface.inputChannels.length +
+    surface.dangerousSinks.length +
+    surface.assets.length +
+    surface.trustBoundaries.length +
+    surface.runtimeExposure.length +
+    surface.likelyCwes.length;
+  return factCount === 0 ? 'insufficient' : 'ambiguous';
+}
+
+function buildSurfaceEvidence(prompt: string, fields: Record<string, string[]>): SurfaceEvidence[] {
+  const promptEvidence = prompt.replace(/\s+/gu, ' ').trim().slice(0, 240);
+  return Object.entries(fields).flatMap(([field, values]) =>
+    values.map(value => ({
+      field,
+      value,
+      source: 'task_prompt' as const,
+      evidence: promptEvidence,
+    }))
+  );
+}
+
+function buildUnresolvedQuestions(surface: {
+  inputChannels: string[];
+  dangerousSinks: string[];
+  trustBoundaries: string[];
+  missingSecurityInputs: string[];
+}): UnresolvedSurfaceQuestion[] {
+  const unresolved: UnresolvedSurfaceQuestion[] = [];
+  if (surface.inputChannels.length === 0) {
+    unresolved.push({
+      field: 'inputChannels',
+      question: 'Which external or untrusted inputs can reach the implementation?',
+      reason: 'No input channel was supported by the task prompt.',
+    });
+  }
+  if (surface.dangerousSinks.length === 0) {
+    unresolved.push({
+      field: 'dangerousSinks',
+      question: 'Which security-sensitive operations or sinks are in scope?',
+      reason: 'No dangerous sink was supported by the task prompt.',
+    });
+  }
+  if (surface.trustBoundaries.length === 0) {
+    unresolved.push({
+      field: 'trustBoundaries',
+      question: 'Where does data or authority cross a trust boundary?',
+      reason: 'No trust boundary was supported by the task prompt.',
+    });
+  }
+  if (surface.missingSecurityInputs.includes('validation criteria')) {
+    unresolved.push({
+      field: 'existingTests',
+      question: 'What positive and negative validation demonstrates correct security behavior?',
+      reason: 'The task prompt does not state validation criteria.',
+    });
+  }
+  return unresolved;
+}
+
 export function extractTaskSurface(
   taskId: string,
   prompt: string,
@@ -170,6 +282,28 @@ export function extractTaskSurface(
   const likelyCwes = inferLikelyCwes(prompt);
   const missingSecurityInputs = inferMissingSecurityInputs(prompt);
   const existingTests = inferExistingTests(repoHints);
+  const surfaceStatus = determineSurfaceStatus({
+    inputChannels,
+    dangerousSinks,
+    assets,
+    trustBoundaries,
+    runtimeExposure,
+    likelyCwes,
+  });
+  const evidence = buildSurfaceEvidence(prompt, {
+    inputChannels,
+    dangerousSinks,
+    assets,
+    trustBoundaries,
+    runtimeExposure,
+    likelyCwes,
+  });
+  const unresolved = buildUnresolvedQuestions({
+    inputChannels,
+    dangerousSinks,
+    trustBoundaries,
+    missingSecurityInputs,
+  });
 
   return {
     taskId,
@@ -190,5 +324,8 @@ export function extractTaskSurface(
       risks: likelyCwes.length > 0 || dangerousSinks.length > 0 ? 0.8 : 0.45,
       missingInputs: missingSecurityInputs.length > 0 ? 0.75 : 0.4,
     },
+    surfaceStatus,
+    evidence,
+    unresolved,
   };
 }

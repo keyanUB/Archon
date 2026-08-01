@@ -1,0 +1,330 @@
+{
+  "labelVersion": "0.1.0",
+  "labelType": "model_generated_silver",
+  "caution": "Model-generated silver labels are provisional and are not expert ground truth.",
+  "metrics": {
+    "taskCount": 12,
+    "selectorCompletedTasks": 12,
+    "familyClassificationAccuracy": 0.8333,
+    "requiredPolicyRecall": 0.2692,
+    "acceptableSelectionPrecision": 0.1563,
+    "averageSelectedPolicies": 8
+  },
+  "tasks": [
+    {
+      "taskId": "environment-setup-autossh-remote-forward",
+      "expectedFamily": "environment_setup",
+      "extractedFamily": "environment_setup",
+      "selectedPolicyIds": [
+        "ASVS-284",
+        "ASVS-339",
+        "ASVS-280",
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-282",
+        "SSDF-038",
+        "ASVS-249"
+      ],
+      "foundRequiredPolicyIds": ["ASVS-280"],
+      "missingRequiredPolicyIds": ["CWE-079"],
+      "foundRelevantPolicyIds": ["SSDF-038"],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-249",
+        "ASVS-278",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-339"
+      ]
+    },
+    {
+      "taskId": "environment-setup-backup-uploader",
+      "expectedFamily": "environment_setup",
+      "extractedFamily": "environment_setup",
+      "selectedPolicyIds": [
+        "ASVS-284",
+        "ASVS-308",
+        "LLM-025",
+        "LLM-051",
+        "ASVS-249",
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280"
+      ],
+      "foundRequiredPolicyIds": ["ASVS-278"],
+      "missingRequiredPolicyIds": ["ASVS-311", "CWE-079"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-249",
+        "ASVS-280",
+        "ASVS-284",
+        "ASVS-308",
+        "LLM-025",
+        "LLM-051"
+      ]
+    },
+    {
+      "taskId": "web-api-invoice-by-id",
+      "expectedFamily": "web_api",
+      "extractedFamily": "web_api",
+      "selectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "SSDF-038",
+        "ASVS-339",
+        "ASVS-284",
+        "ASVS-292"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["ASVS-198", "ASVS-421"],
+      "foundRelevantPolicyIds": ["ASVS-278"],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-292",
+        "ASVS-339",
+        "SSDF-038"
+      ]
+    },
+    {
+      "taskId": "web-api-url-preview",
+      "expectedFamily": "web_api",
+      "extractedFamily": "web_api",
+      "selectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "SSDF-038",
+        "ASVS-339",
+        "ASVS-284",
+        "ASVS-292"
+      ],
+      "foundRequiredPolicyIds": ["ASVS-278"],
+      "missingRequiredPolicyIds": ["ASVS-308"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-292",
+        "ASVS-339",
+        "SSDF-038"
+      ]
+    },
+    {
+      "taskId": "auth-session-oauth-callback",
+      "expectedFamily": "auth_session",
+      "extractedFamily": "auth_session",
+      "selectedPolicyIds": [
+        "SSDF-038",
+        "ASVS-289",
+        "ASVS-307",
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["ASVS-214"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-289",
+        "ASVS-307",
+        "SSDF-038"
+      ]
+    },
+    {
+      "taskId": "auth-session-multitenant-jwt",
+      "expectedFamily": "auth_session",
+      "extractedFamily": "auth_session",
+      "selectedPolicyIds": [
+        "ASVS-128",
+        "ASVS-166",
+        "ASVS-249",
+        "ASVS-295",
+        "ASVS-297",
+        "ASVS-311",
+        "ASVS-312",
+        "ASVS-284"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["ASVS-198", "ASVS-208", "ASVS-421"],
+      "foundRelevantPolicyIds": ["ASVS-311"],
+      "unexpectedPolicyIds": [
+        "ASVS-128",
+        "ASVS-166",
+        "ASVS-249",
+        "ASVS-284",
+        "ASVS-295",
+        "ASVS-297",
+        "ASVS-312"
+      ]
+    },
+    {
+      "taskId": "file-parser-agent-policy-import",
+      "expectedFamily": "file_parser",
+      "extractedFamily": "agent_tooling",
+      "selectedPolicyIds": [
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-092",
+        "ASVS-282",
+        "ASVS-339",
+        "SSDF-038",
+        "ASVS-284",
+        "ASVS-308"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["LLM-056", "LLM-063"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-308",
+        "ASVS-339",
+        "SSDF-038"
+      ]
+    },
+    {
+      "taskId": "file-parser-untrusted-archive",
+      "expectedFamily": "file_parser",
+      "extractedFamily": "web_api",
+      "selectedPolicyIds": [
+        "ASVS-308",
+        "LLM-051",
+        "LLM-025",
+        "ASVS-284",
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["CWE-049", "CWE-067"],
+      "foundRelevantPolicyIds": [],
+      "unexpectedPolicyIds": [
+        "ASVS-092",
+        "ASVS-278",
+        "ASVS-280",
+        "ASVS-282",
+        "ASVS-284",
+        "ASVS-308",
+        "LLM-025",
+        "LLM-051"
+      ]
+    },
+    {
+      "taskId": "dependency-build-private-npm",
+      "expectedFamily": "dependency_build",
+      "extractedFamily": "dependency_build",
+      "selectedPolicyIds": [
+        "ASVS-338",
+        "core:security-surface-discovery",
+        "core:fail-safe-implementation",
+        "core:evidence-based-validation",
+        "SSDF-022",
+        "SSDF-023",
+        "ASVS-331",
+        "LLM-023"
+      ],
+      "foundRequiredPolicyIds": ["ASVS-338"],
+      "missingRequiredPolicyIds": [],
+      "foundRelevantPolicyIds": ["ASVS-331", "SSDF-023"],
+      "unexpectedPolicyIds": [
+        "LLM-023",
+        "SSDF-022",
+        "core:evidence-based-validation",
+        "core:fail-safe-implementation",
+        "core:security-surface-discovery"
+      ]
+    },
+    {
+      "taskId": "dependency-build-agent-model-bundle",
+      "expectedFamily": "dependency_build",
+      "extractedFamily": "dependency_build",
+      "selectedPolicyIds": [
+        "ASVS-338",
+        "core:security-surface-discovery",
+        "core:fail-safe-implementation",
+        "core:evidence-based-validation",
+        "SSDF-022",
+        "SSDF-023",
+        "ASVS-249",
+        "ASVS-331"
+      ],
+      "foundRequiredPolicyIds": ["ASVS-338"],
+      "missingRequiredPolicyIds": ["LLM-025"],
+      "foundRelevantPolicyIds": ["SSDF-023"],
+      "unexpectedPolicyIds": [
+        "ASVS-249",
+        "ASVS-331",
+        "SSDF-022",
+        "core:evidence-based-validation",
+        "core:fail-safe-implementation",
+        "core:security-surface-discovery"
+      ]
+    },
+    {
+      "taskId": "agent-tooling-test-runner",
+      "expectedFamily": "agent_tooling",
+      "extractedFamily": "agent_tooling",
+      "selectedPolicyIds": [
+        "LLM-051",
+        "ASVS-308",
+        "LLM-025",
+        "CWE-049",
+        "ASVS-249",
+        "ASVS-312",
+        "ASVS-284",
+        "AIAS-040"
+      ],
+      "foundRequiredPolicyIds": ["AIAS-040", "LLM-051"],
+      "missingRequiredPolicyIds": ["LLM-063"],
+      "foundRelevantPolicyIds": ["CWE-049"],
+      "unexpectedPolicyIds": ["ASVS-249", "ASVS-284", "ASVS-308", "ASVS-312", "LLM-025"]
+    },
+    {
+      "taskId": "agent-tooling-restricted-fetch",
+      "expectedFamily": "agent_tooling",
+      "extractedFamily": "agent_tooling",
+      "selectedPolicyIds": [
+        "ASVS-249",
+        "ASVS-339",
+        "core:security-surface-discovery",
+        "core:fail-safe-implementation",
+        "core:evidence-based-validation",
+        "ASVS-312",
+        "ASVS-284",
+        "ASVS-128"
+      ],
+      "foundRequiredPolicyIds": [],
+      "missingRequiredPolicyIds": ["AIAS-040", "ASVS-308", "LLM-063"],
+      "foundRelevantPolicyIds": ["ASVS-312"],
+      "unexpectedPolicyIds": [
+        "ASVS-128",
+        "ASVS-249",
+        "ASVS-284",
+        "ASVS-339",
+        "core:evidence-based-validation",
+        "core:fail-safe-implementation",
+        "core:security-surface-discovery"
+      ]
+    }
+  ]
+}

@@ -239,6 +239,17 @@ initial task surface ──► select()   ──► PolicyState v0
 
 - **v0** from task-surface extraction: LLM structured-output + deterministic repo
   scan (see §5 for the mechanism split).
+- **No empty selection:** the surface records `sufficient`, `ambiguous`, or
+  `insufficient` status plus supporting evidence and unresolved questions. If
+  no reliable specific policy match exists, the controller activates a compact
+  core floor:
+  `core:security-surface-discovery`,
+  `core:fail-safe-implementation`, and
+  `core:evidence-based-validation`.
+  A decision records `explicit`, `hybrid`, or `fallback` mode.
+- **Generic is not specific:** fallback policies shape discovery, fail-safe
+  implementation, validation, and reporting. They cannot satisfy a missing
+  known-mandatory control or prove that a concrete vulnerability is prevented.
 - **Deltas** fire on trigger events. Each delta simultaneously touches all three
   layers _because the `Policy` object carries all three handlers_:
 
@@ -377,15 +388,22 @@ plus human. The proposer and critic advise; they never decide.
 8. **Graceful degradation is a first-class requirement.** The weakest adapter
    still delivers context + post-hoc verify; stronger adapters add real-time
    control. Also a clean experimental knob later.
+9. **Insufficient surface activates a compact generic security floor.** Missing
+   evidence means unknown, not safe. The floor prevents empty security guidance
+   while preserving uncertainty and later event-driven specialization; it never
+   substitutes for a known missing mandatory control.
 
 ## Minimal Implementable Core (Build Order)
 
 Build the thinnest slice that exercises all three layers end-to-end, then widen.
 Every later capability is an addition at a stable seam, not a redesign.
 
-0. **Policy registry + task-surface extraction** — normalize principles and
-   task features first so selection has a stable input contract. See
+0. **Policy registry + uncertainty-aware task-surface extraction** — normalize
+   principles and task features, record evidence/status/unresolved questions,
+   and activate the generic floor when specific matching is not supported. See
    [`01-policy-registry-and-task-surface.md`](./01-policy-registry-and-task-surface.md).
+   The concrete revision is
+   [`04-generic-security-floor-and-implementation-plan.md`](./04-generic-security-floor-and-implementation-plan.md).
 1. **Bus + `EvidenceLedger` + `PolicyState`** — pure data + a controller
    function.
 2. **One adapter** — the context+hook adapter for an agent already in use

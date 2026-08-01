@@ -1,0 +1,56 @@
+{
+  "baseline": {
+    "trajectory": {
+      "agentMessages": 4,
+      "commandExecutions": 4,
+      "failedCommands": 0,
+      "fileChangeEvents": 1,
+      "changedFileCount": 2
+    },
+    "usage": {
+      "input_tokens": 111865,
+      "cached_input_tokens": 86784,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 4470,
+      "reasoning_output_tokens": 1767
+    },
+    "evaluation": {
+      "requiredPassed": 11,
+      "requiredTotal": 11,
+      "defenseInDepthPassed": 0,
+      "defenseInDepthTotal": 6,
+      "sourceLines": 96,
+      "privateZipfileApiReferences": 0
+    }
+  },
+  "guided": {
+    "trajectory": {
+      "agentMessages": 4,
+      "commandExecutions": 6,
+      "failedCommands": 1,
+      "fileChangeEvents": 3,
+      "changedFileCount": 2
+    },
+    "usage": {
+      "input_tokens": 220102,
+      "cached_input_tokens": 185088,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8496,
+      "reasoning_output_tokens": 4389
+    },
+    "evaluation": {
+      "requiredPassed": 11,
+      "requiredTotal": 11,
+      "defenseInDepthPassed": 6,
+      "defenseInDepthTotal": 6,
+      "sourceLines": 158,
+      "privateZipfileApiReferences": 3
+    }
+  },
+  "comparison": {
+    "inputTokenRatioGuidedToBaseline": 1.968,
+    "outputTokenRatioGuidedToBaseline": 1.901,
+    "sourceLineDelta": 62,
+    "defenseInDepthPassDelta": 6
+  }
+}

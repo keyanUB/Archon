@@ -279,6 +279,8 @@ Selection is a pipeline (§7.4). The mechanism is split by function (ADR-7):
 - **Perception/proposal** — LLM structured-output + retrieval + graph expansion.
 - **Safety-critical triggers** — deterministic rules (100% recall on the
   known-critical set).
+- **Uncertainty floor** — deterministic activation of compact core fallback
+  policies when no reliable specific match exists (ADR-14).
 - **Enforcement** — deterministic only.
 - **Semantic checks** — critic LLM, output = evidence, gated by rules.
 - **Optimization (later)** — decision-tree/GBDT ranker over the safe candidate
@@ -381,6 +383,18 @@ interface TaskSurface {
   missingTrustInputs: string[];
   likelyCwes: string[];
   confidence: Record<string, number>;
+  surfaceStatus: 'sufficient' | 'ambiguous' | 'insufficient';
+  evidence: {
+    field: string;
+    value: string;
+    source: 'task_prompt' | 'repo_hint' | 'repo_scan' | 'semantic_proposal';
+    evidence: string;
+  }[];
+  unresolved: {
+    field: string;
+    question: string;
+    reason: string;
+  }[];
 }
 
 interface PolicyPack {
@@ -397,13 +411,18 @@ interface PolicyPack {
 
 ```ts
 interface SelectedPolicySet {
+  selectionMode: 'explicit' | 'hybrid' | 'fallback';
+  surfaceStatus: TaskSurface['surfaceStatus'];
   selected: {
     policyId: string;
     because: string[];
     matchedSurfaces: string[];
     severity: Severity;
+    disposition: 'mandatory' | 'ranked' | 'fallback';
   }[];
   rejectedHighScore: { policyId: string; reason: string }[]; // logged for later learning
+  coverageGaps: string[];
+  reassessmentTriggers: string[];
   budget: { maxPolicies: number; tokenBudget: number };
 }
 
@@ -472,9 +491,11 @@ interface PolicyController {
 
 ```text
 1. Intake        controller receives task + repo; adapter attaches to agent.
-2. Surface       LLM structured-output + deterministic repo scan → TaskSurface.
-3. Select        rules (hard-include) + retrieval + graph → SelectedPolicySet
-                 → PolicyState v0 (budget-bounded, redundancy-suppressed).
+2. Surface       LLM structured-output + deterministic repo scan → TaskSurface
+                 with status, evidence, and unresolved questions.
+3. Select        rules (hard-include) + retrieval + graph → specific policies;
+                 if evidence/matches are insufficient, add the compact generic
+                 security floor → SelectedPolicySet → PolicyState v0.
 4. Distribute    materialize phase bindings for each active policy.
 5. Prime (A)     inject orientation/inspection guidance via adapter.
 6. Loop:
@@ -653,6 +674,27 @@ Each record: **Context → Options → Decision → Rationale → Consequences �
 - **Rationale.** Rigid phases would only work for driver adapters and would confound structure with policy (see ADR-2). Soft phases keep Layer A useful without over-constraining the agent (G2).
 - **Consequences.** Phase detection is best-effort; nothing critical depends on perfect phase labels (enforcement lives in B/C, which are event-driven).
 - **Revisit if.** Phase misclassification measurably degrades Layer A — invest in a better classifier, not in hard gating.
+
+### ADR-14 — Insufficient surface activates a generic security floor
+
+- **Context.** An extractor can return a structurally valid but empty or wrong
+  surface. Treating no match as no risk creates a silent false-negative path.
+- **Options.** (a) allow an empty selection; (b) dump a broad security
+  checklist; (c) activate a compact, auditable core fallback pack and continue
+  reassessment.
+- **Decision.** (c). Use
+  `core:security-surface-discovery`, `core:fail-safe-implementation`, and
+  `core:evidence-based-validation`; record selection mode, uncertainty,
+  coverage gaps, and reassessment triggers.
+- **Rationale.** Missing evidence means unknown, not safe. Three behavioral
+  policies provide a useful floor without pretending to cover an unidentified
+  vulnerability or recreating full-corpus prompt overload.
+- **Consequences.** Every valid task has a non-empty decision. Generic policies
+  remain active monotonically but may be suppressed from phase rendering when
+  specific policies supersede their text. They never satisfy a missing known
+  mandatory control.
+- **Revisit if.** Cross-task experiments show that the floor adds cost or
+  overconstraint without improving discovery, validation, or evidence quality.
 
 ---
 

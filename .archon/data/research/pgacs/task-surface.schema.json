@@ -17,7 +17,10 @@
     "likelyCwes",
     "missingSecurityInputs",
     "existingTests",
-    "confidence"
+    "confidence",
+    "surfaceStatus",
+    "evidence",
+    "unresolved"
   ],
   "properties": {
     "taskId": {
@@ -119,6 +122,68 @@
         },
         "missingInputs": {
           "type": "number"
+        }
+      }
+    },
+    "surfaceStatus": {
+      "enum": [
+        "sufficient",
+        "ambiguous",
+        "insufficient"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "value",
+          "source",
+          "evidence"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "task_prompt",
+              "repo_hint",
+              "repo_scan",
+              "semantic_proposal"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "unresolved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "question",
+          "reason"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
         }
       }
     }

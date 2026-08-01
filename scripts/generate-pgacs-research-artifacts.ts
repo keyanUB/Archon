@@ -7,6 +7,7 @@
  *   .archon/data/research/pgacs/policy-registry.normalized.json
  *   .archon/data/research/pgacs/task-surface.schema.json
  *   .archon/data/research/pgacs/policy-record.schema.json
+ *   .archon/data/research/pgacs/policy-selection.example.json
  *
  * Usage:
  *   bun run scripts/generate-pgacs-research-artifacts.ts
@@ -14,7 +15,12 @@
 import { mkdir, writeFile } from 'fs/promises';
 import { join, resolve } from 'path';
 
-import { loadPolicyCorpus, normalizePolicyRegistry } from './pgacs-policy-registry';
+import {
+  loadPolicyCorpus,
+  loadCoreSecurityFloor,
+  normalizePolicyRegistry,
+  selectPolicyDecision,
+} from './pgacs-policy-registry';
 import { extractTaskSurface } from './pgacs-task-surface';
 
 const REPO_ROOT = resolve(import.meta.dir, '..');
@@ -23,6 +29,7 @@ const POLICY_SOURCE = join(
   '.archon/data/research/secure-environment-setup/setup-environment-policies.json'
 );
 const OUTPUT_DIR = join(REPO_ROOT, '.archon/data/research/pgacs');
+const CORE_SECURITY_FLOOR_PATH = join(OUTPUT_DIR, 'core-security-floor.json');
 
 const POLICY_RECORD_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -105,6 +112,9 @@ const TASK_SURFACE_SCHEMA = {
     'missingSecurityInputs',
     'existingTests',
     'confidence',
+    'surfaceStatus',
+    'evidence',
+    'unresolved',
   ],
   properties: {
     taskId: { type: 'string' },
@@ -142,19 +152,51 @@ const TASK_SURFACE_SCHEMA = {
         missingInputs: { type: 'number' },
       },
     },
+    surfaceStatus: { enum: ['sufficient', 'ambiguous', 'insufficient'] },
+    evidence: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['field', 'value', 'source', 'evidence'],
+        properties: {
+          field: { type: 'string' },
+          value: { type: 'string' },
+          source: { enum: ['task_prompt', 'repo_hint', 'repo_scan', 'semantic_proposal'] },
+          evidence: { type: 'string' },
+        },
+      },
+    },
+    unresolved: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['field', 'question', 'reason'],
+        properties: {
+          field: { type: 'string' },
+          question: { type: 'string' },
+          reason: { type: 'string' },
+        },
+      },
+    },
   },
 } as const;
 
 async function main(): Promise<void> {
   await mkdir(OUTPUT_DIR, { recursive: true });
 
-  const corpus = await loadPolicyCorpus(POLICY_SOURCE);
-  const normalizedRegistry = normalizePolicyRegistry(corpus);
+  const [corpus, coreSecurityFloor] = await Promise.all([
+    loadPolicyCorpus(POLICY_SOURCE),
+    loadCoreSecurityFloor(CORE_SECURITY_FLOOR_PATH),
+  ]);
+  const normalizedRegistry = [...normalizePolicyRegistry(corpus), ...coreSecurityFloor];
   const exampleSurface = extractTaskSurface(
     'secure-environment-setup-example',
     'Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The process must restart automatically if the tunnel fails.',
     ['Dockerfile', 'systemd', 'autossh', 'root access', 'headless', 'minimal environment']
   );
+  const exampleSelection = selectPolicyDecision(normalizedRegistry, exampleSurface);
 
   await Promise.all([
     writeFile(
@@ -175,6 +217,11 @@ async function main(): Promise<void> {
     writeFile(
       join(OUTPUT_DIR, 'task-surface.example.json'),
       `${JSON.stringify(exampleSurface, null, 2)}\n`,
+      'utf-8'
+    ),
+    writeFile(
+      join(OUTPUT_DIR, 'policy-selection.example.json'),
+      `${JSON.stringify(exampleSelection, null, 2)}\n`,
       'utf-8'
     ),
   ]);

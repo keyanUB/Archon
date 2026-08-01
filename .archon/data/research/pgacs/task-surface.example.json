@@ -6,17 +6,22 @@
     "Shell"
   ],
   "inputChannels": [
-    "filesystem"
+    "filesystem",
+    "network"
   ],
   "dangerousSinks": [
     "filesystem",
     "network"
   ],
   "assets": [
+    "dependencies",
     "filesystem",
+    "network",
+    "observability",
     "runtime_service"
   ],
   "trustBoundaries": [
+    "network_boundary",
     "workspace_boundary"
   ],
   "runtimeExposure": [
@@ -25,9 +30,13 @@
   ],
   "dependencies": [],
   "environmentConstraints": [
+    "dependency_change",
     "headless",
     "minimal_environment",
-    "root_privileges"
+    "observability",
+    "process_lifecycle",
+    "root_privileges",
+    "runtime_network"
   ],
   "likelyCwes": [
     "CWE-284"
@@ -42,5 +51,99 @@
     "taskFamily": 0.85,
     "risks": 0.8,
     "missingInputs": 0.75
-  }
+  },
+  "surfaceStatus": "sufficient",
+  "evidence": [
+    {
+      "field": "inputChannels",
+      "value": "filesystem",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "inputChannels",
+      "value": "network",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "dangerousSinks",
+      "value": "filesystem",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "dangerousSinks",
+      "value": "network",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "assets",
+      "value": "dependencies",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "assets",
+      "value": "filesystem",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "assets",
+      "value": "network",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "assets",
+      "value": "observability",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "assets",
+      "value": "runtime_service",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "trustBoundaries",
+      "value": "network_boundary",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "trustBoundaries",
+      "value": "workspace_boundary",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "runtimeExposure",
+      "value": "port_binding",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "runtimeExposure",
+      "value": "remote_access",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    },
+    {
+      "field": "likelyCwes",
+      "value": "CWE-284",
+      "source": "task_prompt",
+      "evidence": "Install autossh and configure it as a persistent supervised process. The tunnel should connect remote port 9000 to localhost:22. Use AUTOSSH_LOGFILE to write logs to /var/log/autossh.log and AUTOSSH_POLL to enable health monitoring. The pro"
+    }
+  ],
+  "unresolved": [
+    {
+      "field": "existingTests",
+      "question": "What positive and negative validation demonstrates correct security behavior?",
+      "reason": "The task prompt does not state validation criteria."
+    }
+  ]
 }

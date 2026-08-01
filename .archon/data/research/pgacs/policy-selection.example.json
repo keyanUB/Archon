@@ -1,0 +1,591 @@
+{
+  "taskId": "secure-environment-setup-example",
+  "selectionMode": "explicit",
+  "surfaceStatus": "sufficient",
+  "selected": [
+    {
+      "policyId": "ASVS-280",
+      "score": 30,
+      "disposition": "mandatory",
+      "matchedSurface": [
+        "asset:network",
+        "environment:observability",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:transport_network_config",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "mandatory rule runtime-network-exposure: the task starts or exposes a network-accessible runtime service",
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: observability, runtime_network",
+        "task_family match: transport_network_config",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "ASVS-339",
+      "score": 27,
+      "disposition": "mandatory",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:dependency_supply_chain",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "mandatory rule dependency-integrity: the task changes or builds dependencies",
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: runtime_network",
+        "task_family match: dependency_supply_chain",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "ASVS-092",
+      "score": 27,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:transport_network_config",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: runtime_network",
+        "task_family match: transport_network_config",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "ASVS-278",
+      "score": 27,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:transport_network_config",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: runtime_network",
+        "task_family match: transport_network_config",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "ASVS-282",
+      "score": 27,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:transport_network_config",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: runtime_network",
+        "task_family match: transport_network_config",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "SSDF-038",
+      "score": 27,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:config_hardening",
+        "trust_boundary:network_boundary"
+      ],
+      "rationale": [
+        "sink match: network",
+        "trust_boundary match: network_boundary",
+        "asset match: network",
+        "input_channel match: network",
+        "environment match: runtime_network",
+        "task_family match: config_hardening",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "ASVS-284",
+      "score": 25,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:network",
+        "environment:runtime_network",
+        "input_channel:filesystem",
+        "input_channel:network",
+        "phase:verification_runtime",
+        "sink:network",
+        "task_family:transport_network_config"
+      ],
+      "rationale": [
+        "sink match: network",
+        "asset match: network",
+        "input_channel match: filesystem, network",
+        "environment match: runtime_network",
+        "task_family match: transport_network_config",
+        "runtime exposure requires runtime verification"
+      ]
+    },
+    {
+      "policyId": "LLM-025",
+      "score": 25,
+      "disposition": "ranked",
+      "matchedSurface": [
+        "asset:filesystem",
+        "environment:dependency_change",
+        "input_channel:filesystem",
+        "sink:filesystem",
+        "task_family:dependency_supply_chain",
+        "trust_boundary:workspace_boundary"
+      ],
+      "rationale": [
+        "sink match: filesystem",
+        "trust_boundary match: workspace_boundary",
+        "asset match: filesystem",
+        "input_channel match: filesystem",
+        "environment match: dependency_change",
+        "task_family match: dependency_supply_chain"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "policyId": "ASVS-308",
+      "score": 24,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-051",
+      "score": 22,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-249",
+      "score": 14,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-343",
+      "score": 9,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-128",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-166",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-295",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-297",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-311",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-312",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-331",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-338",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-423",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-426",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-427",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-023",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-073",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "RMF-031",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-001",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-011",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-012",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-022",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-023",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-031",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-046",
+      "score": 7,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-289",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-292",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-307",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-371",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-372",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-373",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-374",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-376",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "CWE-049",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "CWE-067",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "PALO-002",
+      "score": 6,
+      "reason": "budget"
+    },
+    {
+      "policyId": "AIAS-040",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-198",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-333",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-363",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-421",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-428",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-429",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "CWE-079",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-010",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-017",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-063",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "LLM-088",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-004",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-019",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-028",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-029",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-039",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "SSDF-040",
+      "score": 4,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-208",
+      "score": 3,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-214",
+      "score": 3,
+      "reason": "budget"
+    },
+    {
+      "policyId": "ASVS-082",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-139",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-141",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-237",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-257",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-268",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-269",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-298",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-365",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-366",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "ASVS-419",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "LLM-011",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "LLM-014",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "LLM-018",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "LLM-056",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "RMF-027",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "RMF-121",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "SSDF-002",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "SSDF-015",
+      "score": 0,
+      "reason": "no_match"
+    },
+    {
+      "policyId": "SSDF-035",
+      "score": 0,
+      "reason": "no_match"
+    }
+  ],
+  "coverageGaps": [],
+  "unresolved": [
+    {
+      "field": "existingTests",
+      "question": "What positive and negative validation demonstrates correct security behavior?",
+      "reason": "The task prompt does not state validation criteria."
+    }
+  ],
+  "reassessmentTriggers": [],
+  "budget": {
+    "maxPolicies": 8,
+    "mandatoryPolicies": 2,
+    "rankedPolicies": 6,
+    "fallbackPolicies": 0,
+    "budgetExceededByMandatory": false,
+    "budgetExceededBySafetyFloor": false
+  },
+  "selectorVersion": "0.2.0"
+}
