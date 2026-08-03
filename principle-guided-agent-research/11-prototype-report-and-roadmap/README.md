@@ -2,6 +2,13 @@
 
 Date: 2026-07-27
 
+Status: Historical synthesis. For the current generic three-task C2
+implementation, readiness state, and frozen experiment protocol, use
+[`../15-multibench-prototype/technical-design.md`](../15-multibench-prototype/technical-design.md)
+and [`../15-multibench-prototype/README.md`](../15-multibench-prototype/README.md).
+Statements below such as "only ZIP is runnable" and "no model-backed C2 run"
+describe the July milestone and are retained for provenance.
+
 ## Executive Summary
 
 This report consolidates the current prototype of the **Policy-Guided Agent
@@ -49,8 +56,12 @@ The evidence currently supports four limited conclusions:
 
 The work does **not** yet establish that PGACS generally improves secure coding
 or that the corrected semantic selector outperforms the deterministic baseline.
-The downstream study contains one task and one run per condition. The immediate
-research priority is a small, controlled, cross-task experiment separating:
+The downstream study contains one task and one run per condition. The first
+cross-task cohort is now frozen as `pgacs-smoke-v0.1`: seven repository code
+tasks and one environment-configuration task across eight security families.
+Only the ZIP task is currently runnable. The immediate research priority is to
+promote the remaining tasks through shared workspace/evaluator contracts, then
+run a controlled experiment separating:
 
 - ordinary coding-agent behavior;
 - selected-policy prompt guidance; and
@@ -180,17 +191,23 @@ Prepared principle sources
 The intended full PGACS architecture extends this to:
 
 ```text
-task + repository
+frozen task manifest + source lock
+  -> TaskWorkspaceAdapter verifies and prepares subject workspace
+  -> task + repository/container surface
   -> initial PolicyState
   -> phase-local prompt fragments
   -> observation events from an agent adapter
   -> deterministic monitors and evidence
   -> monotonic policy deltas as new risks emerge
+  -> EvaluatorAdapter runs isolated functional/security oracles
   -> targeted repair or stop decisions
 ```
 
-The prototype intentionally stops short of full Archon runtime integration.
-Each mechanism must first demonstrate useful behavior in isolation.
+The ZIP C2 prototype implements one Archon runtime vertical slice. It stops
+short of cross-task integration: generic task workspace/evaluator adapters,
+seven task promotions, and the multi-seed smoke study remain to be implemented.
+The adapter split keeps agent capability translation, subject preparation, and
+verdict authority in separate trust domains.
 
 ## 5. Implemented Components
 
@@ -564,6 +581,26 @@ optimize **security-adjusted correctness**, which includes:
 - code and trajectory cost;
 - evidence quality.
 
+### BaxBench ten-task pilot revision
+
+The completed prompt-only BaxBench pilot compared direct Claude, ordinary
+Archon, and semantic policy-guided Archon on ten Python/FastAPI tasks. Under the
+conservative joint criterion, results were 3/10, 5/10, and 4/10 respectively.
+PGACS uniquely passed ImageTransfer and RegexSearch and prevented the ZipToTxt
+CWE-400 exploit, but minimum-password hardening broke Login and UserCreation
+functional fixtures. Several other cells were inconclusive because evaluators
+assumed specific response fields, database paths, or temporary files.
+
+This changes the prototype design in four ways:
+
+1. selection and activation are separate stages;
+2. contract-narrowing hardening defaults to advisory unless explicitly required;
+3. evaluators return typed candidate/oracle outcomes; and
+4. only candidate failures can consume the bounded repair attempt.
+
+The full result and per-task adjudication are in
+[`../14-baxbench-pilot/results.md`](../14-baxbench-pilot/results.md).
+
 ## 10. Current Claims and Non-Claims
 
 ### Supported claims
@@ -632,60 +669,71 @@ minimal harness adds value beyond prompt injection.
 
 ### 12.1 Experimental sample
 
-Select 6-10 tasks spanning:
+**Current status: selected and source-pinned.** The sample is
+[`../15-multibench-prototype/prototype-v0.1.json`](../15-multibench-prototype/prototype-v0.1.json):
 
-- file parsing and filesystem boundaries;
-- command/process execution;
-- web API authorization;
-- database queries and object-level access;
-- dependency and build integrity;
-- authentication/session handling;
-- environment/runtime setup;
-- agent-tool authorization or untrusted instruction handling.
+| Source | Tasks | Role |
+| --- | ---: | --- |
+| BaxBench | 3 | Standalone backend generation and adapter regression |
+| SWE-bench Verified | 3 | Django permissions, token invalidation, and authorization modification |
+| SetupBench | 3 | Secure service, database, and persistent-tunnel configuration |
 
-Prefer tasks with:
+The task families cover credential storage and authentication, regex and
+archive resource safety, password-recovery token invalidation, administrative
+authorization, uploaded-file permissions, and secure service/database/tunnel
+configuration.
 
-- deterministic offline execution;
-- independently testable security properties;
-- modest implementation size;
-- no requirement for live credentials;
-- both positive behavior and rejection behavior;
-- enough ambiguity for policies to add information.
-
-Reuse some frozen selector tasks, but do not tune evaluators after observing
-condition outputs.
+The cohort was adjudicated before B0/C0/C1/C2 outputs. Prompt digests, source
+revisions, mutation boundaries, security claims, and oracle requirements are
+frozen. `selected` is not synonymous with `runnable`: six tasks still require
+adapters and/or independent PGACS security oracles, while three BaxBench tasks
+have concrete adapters but remain selected pending calibration receipts and an
+OS-enforced agent/evaluator leakage boundary.
 
 ### 12.2 Conditions
 
-Run three conditions with the same model, agent configuration, sandbox, task
+Run four conditions with the same model, provider configuration, sandbox, task
 artifact, and execution budget:
 
 | Condition | Mechanism | Research purpose |
 | --- | --- | --- |
-| C0: Baseline | Task only | Measure ordinary agent behavior |
-| C1: Policy prompt | Compact selected policies at intake | Measure informational/prompt effect |
-| C2: Minimal harness | C1 plus deterministic post-edit checks and at most one targeted repair | Measure enforcement value beyond prompting |
+| B0: Direct agent | Task only, without Archon | Measure provider behavior and isolate orchestration effects |
+| C0: Archon baseline | Task only through ordinary Archon | Measure ordinary orchestrated-agent behavior |
+| C1: Compatible policy prompt | Only activated obligations rendered at intake | Measure policy-information effect without known overconstraint |
+| C2: Minimal harness | C1 plus typed checks and at most one candidate repair | Measure enforcement value beyond prompting |
 
-Use at least three independent runs per task and condition. With 6-10 tasks,
-this yields 54-90 trajectories, enough for task-level paired analysis while
-remaining a prototype-scale study.
+First run one deterministic adapter/evaluator dry run per promoted task. Once
+all nine tasks are runnable and the generation, repository-modification, and
+environment-configuration adapter paths are stable, use at least three
+independent runs per task and condition. The full four-condition study then
+yields 108 trajectories. Report task-level
+paired results; aggregate results must also be stratified by task and security
+family.
 
 ### 12.3 Freeze before execution
 
 For each task, freeze:
 
+- source-lock entry and prompt digest;
 - task text and repository snapshot;
+- task workspace adapter version and preparation receipt;
 - selected policy set and rationales;
 - required functional tests;
 - required security probes;
 - optional defense-in-depth probes;
 - compatibility cases;
+- a public compatibility envelope and per-obligation activation plan;
 - prohibited implementation shortcuts;
+- allowed mutation paths without exposing exact gold-patch scope;
 - execution and token budget;
-- evaluator version.
+- evaluator adapter version and container/image digest.
 
-Keep task evaluators hidden from the coding agent. Agent-authored tests remain
-trajectory evidence, not the oracle.
+Keep gold patches, reference completions, task-specific vulnerability labels,
+and evaluator implementations hidden from the coding agent. Upstream functional
+tests, upstream security tests, and PGACS-authored independent probes are
+separate evidence classes. Agent-authored tests remain trajectory evidence, not
+the oracle. Before promotion, each required security oracle must fail a known-
+insecure candidate and pass the trusted reference behavior.
 
 ### 12.4 Independent outcome classification
 
@@ -709,6 +757,7 @@ agent's explanation.
 - security-adjusted correctness;
 - functional regression rate;
 - overconstraint and brittle-change rates;
+- activation conflict, advisory downgrade, and unresolved-input rates;
 - residual vulnerability count and severity.
 
 #### Trajectory metrics
@@ -771,8 +820,10 @@ Render selected policies into three compact forms:
 - adversarial validation obligations;
 - forbidden repair shortcuts.
 
-Avoid a full workflow or continuous phase classifier. Intake rendering is enough
-for C1; C2 can inject one corrective message after evaluation.
+Render only obligations admitted by the activation plan. Contract-narrowing
+hardening remains advisory unless explicitly authorized. Avoid a full workflow
+or continuous phase classifier. Intake rendering is enough for C1; C2 can
+inject one corrective message after evaluation.
 
 ### 13.2 Deterministic policy checker
 
@@ -783,7 +834,7 @@ type PolicyCheck = {
   id: string;
   policyId: string;
   run: (workspace: string) => Promise<{
-    status: 'pass' | 'fail' | 'not_applicable' | 'error';
+    status: 'pass' | 'fail' | 'inconclusive' | 'harness_error';
     evidence: string[];
   }>;
 };
@@ -794,13 +845,17 @@ or bounded runtime probes. They must not accept model prose as evidence.
 
 ### 13.3 One bounded repair loop
 
-If a required check fails:
+If an admissible required check reports a candidate failure:
 
 1. provide the failed policy ID, observed evidence, and expected invariant;
 2. allow one repair attempt;
 3. rerun functional and policy checks;
 4. record whether repair fixed the control, caused a regression, or attempted a
    forbidden shortcut.
+
+An inconclusive idempotent oracle may be retried once by the harness. Persistent
+inconclusive results and harness errors terminate without consuming the agent
+repair budget.
 
 One loop is enough to test the mechanism without building a heavy controller.
 
@@ -821,7 +876,7 @@ This record becomes the unit for later trajectory analysis.
 
 ## 14. Later Research Stages
 
-Only after the cross-task experiment should the prototype expand.
+Only after the nine-task prototype experiment should the prototype expand.
 
 ### Stage A: Phase distribution
 
@@ -934,27 +989,30 @@ reported here.
 
 ## 17. Recommended Immediate Work Order
 
-1. Commit and run the revised ZIP C2 workflow once; inspect its pre-tool
-   interventions, phase-attributed trajectory records, write-scope result,
-   control-plane, repair, and terminal-decision artifacts.
-2. Rerun the semantic selector without task-family metadata, produce a fresh
-   independently bound adjudication, and freeze the corrected selections.
-3. Select and freeze 6-10 cross-family tasks.
-4. Write independent functional, security, compatibility, and maintainability
-   evaluators.
-5. Freeze semantic policy selections before any coding runs.
-6. Extend the trajectory runner from two conditions to C0/C1/C2 and three
-   seeds.
-7. Generalize the implemented ZIP checker and one-repair workflow only as
-   required by the frozen task set.
-8. Execute all conditions under identical budgets and capture complete
-   trajectories.
-9. Generate task-level and aggregate metrics.
-10. Conduct blinded review of overconstraining, brittle, and harmful changes.
-11. Decide whether evidence justifies phase distribution and dynamic adoption.
+1. Implement the compatibility envelope and per-obligation activation plan,
+   using Login and UserCreation as regression fixtures.
+2. Implement typed oracle outcomes and candidate-only repair routing, using
+   Monitor, SecretStorage, and ZipToTxt exceptions as fixtures.
+3. Route the existing ZIP task through `pgacs-smoke-v0.1` without changing its
+   existing C2 behavior or evidence semantics.
+4. Define minimal, separate `TaskWorkspaceAdapter` and `EvaluatorAdapter`
+   contracts using ZIP and the existing BaxBench adapters as concrete callers.
+5. Verify source locks and isolate evaluator material for all nine tasks.
+6. Implement the SWE-bench workspace adapter and independent security oracles
+   one task at a time.
+7. Implement the SetupBench adapter and prove that its security oracle rejects
+   a functional-but-insecure tunnel configuration.
+8. Freeze semantic policy selections, activation plans, evaluator images,
+   budgets, and analysis
+   rules before any condition run.
+9. Extend the runner to B0/C0/C1/C2 and three seeds, then execute all 108
+    trajectories under identical budgets.
+10. Generate task-level, family-stratified, and aggregate metrics.
+11. Conduct blinded review of overconstraining, brittle, and harmful changes.
+12. Decide whether evidence justifies PGACS-50, phase distribution, and dynamic
+    adoption.
 
-The first concrete deliverable should be a **cross-task experiment
-specification** containing frozen tasks, policies, evaluator contracts, run
-budgets, and analysis rules. Coding the larger harness before this specification
-would make it difficult to distinguish a real policy effect from workflow
-structure or evaluator tuning.
+The cross-task experiment specification now begins with the frozen dataset
+manifest, source lock, adjudication record, and readiness gates in
+[`../13-smoke-dataset/`](../13-smoke-dataset/). The next deliverable is the
+minimal shared task/evaluator implementation, not further task selection.

@@ -205,12 +205,18 @@ on a semantic guess.
 Candidates dropped by the budget remain in `rejected`. Recording these near
 misses is important for later selector learning and false-negative analysis.
 
-### 6. Materialize policy state
+### 6. Adjudicate compatibility, then materialize policy state
 
-The controller resolves selected IDs against the immutable registry snapshot,
-creates phase bindings, and arms monitors/invariants. Prompt rendering remains
-separate: a policy can stay active without consuming prompt tokens in every
-phase.
+Selection returns candidates, not enforcement authority. The controller resolves
+selected IDs against the immutable registry snapshot and classifies each
+obligation against the frozen public compatibility envelope. A control that
+narrows accepted inputs or changes the public API defaults to advisory unless
+the task contract explicitly requires it. Required conflicts and missing
+fail-closed inputs stop in the control plane.
+
+Only the resulting `PolicyActivationPlan` creates phase bindings and arms
+monitors/invariants. Prompt rendering remains separate: an activated policy can
+stay in state without consuming prompt tokens in every phase.
 
 ## Dynamic Selection
 
@@ -297,21 +303,27 @@ This milestone is complete when PGACS can:
 5. continue safely when the optional LLM proposer fails;
 6. emit monotonic policy deltas when the trajectory exposes new risks;
 7. produce a non-empty generic-floor decision when surface evidence is
-   insufficient.
+   insufficient;
+8. produce a deterministic per-obligation activation plan without exposing
+   hidden tests or exploit bodies.
 
 ## Concrete Future Updates
 
 The next research iterations, in order, are:
 
-1. implement and test the generic security floor described in milestone 2.1;
-2. run the frozen cross-task C0/C1/C2 experiment and measure security-adjusted
-   correctness, overconstraint, and cost;
-3. add an explicit `controlCapabilities` field only where observed mandatory
+1. exercise the implemented typed-fact trajectory loop on ZIP and one
+   cross-task caller, including activation of a pre-adjudicated dormant
+   obligation;
+2. add phase-local reinjection and invariant registration for newly activated
+   obligations only where the first loop demonstrates a concrete need;
+3. run the frozen cross-task B0/C0/C1/C2 experiment and measure
+   security-adjusted correctness, overconstraint, and cost;
+4. add an explicit `controlCapabilities` field only where observed mandatory
    matching still depends on broad inferred tags;
-4. bind selected policies to phase-local prompt fragments after prompt-only
+5. bind selected policies to phase-local prompt fragments after prompt-only
    versus check-and-repair effects are measured;
-5. add evidence monitors only for policies that demonstrate downstream value;
-6. consider a learned ranker only after enough labeled decisions exist.
+6. add evidence monitors only for policies that demonstrate downstream value;
+7. consider a learned ranker only after enough labeled decisions exist.
 
 This ordering keeps the research falsifiable: each added mechanism must improve
 selection quality or secure-coding outcomes before the prototype grows.

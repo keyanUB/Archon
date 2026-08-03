@@ -361,11 +361,33 @@ describe('dagNodeSchema — new Claude SDK options', () => {
     const result = dagNodeSchema.safeParse({
       id: 'n',
       prompt: 'do it',
-      sandbox: { enabled: true, filesystem: { allowWrite: ['src/'] } },
+      sandbox: {
+        enabled: true,
+        failIfUnavailable: true,
+        allowUnsandboxedCommands: false,
+        network: { allowedDomains: [], deniedDomains: ['*'] },
+        filesystem: {
+          allowWrite: ['src/'],
+          denyRead: ['secrets/'],
+          allowRead: ['src/'],
+          allowManagedReadPathsOnly: true,
+        },
+      },
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect((result.data as PromptNode).sandbox?.enabled).toBe(true);
+      expect((result.data as PromptNode).sandbox).toEqual({
+        enabled: true,
+        failIfUnavailable: true,
+        allowUnsandboxedCommands: false,
+        network: { allowedDomains: [], deniedDomains: ['*'] },
+        filesystem: {
+          allowWrite: ['src/'],
+          denyRead: ['secrets/'],
+          allowRead: ['src/'],
+          allowManagedReadPathsOnly: true,
+        },
+      });
     }
   });
 

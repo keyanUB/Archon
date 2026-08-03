@@ -36,6 +36,7 @@ export interface WorkflowEvent {
   tool_input?: Record<string, unknown>;
   duration_ms?: number;
   tokens?: WorkflowTokenUsage;
+  resolved_models?: string[];
   check?: string;
   result?: 'pass' | 'fail' | 'warn' | 'unknown';
   error?: string;
@@ -199,7 +200,7 @@ export async function logNodeComplete(
   workflowRunId: string,
   nodeId: string,
   commandName: string,
-  meta?: { durationMs?: number; tokens?: WorkflowTokenUsage }
+  meta?: { durationMs?: number; tokens?: WorkflowTokenUsage; resolvedModelIds?: string[] }
 ): Promise<void> {
   await logWorkflowEvent(logDir, workflowRunId, {
     type: 'node_complete',
@@ -207,6 +208,7 @@ export async function logNodeComplete(
     content: commandName,
     ...(meta?.durationMs !== undefined ? { duration_ms: meta.durationMs } : {}),
     ...(meta?.tokens ? { tokens: meta.tokens } : {}),
+    ...(meta?.resolvedModelIds ? { resolved_models: meta.resolvedModelIds } : {}),
   });
 }
 

@@ -52,9 +52,9 @@ interface ClaudeEnvelope {
 
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const CORPUS_PATH = '.archon/data/research/pgacs/principle-corpus.expanded.json';
-const LABELS_PATH =
+const DEFAULT_LABELS_PATH =
   'principle-guided-agent-research/09-semantic-selector-evaluation/expanded-silver-labels.json';
-const OUTPUT_PATH =
+const DEFAULT_OUTPUT_PATH =
   'principle-guided-agent-research/09-semantic-selector-evaluation/semantic-selection.generated.json';
 const MODEL = process.env.PGACS_SELECTOR_MODEL || 'sonnet';
 const MAX_POLICIES_PER_TASK = 6;
@@ -284,9 +284,19 @@ async function writeFormattedJson(path: string, value: unknown): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const labelsArgument = process.argv.indexOf('--labels');
+  const outputArgument = process.argv.indexOf('--output');
+  const labelsPath =
+    labelsArgument >= 0 && process.argv[labelsArgument + 1]
+      ? resolve(process.argv[labelsArgument + 1])
+      : join(REPO_ROOT, DEFAULT_LABELS_PATH);
+  const outputPath =
+    outputArgument >= 0 && process.argv[outputArgument + 1]
+      ? resolve(process.argv[outputArgument + 1])
+      : join(REPO_ROOT, DEFAULT_OUTPUT_PATH);
   const [corpusText, labelsText] = await Promise.all([
     readFile(join(REPO_ROOT, CORPUS_PATH), 'utf-8'),
-    readFile(join(REPO_ROOT, LABELS_PATH), 'utf-8'),
+    readFile(labelsPath, 'utf-8'),
   ]);
   const corpus = JSON.parse(corpusText) as ExpandedCorpus;
   const labels = JSON.parse(labelsText) as SilverLabels;
@@ -321,7 +331,6 @@ async function main(): Promise<void> {
     },
     tasks,
   };
-  const outputPath = join(REPO_ROOT, OUTPUT_PATH);
   await writeFormattedJson(outputPath, output);
   console.log(`Wrote semantic policy selections for ${tasks.length} tasks to ${outputPath}`);
 }

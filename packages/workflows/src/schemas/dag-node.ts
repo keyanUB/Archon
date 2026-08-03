@@ -78,15 +78,18 @@ export type ThinkingConfig = z.infer<typeof thinkingConfigSchema>;
 export const sandboxSettingsSchema = z
   .object({
     enabled: z.boolean().optional(),
+    failIfUnavailable: z.boolean().optional(),
     autoAllowBashIfSandboxed: z.boolean().optional(),
     allowUnsandboxedCommands: z.boolean().optional(),
     network: z
       .object({
         allowedDomains: z.array(z.string()).optional(),
+        deniedDomains: z.array(z.string()).optional(),
         allowManagedDomainsOnly: z.boolean().optional(),
         allowUnixSockets: z.array(z.string()).optional(),
         allowAllUnixSockets: z.boolean().optional(),
         allowLocalBinding: z.boolean().optional(),
+        allowMachLookup: z.array(z.string()).optional(),
         httpProxyPort: z.number().optional(),
         socksProxyPort: z.number().optional(),
       })
@@ -96,6 +99,8 @@ export const sandboxSettingsSchema = z
         allowWrite: z.array(z.string()).optional(),
         denyWrite: z.array(z.string()).optional(),
         denyRead: z.array(z.string()).optional(),
+        allowRead: z.array(z.string()).optional(),
+        allowManagedReadPathsOnly: z.boolean().optional(),
       })
       .optional(),
     ignoreViolations: z.record(z.string(), z.array(z.string())).optional(),

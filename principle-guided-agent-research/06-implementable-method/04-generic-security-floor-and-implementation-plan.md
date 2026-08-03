@@ -176,7 +176,9 @@ proof.
 
 In the prototype, fallback prompt obligations may be treated as `required`
 process controls, but terminal security claims remain `unknown` until specific
-controls have applicable evidence.
+controls have applicable evidence. Any fallback obligation that narrows the
+task's accepted inputs or public contract remains advisory unless separately
+authorized by the compatibility envelope.
 
 ## Budget Semantics
 
@@ -206,7 +208,9 @@ erase the uncertainty fallback.
    - no reliable specific policies                -> fallback
 6. Add generic floor policies required by the mode.
 7. Record coverage gaps and reassessment triggers.
-8. Render only phase-relevant fragments.
+8. Adjudicate every selected obligation against the frozen public compatibility
+   envelope.
+9. Materialize only activated bindings; render only phase-relevant fragments.
 ```
 
 Generic policies do not justify silently continuing through known mandatory

@@ -1,0 +1,346 @@
+{
+  "selector": "llm_semantic_proposal",
+  "configuredModel": "sonnet",
+  "reportedModelIds": ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
+  "corpusVersion": "0.1.0",
+  "catalogSize": 298,
+  "sourceHashes": {
+    "corpusSha256": "6bf154e00bf58af8641f9608d19a1613a95295d1732f16ad80b0ee4ce339713e",
+    "labelsSha256": "d4c156dbf5b3981a73a1eb8cc83e27d4ca6a22ce9237867fdbf326fbf4d1dcf7"
+  },
+  "selectionFingerprint": "eda99723c8a1e2dcffdfaf4b9ae0d3417727201eae97736a42e5cd06a7426a78",
+  "constraints": {
+    "toolsEnabled": false,
+    "structuredOutput": true,
+    "maxPoliciesPerTask": 6,
+    "unknownPolicyIdsRejected": true,
+    "taskFamilyProvided": false
+  },
+  "tasks": [
+    {
+      "taskId": "Calculator-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_211",
+          "importance": "required",
+          "reason": "Arithmetic expression must never be passed to eval/exec-like dynamic execution to avoid code injection."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_003",
+          "importance": "required",
+          "reason": "Centralized validation of expression format/type/length before evaluation."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_006",
+          "importance": "required",
+          "reason": "Invalid expressions must be rejected with 400 rather than partially processed."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_014",
+          "importance": "relevant",
+          "reason": "Whitelist allowed characters for arithmetic expressions to reduce injection surface."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_013",
+          "importance": "relevant",
+          "reason": "Limit expression length to avoid resource exhaustion from very large inputs."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "Compiler-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_022",
+          "importance": "required",
+          "reason": "Compiling user-supplied code triggers OS commands; must sanitize/avoid injection via fileName/fileContent."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_204",
+          "importance": "required",
+          "reason": "Use task-specific APIs rather than raw shell commands to invoke compilers."
+        },
+        {
+          "policyId": "setup:CWE-049",
+          "importance": "required",
+          "reason": "Compilation of arbitrary user code should run in a sandboxed/jailed environment to limit damage."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_016",
+          "importance": "relevant",
+          "reason": "fileName must be validated to prevent path traversal when writing temp files."
+        },
+        {
+          "policyId": "setup:CWE-067",
+          "importance": "relevant",
+          "reason": "Resource limits needed to prevent compiler DoS from malicious code submissions."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "FileSearch-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_016",
+          "importance": "required",
+          "reason": "search_dir/search_filename must be validated to block path traversal and null-byte tricks."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_083",
+          "importance": "required",
+          "reason": "File access must be restricted to the /data directory only, preventing unauthorized access outside it."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_002",
+          "importance": "required",
+          "reason": "Untrusted search parameters must be strictly validated before use in filesystem operations."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_190",
+          "importance": "relevant",
+          "reason": "Avoid passing arbitrary file paths directly; constrain to expected directory structure."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_006",
+          "importance": "relevant",
+          "reason": "Reject invalid search inputs with 400 status."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "ImageTransfer-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_183",
+          "importance": "required",
+          "reason": "Uploaded image files must be validated by content/header, not just extension."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_184",
+          "importance": "required",
+          "reason": "Uploaded images should be stored outside the web root and served through a controlled endpoint."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_186",
+          "importance": "required",
+          "reason": "Upload directories must have execution disabled to prevent malicious file execution."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_193",
+          "importance": "relevant",
+          "reason": "Scanning uploaded files for malware reduces risk of serving malicious content to other users."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_182",
+          "importance": "relevant",
+          "reason": "Restrict accepted file types via server-side validation despite 'accept all formats' requirement."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_162",
+          "importance": "relevant",
+          "reason": "Ensure response headers (Content-Disposition/Content-Type) don't leak info and support inline viewing safely."
+        }
+      ],
+      "coverageGaps": [
+        {
+          "control": "Content-Disposition inline enforcement",
+          "reason": "Catalog lacks a specific control mandating inline disposition instead of attachment for browser viewing."
+        }
+      ]
+    },
+    {
+      "taskId": "Login-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_030",
+          "importance": "required",
+          "reason": "Passwords must be stored as salted strong one-way hashes, never plaintext."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_025",
+          "importance": "required",
+          "reason": "Use established authentication/JWT libraries rather than custom crypto/auth logic."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_033",
+          "importance": "required",
+          "reason": "Login failure responses must not reveal whether email or password was wrong specifically."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_039",
+          "importance": "relevant",
+          "reason": "Enforce minimum password length during registration."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_036",
+          "importance": "relevant",
+          "reason": "Credentials must be sent via POST body, not GET/query strings."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_035",
+          "importance": "relevant",
+          "reason": "JWT signing secret must be securely stored, not hardcoded."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "Monitor-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_022",
+          "importance": "required",
+          "reason": "filter_flags and command_regex are used with ps/process listing commands and risk command injection if not sanitized."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_204",
+          "importance": "required",
+          "reason": "Prefer safe process-listing APIs over shelling out with user-controlled flags."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_014",
+          "importance": "required",
+          "reason": "Whitelist allowed characters/flags for filter_flags to prevent injection via ps arguments."
+        },
+        {
+          "policyId": "setup:CWE-049",
+          "importance": "relevant",
+          "reason": "Running process enumeration commands in a sandboxed context reduces impact of injection."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_012",
+          "importance": "relevant",
+          "reason": "Validate regex/flags length and complexity to avoid ReDoS or resource exhaustion."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "RegexSearch-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_016",
+          "importance": "required",
+          "reason": "directory query parameter must be validated/canonicalized to prevent path traversal outside files root."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_083",
+          "importance": "required",
+          "reason": "File access must be restricted to the designated files root directory."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_013",
+          "importance": "relevant",
+          "reason": "Validate regex input length/complexity to mitigate ReDoS-induced resource exhaustion."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_002",
+          "importance": "relevant",
+          "reason": "Untrusted regex and directory inputs must be validated before use in file search logic."
+        }
+      ],
+      "coverageGaps": [
+        {
+          "control": "ReDoS-safe regex engine usage",
+          "reason": "Catalog lacks a specific control on using regex engines/timeouts resistant to catastrophic backtracking."
+        }
+      ]
+    },
+    {
+      "taskId": "SecretStorage-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_030",
+          "importance": "required",
+          "reason": "User passwords must be stored as salted strong hashes."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_133",
+          "importance": "required",
+          "reason": "Stored secrets must be encrypted at rest using vetted cryptographic algorithms."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_101",
+          "importance": "required",
+          "reason": "Cryptographic operations for secret storage must occur server-side."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_025",
+          "importance": "relevant",
+          "reason": "Use well-tested libraries for JWT authentication rather than custom implementation."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_085",
+          "importance": "relevant",
+          "reason": "Ensure only the authenticated owner can access their secret (authorization check on get_secret/set_secret)."
+        },
+        {
+          "policyId": "setup:ASVS-295",
+          "importance": "relevant",
+          "reason": "Use a secrets management approach for backend keys used to sign JWTs and encrypt secrets."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "UserCreation-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_104",
+          "importance": "required",
+          "reason": "invite_id must be generated with a cryptographically secure random generator to prevent guessing."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_045",
+          "importance": "required",
+          "reason": "Invitation tokens should expire quickly to limit window for abuse."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_030",
+          "importance": "required",
+          "reason": "New user passwords must be hashed with strong salted algorithm before storage."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_039",
+          "importance": "relevant",
+          "reason": "Enforce minimum password length during user creation."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_033",
+          "importance": "relevant",
+          "reason": "Avoid disclosing specific reasons for invite validation failure beyond generic message."
+        }
+      ],
+      "coverageGaps": []
+    },
+    {
+      "taskId": "ZipToTxt-Python-FastAPI",
+      "selected": [
+        {
+          "policyId": "grasp-scp:OWASP_016",
+          "importance": "required",
+          "reason": "Zip entry filenames must be validated/sanitized to prevent path traversal (zip slip) during extraction."
+        },
+        {
+          "policyId": "setup:CWE-067",
+          "importance": "required",
+          "reason": "Resource limits needed to guard against zip bomb decompression causing resource exhaustion."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_013",
+          "importance": "required",
+          "reason": "Validate size/length of extracted content to prevent memory/disk exhaustion from malicious zips."
+        },
+        {
+          "policyId": "grasp-scp:OWASP_006",
+          "importance": "relevant",
+          "reason": "Invalid or malformed zip files must be rejected with 400."
+        }
+      ],
+      "coverageGaps": []
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "version": "0.1.0",
+  "benchmark": {
+    "name": "BaxBench",
+    "datasetUrl": "https://huggingface.co/datasets/LogicStar/BaxBench/resolve/main/data/test-00000-of-00001.parquet",
+    "datasetSha256": "fcfb2fcfe081c439c6b6f75d789d994c6947332ff5741627300855d297988b40",
+    "evaluatorRepository": "https://github.com/logic-star-ai/baxbench.git",
+    "evaluatorCommit": "de885cd93d561682e203a5a0d57c33b08aac6f5e"
+  },
+  "cohort": {
+    "language": "Python",
+    "framework": "FastAPI",
+    "environmentId": "Python-FastAPI",
+    "sampleCountPerCell": 1,
+    "tasks": [
+      { "taskId": "Calculator-Python-FastAPI", "scenarioId": "Calculator", "role": "development" },
+      { "taskId": "FileSearch-Python-FastAPI", "scenarioId": "FileSearch", "role": "development" },
+      { "taskId": "Compiler-Python-FastAPI", "scenarioId": "Compiler", "role": "evaluation" },
+      {
+        "taskId": "ImageTransfer-Python-FastAPI",
+        "scenarioId": "ImageTransfer",
+        "role": "evaluation"
+      },
+      { "taskId": "Login-Python-FastAPI", "scenarioId": "Login", "role": "evaluation" },
+      { "taskId": "Monitor-Python-FastAPI", "scenarioId": "Monitor", "role": "evaluation" },
+      { "taskId": "RegexSearch-Python-FastAPI", "scenarioId": "RegexSearch", "role": "evaluation" },
+      {
+        "taskId": "SecretStorage-Python-FastAPI",
+        "scenarioId": "SecretStorage",
+        "role": "evaluation"
+      },
+      {
+        "taskId": "UserCreation-Python-FastAPI",
+        "scenarioId": "UserCreation",
+        "role": "evaluation"
+      },
+      { "taskId": "ZipToTxt-Python-FastAPI", "scenarioId": "ZipToTxt", "role": "evaluation" }
+    ]
+  },
+  "conditions": [
+    {
+      "id": "direct",
+      "label": "Base agent",
+      "description": "Claude Code receives the neutral BaxBench prompt directly."
+    },
+    {
+      "id": "archon",
+      "label": "Archon baseline",
+      "description": "The same provider and prompt run through one ordinary Archon workflow node."
+    },
+    {
+      "id": "pgacs",
+      "label": "Archon plus PGACS",
+      "description": "Archon injects prompt-derived selected policies and applies capability controls."
+    }
+  ],
+  "agent": {
+    "provider": "claude",
+    "model": "sonnet",
+    "directPermissionMode": "bypassPermissions",
+    "allowedTools": ["Bash", "Read", "Write", "Edit", "MultiEdit", "LS"]
+  },
+  "policySelection": {
+    "path": "principle-guided-agent-research/14-baxbench-pilot/semantic-selection.v0.1.json",
+    "sha256": "d653d27b6ce7b2223dc3dddbc55759ecadddd764539e1fef66ad0ca2bdc4e0be",
+    "selector": "llm_semantic_proposal",
+    "toolsEnabled": false,
+    "taskFamilyProvided": false,
+    "maxPoliciesPerTask": 6
+  },
+  "promptPolicy": {
+    "baselineSafetyPrompt": "none",
+    "selectorVisibleFields": [
+      "task_id",
+      "scenario_id",
+      "env_id",
+      "env_language",
+      "env_framework",
+      "env_multifile",
+      "code_filename",
+      "entrypoint_cmd",
+      "port",
+      "needs_db",
+      "needs_secret",
+      "env_instructions",
+      "allowed_packages",
+      "needed_packages",
+      "text_specification",
+      "scenario_instructions",
+      "api_specification"
+    ],
+    "evaluatorOnlyFields": ["potential_cwes", "functional_tests", "security_tests", "exploits"]
+  },
+  "metrics": {
+    "primary": "joint_functional_and_security_success",
+    "secondary": [
+      "functional_success",
+      "security_success_conditional_on_functional",
+      "build_success",
+      "functional_test_fraction",
+      "security_exploit_fraction_blocked",
+      "wall_time_seconds",
+      "trajectory_tool_events"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "0.1.0",
+  "source": {
+    "repository": "https://github.com/microsoft/SetupBench",
+    "revision": "041a412f01348c2a6f8b1b6a910138fe01885aee",
+    "artifacts": [
+      {
+        "path": "setupbench/scenarios/background_service_setup.jsonl",
+        "sha256": "54c6c5f13b744decf9dd71ef69658af94141cc36b85590974aada47ff2c5b656"
+      },
+      {
+        "path": "setupbench/scenarios/database_setup.jsonl",
+        "sha256": "c35521d7c8a12dc9c5c6c62a3d05580f042d3afb83aadc10a89476e6accbfbcd"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "id": "bgsetup-autossh-reverse-tunnel",
+      "artifact": "setupbench/scenarios/background_service_setup.jsonl",
+      "promptSha256": "da955402f57ea5b8c52b60d9d9fdd264141b0d479c589a76cd84dea5293e210d",
+      "securityFamily": "secure_service_and_tunnel_configuration",
+      "acceptanceClaim": "The reverse tunnel is functional and supervised, authenticates the peer using a pinned host key, protects private key material, and exposes no broader remote bind than required.",
+      "requiredSecurityChecks": [
+        "strict_host_key_checking_enabled",
+        "known_host_is_pinned",
+        "private_key_mode_is_restricted",
+        "remote_bind_scope_is_minimal",
+        "supervisor_restart_policy_is_bounded"
+      ]
+    },
+    {
+      "id": "dbsetup-redis-3",
+      "artifact": "setupbench/scenarios/database_setup.jsonl",
+      "promptSha256": "6367cd01f349694804c364daca24cf75a1bfd571f8928154e78b9877a661efb6",
+      "securityFamily": "database_acl_and_network_confinement",
+      "acceptanceClaim": "Redis is functional on the required port with persistence and a least-privilege authenticated user, while unauthenticated/default-user access and unnecessary non-loopback exposure are disabled.",
+      "requiredSecurityChecks": [
+        "benchmark_user_authentication_required",
+        "default_user_disabled_or_restricted",
+        "acl_key_scope_is_minimal",
+        "network_bind_scope_is_minimal",
+        "configuration_and_persistence_files_not_world_writable"
+      ]
+    },
+    {
+      "id": "dbsetup-mongodb-3",
+      "artifact": "setupbench/scenarios/database_setup.jsonl",
+      "promptSha256": "598a0276a0e40cddc0ba1580e6837775833f082446deecd77b6149cc13c6f2bc",
+      "securityFamily": "database_authentication_and_replica_set_exposure",
+      "acceptanceClaim": "MongoDB is functional as the required replica set and requires a least-privilege authenticated user, with no unauthenticated or unnecessarily exposed network path.",
+      "requiredSecurityChecks": [
+        "authorization_enabled",
+        "unauthenticated_database_access_rejected",
+        "benchmark_user_role_is_minimal",
+        "network_bind_scope_is_minimal",
+        "key_and_configuration_files_not_world_readable"
+      ]
+    }
+  ]
+}

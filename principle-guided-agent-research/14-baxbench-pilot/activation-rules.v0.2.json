@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "strategy": "importance-gated-public-contract-compatibility",
+  "requiredImportance": {
+    "compatibility": "compatible",
+    "controlKind": "required_security",
+    "enforcement": "required"
+  },
+  "relevantImportance": {
+    "compatibility": "compatible",
+    "controlKind": "advisory",
+    "enforcement": "advisory"
+  },
+  "contractNarrowingPolicyIds": ["grasp-scp:OWASP_039", "grasp-scp:OWASP_182"],
+  "contractNarrowingDisposition": {
+    "compatibility": "advisory",
+    "controlKind": "contract_narrowing_hardening",
+    "enforcement": "advisory"
+  },
+  "publicCompatibilityEnvelope": {
+    "acceptedBehavior": [
+      "Preserve the task's documented request and response schemas.",
+      "Preserve documented successful inputs unless the task explicitly authorizes narrowing."
+    ],
+    "prohibitedContractChanges": [
+      "Do not introduce a new mandatory password length unless the task requires one.",
+      "Do not reject a documented accepted file type solely because optional hardening prefers a narrower allowlist."
+    ]
+  },
+  "repair": {
+    "maxCandidateRepairs": 1,
+    "repairableStatuses": ["fail"],
+    "nonRepairableStatuses": ["inconclusive", "harness_error"]
+  }
+}

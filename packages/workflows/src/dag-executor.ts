@@ -860,6 +860,7 @@ async function executeNodeInternal(
   let nodeStopReason: string | undefined;
   let nodeNumTurns: number | undefined;
   let nodeModelUsage: Record<string, unknown> | undefined;
+  let nodeResolvedModelIds: string[] | undefined;
   const batchMessages: string[] = [];
 
   // Create per-node abort controller for idle timeout cleanup
@@ -1084,6 +1085,7 @@ async function executeNodeInternal(
         if (msg.stopReason !== undefined) nodeStopReason = msg.stopReason;
         if (msg.numTurns !== undefined) nodeNumTurns = msg.numTurns;
         if (msg.modelUsage) nodeModelUsage = msg.modelUsage;
+        if (msg.resolvedModelIds) nodeResolvedModelIds = msg.resolvedModelIds;
         if (msg.structuredOutput !== undefined) structuredOutput = msg.structuredOutput;
         // Fail the node if the SDK reports a cost cap exceeded error
         if (msg.isError && msg.errorSubtype === 'error_max_budget_usd') {
@@ -1459,6 +1461,7 @@ async function executeNodeInternal(
     await logNodeComplete(logDir, workflowRun.id, node.id, node.command ?? '<inline>', {
       durationMs: duration,
       tokens: nodeTokens,
+      resolvedModelIds: nodeResolvedModelIds,
     });
 
     deps.store
@@ -1473,6 +1476,7 @@ async function executeNodeInternal(
           ...(nodeStopReason ? { stop_reason: nodeStopReason } : {}),
           ...(nodeNumTurns !== undefined ? { num_turns: nodeNumTurns } : {}),
           ...(nodeModelUsage ? { model_usage: nodeModelUsage } : {}),
+          ...(nodeResolvedModelIds ? { resolved_model_ids: nodeResolvedModelIds } : {}),
         },
       })
       .catch((err: Error) => {

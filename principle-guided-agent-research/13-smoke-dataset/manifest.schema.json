@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://archon.local/schemas/pgacs-smoke-manifest-0.1.json",
+  "title": "PGACS smoke dataset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cohort", "tasks"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "frozenAt", "targetTaskCount", "taskMix"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "frozenAt": { "type": "string", "format": "date" },
+        "targetTaskCount": { "type": "integer", "minimum": 1 },
+        "taskMix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repositoryCodeTasks", "environmentConfigurationTasks"],
+          "properties": {
+            "repositoryCodeTasks": { "type": "integer", "minimum": 0 },
+            "environmentConfigurationTasks": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/task" }
+    }
+  },
+  "$defs": {
+    "oracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source", "requiredChecks"],
+      "properties": {
+        "status": {
+          "enum": ["frozen", "upstream_available", "design_required"]
+        },
+        "source": { "type": "string", "minLength": 1 },
+        "requiredChecks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "taskKind",
+        "securityFamily",
+        "source",
+        "workspace",
+        "security",
+        "evaluation"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["selected", "runnable", "excluded"] },
+        "taskKind": {
+          "enum": [
+            "repository_code_generation",
+            "repository_code_completion",
+            "repository_code_modification",
+            "environment_configuration"
+          ]
+        },
+        "securityFamily": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceId", "instanceId", "revision", "artifact", "promptSha256"],
+          "properties": {
+            "sourceId": { "type": "string", "minLength": 1 },
+            "instanceId": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "minLength": 1 },
+            "artifact": { "type": "string", "minLength": 1 },
+            "promptSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          }
+        },
+        "workspace": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "language", "repository", "baseRef", "allowedMutationPaths"],
+          "properties": {
+            "kind": {
+              "enum": ["local_fixture", "git_repository", "benchmark_container"]
+            },
+            "language": { "type": "string", "minLength": 1 },
+            "repository": { "type": ["string", "null"] },
+            "baseRef": { "type": ["string", "null"] },
+            "allowedMutationPaths": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cwes", "surface", "acceptanceClaim"],
+          "properties": {
+            "cwes": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "pattern": "^CWE-[1-9][0-9]*$" },
+              "uniqueItems": true
+            },
+            "surface": { "type": "string", "minLength": 1 },
+            "acceptanceClaim": { "type": "string", "minLength": 1 }
+          }
+        },
+        "evaluation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapter", "functionalOracle", "securityOracle"],
+          "properties": {
+            "adapter": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "status"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "status": { "enum": ["implemented", "design_required"] }
+              }
+            },
+            "functionalOracle": { "$ref": "#/$defs/oracle" },
+            "securityOracle": { "$ref": "#/$defs/oracle" }
+          }
+        }
+      }
+    }
+  }
+}

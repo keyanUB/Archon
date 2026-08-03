@@ -1,0 +1,252 @@
+{
+  "schemaVersion": "0.1.0",
+  "study": {
+    "id": "pgacs-v0.3-multibench-registry-v0.1",
+    "systemVersion": "0.3.0",
+    "phase": "prototype_development",
+    "claimLevel": "preliminary_mechanism_evidence",
+    "frozenAt": "2026-08-02",
+    "targetTaskCount": 9,
+    "conditions": ["B0", "C0", "C1", "C2"],
+    "primaryOutcome": "safe_system_security_outcome",
+    "benchmarkMix": {
+      "baxbench": 3,
+      "swebench_verified": 3,
+      "setupbench": 3
+    },
+    "interpretationBoundaries": [
+      "All tasks are integration or development tasks; none is held out.",
+      "Results support feasibility and preliminary mechanism evidence only.",
+      "Benchmark results must be reported separately before any pooled summary.",
+      "A later confirmatory study requires a newly frozen held-out cohort."
+    ]
+  },
+  "tasks": [
+    {
+      "id": "prototype-baxbench-login",
+      "benchmark": "baxbench",
+      "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
+      "sourceTaskId": "Login-Python-FastAPI",
+      "studyRole": "development",
+      "status": "adapter_ready",
+      "securityFamily": "credential_storage_and_authentication",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "implemented",
+        "functionalOracle": "executed",
+        "securityOracle": "executed",
+        "knownVulnerableRejected": "recorded",
+        "knownSecureAccepted": "recorded",
+        "deterministicReplay": "recorded",
+        "evaluatorIsolation": "implemented",
+        "leakageBoundary": "implemented",
+        "agentBoundaryValidation": "pending",
+        "blockers": [
+          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
+        ]
+      }
+    },
+    {
+      "id": "prototype-baxbench-regex-search",
+      "benchmark": "baxbench",
+      "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
+      "sourceTaskId": "RegexSearch-Python-FastAPI",
+      "studyRole": "development",
+      "status": "adapter_ready",
+      "securityFamily": "path_confinement",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "implemented",
+        "functionalOracle": "executed",
+        "securityOracle": "executed",
+        "knownVulnerableRejected": "recorded",
+        "knownSecureAccepted": "recorded",
+        "deterministicReplay": "recorded",
+        "evaluatorIsolation": "implemented",
+        "leakageBoundary": "implemented",
+        "agentBoundaryValidation": "pending",
+        "blockers": [
+          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
+        ]
+      }
+    },
+    {
+      "id": "prototype-baxbench-zip-to-txt",
+      "benchmark": "baxbench",
+      "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
+      "sourceTaskId": "ZipToTxt-Python-FastAPI",
+      "studyRole": "development",
+      "status": "adapter_ready",
+      "securityFamily": "archive_path_and_resource_safety",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "implemented",
+        "functionalOracle": "executed",
+        "securityOracle": "executed",
+        "knownVulnerableRejected": "recorded",
+        "knownSecureAccepted": "recorded",
+        "deterministicReplay": "recorded",
+        "evaluatorIsolation": "implemented",
+        "leakageBoundary": "implemented",
+        "agentBoundaryValidation": "pending",
+        "blockers": [
+          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
+        ]
+      }
+    },
+    {
+      "id": "prototype-swebench-django-13551",
+      "benchmark": "swebench_verified",
+      "sourceManifest": "principle-guided-agent-research/13-smoke-dataset/smoke-v0.1.json",
+      "sourceTaskId": "swebench-django-13551",
+      "studyRole": "integration",
+      "status": "selected",
+      "securityFamily": "password_recovery_token_invalidation",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "design_required",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Implement the SWE-bench workspace and evaluator adapter.",
+          "Implement and independently review the password-reset token lifecycle probe.",
+          "Validate the probe against pre-fix and fixed Django revisions."
+        ]
+      }
+    },
+    {
+      "id": "prototype-swebench-django-16527",
+      "benchmark": "swebench_verified",
+      "sourceManifest": "principle-guided-agent-research/13-smoke-dataset/smoke-v0.1.json",
+      "sourceTaskId": "swebench-django-16527",
+      "studyRole": "development",
+      "status": "selected",
+      "securityFamily": "administrative_authorization",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "design_required",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Promote only after the shared SWE-bench adapter passes task 13551.",
+          "Implement and validate the server-side authorization role matrix."
+        ]
+      }
+    },
+    {
+      "id": "prototype-swebench-django-10914",
+      "benchmark": "swebench_verified",
+      "sourceManifest": "principle-guided-agent-research/13-smoke-dataset/smoke-v0.1.json",
+      "sourceTaskId": "swebench-django-10914",
+      "studyRole": "development",
+      "status": "selected",
+      "securityFamily": "uploaded_file_permissions",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "design_required",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Promote only after the shared SWE-bench adapter passes task 13551.",
+          "Implement and validate independent upload-permission probes across small and large upload paths."
+        ]
+      }
+    },
+    {
+      "id": "prototype-setupbench-autossh",
+      "benchmark": "setupbench",
+      "sourceManifest": "principle-guided-agent-research/15-multibench-prototype/setupbench-selection-v0.1.json",
+      "sourceTaskId": "bgsetup-autossh-reverse-tunnel",
+      "studyRole": "integration",
+      "status": "selected",
+      "securityFamily": "secure_service_and_tunnel_configuration",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "implemented",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Implement the SetupBench container and evaluator adapter.",
+          "Execute the implemented autossh security oracle in the native SetupBench container.",
+          "Validate it against functional insecure and functional secure tunnel configurations, then record deterministic replay receipts."
+        ]
+      }
+    },
+    {
+      "id": "prototype-setupbench-redis-3",
+      "benchmark": "setupbench",
+      "sourceManifest": "principle-guided-agent-research/15-multibench-prototype/setupbench-selection-v0.1.json",
+      "sourceTaskId": "dbsetup-redis-3",
+      "studyRole": "development",
+      "status": "selected",
+      "securityFamily": "database_acl_and_network_confinement",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "design_required",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Promote only after the SetupBench adapter passes the autossh task.",
+          "Implement Redis ACL, default-user, network-bind, and configuration-permission probes.",
+          "Validate against a functional Redis configuration with excessive access."
+        ]
+      }
+    },
+    {
+      "id": "prototype-setupbench-mongodb-3",
+      "benchmark": "setupbench",
+      "sourceManifest": "principle-guided-agent-research/15-multibench-prototype/setupbench-selection-v0.1.json",
+      "sourceTaskId": "dbsetup-mongodb-3",
+      "studyRole": "development",
+      "status": "selected",
+      "securityFamily": "database_authentication_and_replica_set_exposure",
+      "readiness": {
+        "sourcePinned": true,
+        "workspaceAdapter": "design_required",
+        "functionalOracle": "upstream_available",
+        "securityOracle": "design_required",
+        "knownVulnerableRejected": "not_recorded",
+        "knownSecureAccepted": "not_recorded",
+        "deterministicReplay": "not_recorded",
+        "evaluatorIsolation": "design_required",
+        "leakageBoundary": "design_required",
+        "agentBoundaryValidation": "not_recorded",
+        "blockers": [
+          "Promote only after the SetupBench adapter passes the autossh task.",
+          "Implement MongoDB authorization, least-privilege, network-bind, and key-file permission probes.",
+          "Validate against a functional MongoDB replica set with unauthenticated access."
+        ]
+      }
+    }
+  ]
+}

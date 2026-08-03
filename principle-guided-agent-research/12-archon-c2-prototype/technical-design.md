@@ -2,8 +2,18 @@
 
 Date: 2026-08-01
 
-Status: Implemented and deterministically tested. No model-backed run of this
-revision has been recorded.
+Status: Revised PGACS is the active prototype. ZIP C2 now has deterministic
+obligation-level activation, typed security-fact extraction, runtime
+policy-state replay, versioned primary behavior annotations, and typed oracle
+routing; the generic reducer can activate pre-adjudicated dormant obligations
+and route their missing evidence to a probe and one candidate-only repair. The
+original prompt-guided path is frozen as a legacy ablation.
+
+Scope note: this document is the as-built record for the fixed ZIP vertical
+slice. The current authoritative generic prototype design is
+[`../15-multibench-prototype/technical-design.md`](../15-multibench-prototype/technical-design.md),
+which supersedes cross-task controller, trust-boundary, oracle, and experiment
+semantics described here.
 
 ## 1. Novel Concept: Security Policy Harness
 
@@ -38,35 +48,108 @@ that is detective rather than preventive enforcement.
 
 ### 2.1 Trajectory-Wise, Behavior-Event-Level Control
 
-**Current status: Partial.** The prototype observes phase-attributed tool calls,
-Git-visible changed paths, evaluator results, and repair boundaries. It does not
-yet normalize every message, command result, edit diff, dependency change, or
-service event.
+**Current status: Partial, with the first trajectory-control reducer
+implemented.** The prototype normalizes phase-attributed tool calls,
+deterministically extracted security facts, Git-visible workspace boundaries,
+policy-bound probe results, implementation/repair loop boundaries, and a
+deterministic subset of the primary behavior taxonomy. It does not yet normalize
+every message, command result, edit diff, dependency change, or live service
+event.
 
 The intended controller consumes normalized observations throughout a run:
 
 ```ts
 type ObservationEvent =
-  | { kind: 'tool_call'; phase: string; tool: string; inputDigest: string }
-  | { kind: 'file_change'; phase: string; path: string; diffDigest?: string }
-  | { kind: 'command_result'; phase: string; command: string; exitCode: number }
-  | { kind: 'dependency_change'; manifest: string; packages: string[] }
-  | { kind: 'probe_result'; probeId: string; status: 'pass' | 'fail' }
-  | { kind: 'loop_boundary'; attempt: number; priorDecision: string };
+  | { kind: 'tool_call'; phase: string; toolName: string; inputSha256: string }
+  | {
+      kind: 'security_fact';
+      phase: string;
+      factId: SecurityFactId;
+      source: SecurityFactSource;
+      evidenceRef: string;
+      subjectRefs: string[];
+      subjectSha256: string;
+    }
+  | {
+      kind: 'workspace_boundary';
+      phase: string;
+      logAvailable: boolean;
+      changedPaths: string[];
+      scopeViolations: string[];
+    }
+  | {
+      kind: 'probe_result';
+      phase: string;
+      policyId: string;
+      evidenceRef: string;
+      outcome: 'pass' | 'fail' | 'inconclusive' | 'harness_error';
+    }
+  | {
+      kind: 'loop_boundary';
+      phase: string;
+      boundary: 'post_implementation' | 'post_repair' | 'pre_terminal';
+      repairAvailable: boolean;
+    };
 ```
 
-**TBD design:** introduce this event union only after a second task/provider
-supplies real callers. Events should be append-only, phase-attributed, and
-content-hashed where raw inputs may contain secrets. The controller should be a
-replayable reducer: `(PolicyState, ObservationEvent) -> PolicyDelta +
-Intervention[]`.
+**Implemented first slice:** the event union now runs on the existing ZIP
+vertical slice before another benchmark or provider is added. Events are
+append-only, phase-attributed, sequence-checked, and content-hashed where raw
+inputs may contain secrets. The controller is a replayable reducer:
+`(PolicyState, ObservationEvent) -> PolicyState + PolicyDelta + Intervention[]`.
+
+The first implementation normalizes tool calls, five path/tool-derived fact
+classes, workspace-boundary evidence, obligation-bound probe outcomes, and loop
+boundaries. It intentionally excludes messages and arbitrary command parsing
+until a concrete control decision needs them. The current facts are archive
+processing changes, dependency-manifest changes, process-execution requests,
+repair-time artifact changes, and service-configuration changes. Each obligation
+carries both `policyId` and unique `obligationId`; this
+prevents one passing obligation from masking another obligation compiled from
+the same policy. Obligation status is one of `dormant`, `active`, `satisfied`,
+`violated`, `uncertain`, or `inapplicable`; missing, inconclusive, and harness-failure
+evidence cannot produce `satisfied`.
+
+#### 2.1.1 Primary Behavior Taxonomy Integration
+
+**Current status: Minimal observational slice implemented.** The frozen
+`pgacs-behavior-taxonomy.ts` control-plane module defines the complete 12-label
+primary vocabulary. It deterministically annotates only event forms whose
+meaning is unambiguous in the normalized trace:
+
+| Normalized agent event                       | Primary behavior                |
+| -------------------------------------------- | ------------------------------- |
+| `Read`, `Glob`, `Grep`, `LS`, `Search`       | `inspection`                    |
+| `Write`, `Edit`, `MultiEdit`, `apply_patch`  | `implementation_writing`        |
+| classified static/build/test/runtime command | matching `verification_*` label |
+| explicit repair boundary                     | `adaptation`                    |
+| explicit final response                      | `final_reporting`               |
+
+The current C2 adapter emits tool-call observations and an explicit repair
+boundary; command and final-response variants are typed for future adapters but
+are not yet produced by the ZIP workflow. Unsupported tools remain unclassified
+rather than receiving a guessed label. Harness-owned evaluator/probe execution
+is excluded because it is not agent behavior.
+
+Each annotation carries taxonomy version, deterministic rule ID, and source
+event reference. Per-attempt summaries store observed, classified, and
+unclassified counts plus the primary-label distribution so coverage is not
+confused with classifier precision. An initial candidate failure adds an
+`adaptation` soft prompt route to the bounded repair input. These annotations
+have **no policy-selection, activation, evidence-satisfaction, severity, or
+terminal-gate authority**.
+Security authority remains with typed fact triggers compiled into compatible
+obligations and with trusted probe outcomes. Orientation, planning, refinement,
+failure diagnosis, secondary attributes, and classifier validity studies remain
+TBD.
 
 ### 2.2 Layer A: LLM Guidance (Proactive)
 
 **Current status: Implemented for C2.** The initial Claude prompt receives the
 frozen task surface and selected policies. `PreToolUse` for `Write|Edit` injects
 the authorized paths; `PostToolUse` injects security invariants. Repair receives
-failed evidence and a preservation instruction.
+failed evidence, a preservation instruction, and taxonomy-routed adaptation
+guidance whose authority is explicitly limited to prompt routing.
 
 Natural language is sufficient for model-facing guidance, but it should be
 generated from structured policy data rather than maintained as independent
@@ -95,6 +178,9 @@ prompt so later evidence can refer to the same obligation.
 
 - phase-attributed tool-call logging;
 - SHA-256 normalization of tool input;
+- versioned deterministic behavior annotations for supported agent events;
+- deterministic extraction of five typed security facts from stable path/tool
+  metadata, without admitting raw tool input as controller authority;
 - tracked, staged, and untracked path observation;
 - deterministic write-scope blocking;
 - 11 required and 6 defense-in-depth ZIP probes; and
@@ -125,9 +211,10 @@ a monitor raises a signal. Probe execution must remain outside agent control.
 
 **Current status: Partial.** The initial gate acts as a rule-based predictor:
 `blocked` means another action is required. The workflow permits one fresh-
-context repair, injects exact failed evidence, preserves all controls, and then
-re-evaluates. This is bounded loop conditioning, not adaptive multi-step
-control.
+context repair, injects exact failed evidence plus soft `adaptation` guidance,
+preserves all controls, and then re-evaluates. The label does not trigger or
+authorize repair; typed candidate-failure classification does. This is bounded
+loop conditioning, not adaptive multi-step control.
 
 **TBD design:** each loop boundary should execute:
 
@@ -175,23 +262,98 @@ may be one adapter transport for interventions and probes.
 
 ### 3.1 Initial Policy Selection
 
-**Current status: Implemented outside C2; frozen inside C2.** The repository has
-task-surface extraction, deterministic selection, a generic security floor, and
-a schema-constrained semantic-selector prototype. C2 deliberately freezes three
-policies to isolate enforcement from selector error.
+**Current status: selection frozen; activation implemented in C2.** The
+repository has task-surface extraction, deterministic selection, a generic
+security floor, and a schema-constrained semantic-selector prototype. C2
+deliberately freezes three policies to isolate enforcement from selector error,
+then compiles three manually adjudicated obligations through the same typed
+activation rules used by the compatibility design.
 
 **TBD integration design:** production selection should combine:
 
 1. deterministic mandatory triggers for known high-risk surfaces;
 2. a compact generic floor when the surface is insufficient/ambiguous;
 3. semantic proposal over the safe candidate set;
-4. deterministic validation of proposed IDs and capability coverage; and
-5. a frozen `PolicyState v0` plus provenance/content hashes before coding.
+4. deterministic validation of proposed IDs and capability coverage;
+5. a frozen `SelectedPolicySet` plus provenance/content hashes before coding;
+   and
+6. compatibility adjudication into `PolicyState v0` before coding.
+
+Selection must be followed by a deterministic **compatibility adjudication**
+before activation. The BaxBench pilot exposed a concrete conflict: a selected
+minimum-password policy rejected the benchmark's required `pass1` functional
+fixture. Each selected obligation must therefore be classified as:
+
+- `compatible`: enforce without changing the frozen public contract;
+- `conflicting`: policy and task contract cannot both be satisfied;
+- `input_required`: compatibility depends on a missing security fact; or
+- `advisory`: retain as guidance but do not make it a terminal obligation.
+
+`conflicting` and `input_required` decisions belong to the control plane. The
+coding agent must not silently weaken either the policy or the task contract.
+
+Compatibility is evaluated per obligation, not per policy ID. A policy may
+contain both a contract-preserving required control (for example, password
+hashing) and contract-narrowing hardening (for example, rejecting passwords
+below a new minimum length). The activation result is frozen before generation:
+
+```ts
+interface PolicyActivationDecision {
+  policyId: string;
+  obligationId: string;
+  controlKind: 'required_security' | 'contract_narrowing_hardening' | 'advisory';
+  contractRelation: 'preserves' | 'narrows' | 'conflicts' | 'unknown';
+  requestedEnforcement: 'required' | 'fail_closed' | 'advisory';
+  compatibility: 'compatible' | 'conflicting' | 'input_required' | 'advisory';
+  enforcement: 'required' | 'fail_closed' | 'advisory' | 'inactive';
+  evidenceRefs: string[];
+  rationale: string;
+}
+
+interface CompatibilityEnvelope {
+  taskId: string;
+  taskContractSha256: string;
+  acceptedBehavior: string[];
+  prohibitedContractChanges: string[];
+}
+
+interface PolicyActivationPlan {
+  version: '0.1.0';
+  taskId: string;
+  taskContractSha256: string;
+  selectionSha256: string;
+  compatibilityEnvelope: CompatibilityEnvelope;
+  decisions: PolicyActivationDecision[];
+  unresolvedInputs: string[];
+  blockingDecisionIds: string[];
+  status: 'ready' | 'blocked';
+  activationSha256: string;
+}
+```
+
+Default rule: a hardening control that narrows otherwise valid input or changes
+the public API is advisory unless the frozen task contract explicitly requires
+it. A trusted required-security control may still fail closed, but a genuine
+policy/contract contradiction becomes `BLOCKED_POLICY_CONFLICT` before the
+agent is asked to implement an impossible specification. Hidden tests and
+exploit bodies remain outside agent context; the activation plan uses only the
+public task contract and a precommitted compatibility envelope. In this
+prototype, `contractRelation` and `publicRequirementRefs` are trusted,
+manually frozen declarations. Automatic relation inference remains out of the
+trusted path.
 
 ### 3.2 Dynamic Adaptation Across All Three Layers
 
-**Current status: TBD.** C2 keeps the selected policy set static during initial
-implementation and repair.
+**Current status: first deterministic trajectory-control reducer implemented.**
+ZIP C2 keeps its three publicly required obligations active from intake. The
+generic reducer additionally supports `dormant` obligations whose trigger IDs
+were compiled through compatibility adjudication. A matching typed security fact
+activates such an obligation monotonically; the next loop boundary requests its
+missing probe, and a failed probe routes to the existing bounded repair.
+Identical event sequences produce stable state/delta hashes; cross-task,
+out-of-order, and unknown-evidence events fail closed. Selecting and
+compatibility-adjudicating entirely new obligations during a live run remains
+TBD.
 
 The proposed controller should reassess on security-bearing events such as a new
 dependency, newly observed network exposure, an unexpected sink, a permission
@@ -204,10 +366,13 @@ severity may harden automatically
 relaxation requires explicit human authorization
 ```
 
-A `PolicyDelta` should state trigger evidence, added/hardened policies, new
-bindings, and the hash of prior/new states. All three layers subscribe to the
-same state, so a newly adopted policy immediately changes prompts, monitors,
-probes, and loop invariants.
+A `PolicyDelta` states trigger evidence, status changes, interventions, and the
+hash of prior/new states. Every dynamic candidate passes compatibility
+adjudication before becoming dormant runtime state; fact events cannot invent
+obligations or enforcement authority. The implemented slice connects activation
+to probe scheduling and bounded repair. Phase-local reinjection, invariant
+registration, severity hardening, and live selection of entirely new candidates
+remain TBD.
 
 ### 3.3 How Adaptation Should Be Achieved
 
@@ -237,44 +402,152 @@ and complete attempt artifacts. It is a mechanism test, not a general benchmark.
 
 ### 4.2 Existing Benchmark Integration
 
-**Current status: TBD.** Candidate families include SecRepoBench and
-ProjectEval, but neither can be adopted directly without checking whether it
-provides security-relevant tasks, reproducible environments, independent
-oracles, and trajectory access.
+**Current status: three BaxBench tasks are adapter-ready; six integrations are
+partial/TBD.** The cross-task development registry is
+[`../15-multibench-prototype/prototype-v0.1.json`](../15-multibench-prototype/prototype-v0.1.json).
+It contains nine tasks across generation, repository modification, and
+environment configuration:
 
-**Proposed benchmark adapter:**
+- three BaxBench Python/FastAPI generation tasks;
+- three security-relevant Django modifications from SWE-bench Verified; and
+- three SetupBench service/database configuration tasks.
+
+The cohort, prompt digests, repository/container states, mutation boundaries,
+security claims, and oracle requirements are frozen. The three BaxBench tasks
+have adapters, isolated oracles, a common leakage boundary, and deterministic
+v0.4 calibration receipts; they await only live agent-boundary verification.
+The SWE-bench Verified and SetupBench tasks remain selected integrations. No
+task may be used in an effectiveness run until all promotion gates in the
+active dataset README are satisfied.
+
+A second prompt-only integration is implemented under
+[`../14-baxbench-pilot/`](../14-baxbench-pilot/). It pins ten Python/FastAPI
+BaxBench tasks and the official evaluator, creates empty generation workspaces,
+and separates agent-visible task fields from evaluator-only CWE/tests/exploits.
+Its then-active v0.2 comparison used direct B0, ordinary Archon C0, and revised
+PGACS C2. The original policy-guided condition remains explicit opt-in only.
+The revised path adds compatibility activation, typed evaluator outcomes, and
+bounded repair. It is a partial pre-C2 engineering condition: it does not use
+the ZIP runtime reducer, deterministic write-scope gate, or independent mid-run
+probes and must not be analyzed as the study's full C2 condition.
+
+Benchmark integration is split into three contracts. Combining them into one
+adapter would couple agent control, workspace acquisition, and verdict
+authority:
 
 ```ts
-interface BenchmarkTaskAdapter {
-  loadTask(id: string): Promise<FrozenTask>;
-  prepareWorkspace(task: FrozenTask): Promise<void>;
-  taskSurface(task: FrozenTask): TaskSurface;
-  functionalChecks(): ActiveProbe[];
-  securityChecks(): ActiveProbe[];
-  compatibilityChecks(): ActiveProbe[];
-  artifactManifest(): string[];
+interface FrozenTaskManifest {
+  id: string;
+  source: {
+    sourceId: string;
+    instanceId: string;
+    revision: string;
+    artifact: string;
+    promptSha256: string;
+  };
+  taskKind:
+    | 'repository_code_generation'
+    | 'repository_code_completion'
+    | 'repository_code_modification'
+    | 'environment_configuration';
+  workspace: {
+    allowedMutationPaths: string[];
+  };
+  security: {
+    acceptanceClaim: string;
+  };
+  compatibility: CompatibilityEnvelope;
+  evaluation: {
+    functionalOracle: OracleSpec;
+    securityOracle: OracleSpec;
+  };
+}
+
+interface TaskWorkspaceAdapter {
+  id: string;
+  supports(sourceId: string): boolean;
+  verifySource(task: FrozenTaskManifest): Promise<SourceReceipt>;
+  prepare(task: FrozenTaskManifest): Promise<PreparedWorkspace>;
+  deriveSurface(task: FrozenTaskManifest, workspace: PreparedWorkspace): Promise<TaskSurface>;
+  collectArtifacts(workspace: PreparedWorkspace): Promise<WorkspaceArtifact[]>;
+}
+
+interface EvaluatorAdapter {
+  id: string;
+  prepare(task: FrozenTaskManifest, candidate: CandidateArtifact): Promise<EvaluatorContext>;
+  runFunctional(context: EvaluatorContext): Promise<OracleOutcome[]>;
+  runSecurity(context: EvaluatorContext): Promise<OracleOutcome[]>;
+  attest(context: EvaluatorContext): Promise<EvaluatorAttestation>;
 }
 ```
 
-Selection criteria: license/data availability, deterministic setup, no hidden
-labels exposed to the agent, containerizable dependencies, task-family breadth,
-security oracle quality, and feasible repeated runs. A benchmark name alone is
-not evidence that it fits PGACS.
+`AgentAdapter` remains a separate contract: it translates observations and
+interventions for Claude, Codex, OpenHands, or another coding-agent runtime.
+`TaskWorkspaceAdapter` prepares the subject under test. `EvaluatorAdapter` owns
+trusted checks and cannot execute inside an agent-controlled workspace.
+
+Oracle authority is explicit:
+
+1. upstream functional tests may establish compatibility/functionality;
+2. upstream security tests may establish security only after evaluator
+   isolation and failure-on-known-insecure behavior are verified;
+3. PGACS-authored independent probes fill missing security claims; and
+4. agent-authored tests are trajectory evidence, never terminal authority.
+
+Every oracle invocation must also return a typed completion state:
+`pass`, `fail`, `inconclusive`, or `harness_error`. A rejected malicious request
+can be secure behavior while still causing an evaluator parser to throw. Such a
+run is `inconclusive`, not secure and not vulnerable. C2 may use one bounded
+repair only after an admissible oracle reports a candidate failure. An
+`inconclusive` result first receives at most one deterministic evaluator retry
+when the manifest declares the oracle idempotent; `harness_error` is never sent
+to the coding agent for repair. Neither state can become a security pass.
+
+```ts
+interface OracleOutcome {
+  oracleId: string;
+  kind: 'functional' | 'required_security' | 'defense_in_depth';
+  status: 'pass' | 'fail' | 'inconclusive' | 'harness_error';
+  evidenceRefs: string[];
+  candidateFailure?: string;
+  oracleFailure?: string;
+  attempt: 1 | 2;
+}
+```
+
+Source selection and exclusion reasoning are recorded in
+[`../13-smoke-dataset/adjudication.md`](../13-smoke-dataset/adjudication.md).
+A benchmark name or native success command alone is not evidence that a task
+fits PGACS.
 
 ### 4.3 Experimental Conditions
 
-**Current status: designed, not executed for revised C2.** Freeze identical
-task/provider/model/budget/environment inputs for:
+**Current status: smoke cohort frozen, execution design not yet run.** Freeze
+identical task/provider/model/budget/environment inputs for:
 
-- `C0`: ordinary coding-agent behavior;
-- `C1`: selected-policy prompt guidance;
-- `C2`: C1 plus runtime controls, independent gate, and one repair.
+- `B0`: direct provider behavior without Archon;
+- `C0`: ordinary Archon behavior;
+- `C1`: compatibility-adjudicated policy guidance through Archon; and
+- `C2`: C1 plus runtime controls, typed independent gate, and one candidate
+  repair.
 
-Use multiple seeds per task and cross-family tasks. Primary outcome is required
-security-probe pass rate. Secondary outcomes include functional correctness,
-residual risk, interventions, repair success, tokens/cost/time, code size,
-compatibility, and maintainability. Selections and evaluators must be frozen
-before agent runs to prevent outcome-aware tuning.
+Execution is staged rather than immediately launching every task:
+
+1. record vulnerable/secure calibration and deterministic-replay receipts for
+   the three manifest-backed BaxBench adapter paths;
+2. keep native evaluator errors distinct from candidate failures;
+3. add one independently reviewed security oracle per SWE-bench task;
+4. promote each SetupBench task only after its security oracle rejects a
+   functional-but-insecure reference; and
+5. run the nine-task B0/C0/C1/C2 study before expanding toward PGACS-50.
+
+Use multiple seeds only after the mechanism is stable across at least two
+adapter paths. Primary outcome is joint functional-and-required-security
+success, reported both overall and by task/security family. Secondary outcomes
+include functional correctness, security-probe pass rate, residual risk,
+interventions, repair success, tokens/cost/time, code size, compatibility, and
+maintainability. Task manifests, source locks, selections, evaluator images,
+and probes must be frozen before model runs to prevent outcome-aware tuning.
 
 ## 5. System Implementation
 
@@ -341,6 +614,9 @@ must remain task-family agnostic.
 Proposed extension points:
 
 - `AgentAdapterPlugin` for Claude, Codex, OpenHands, and others;
+- `TaskWorkspaceAdapterPlugin` for PGACS custom, BaxBench, SWE-bench, and
+  SetupBench workspace preparation;
+- `EvaluatorAdapterPlugin` for benchmark-native and PGACS-authored oracles;
 - `MonitorPlugin` for normalized events;
 - `ProbeRunnerPlugin` for local sandbox, Docker, or remote isolation;
 - `LedgerBackendPlugin` for JSONL, database, or signed storage; and
@@ -370,18 +646,23 @@ domain behavior without editing the core controller.
 
 ### 6.3 New Task-Family Extension Flow
 
-**TBD design:** extending from ZIP parsing to another family should require:
+**Current status: first extension cohort frozen; implementation TBD.** Extending
+from ZIP parsing to another family now requires:
 
-1. define surface vocabulary values and threat assumptions;
-2. select/compile policies with provenance;
-3. implement passive monitors and independent probes;
-4. define required versus defense-in-depth evidence;
-5. provide sandbox/workspace fixtures;
-6. validate pack determinism and failure behavior; and
-7. register the pack without changing controller logic.
+1. add a source-pinned `FrozenTaskManifest` without gold-patch content;
+2. implement or reuse a `TaskWorkspaceAdapter` and declare mutation boundaries;
+3. define surface vocabulary values and threat assumptions;
+4. select/compile policies with provenance;
+5. implement passive monitors and independent probes;
+6. separate functional, required-security, and defense-in-depth evidence;
+7. demonstrate that the security oracle fails a known-insecure candidate;
+8. validate source, workspace, evaluator, and pack determinism; and
+9. promote the task to `runnable` without changing controller logic.
 
-The second concrete task family should drive these interfaces. Creating a broad
-plugin framework before that evidence would be speculative.
+The ZIP task and existing BaxBench adapters should first drive the minimal
+interfaces; SWE-bench Django `13551` then tests the first repository-modification
+caller. Broader plugin machinery remains deferred until those callers work
+through the same contract.
 
 ### 6.4 Implementation Status Summary
 
@@ -396,11 +677,13 @@ plugin framework before that evidence would be speculative.
 | Dynamic policy adoption                                  | TBD             | Monotonic `PolicyDelta` reducer design                    |
 | Fixed-rule adaptation                                    | TBD integration | Recommended first controller                              |
 | RL adaptation                                            | Deferred        | Only optional safe ranking after sufficient data          |
-| Existing benchmark testbed                               | TBD             | Adapter and qualification criteria defined                |
+| Existing benchmark testbed                               | Partial         | Nine tasks frozen; six await adapters/oracles             |
 | Archon implementation                                    | Implemented     | Workflow, hooks, logs, worktree, artifacts                |
 | HarnessX/OpenHands/Hermes                                | TBD             | Capability-audited adapters                               |
 | Enforcement-harness plugin                               | TBD             | Generic runtime extension contract proposed               |
 | Policy-knowledge plugin                                  | Partial         | Corpus/selector exist; pack contract proposed             |
+| Task workspace adapters                                  | Partial         | ZIP + three BaxBench generation callers implemented       |
+| Evaluator adapters                                       | Partial         | ZIP + official BaxBench staging/invocation implemented    |
 
 ## 7. Detailed As-Built Technical Reference
 
@@ -421,6 +704,9 @@ Implementation truth is ordered as follows:
 2. [`../../scripts/pgacs-c2-harness.ts`](../../scripts/pgacs-c2-harness.ts): policy freezing, observation, gates, repair selection, and artifacts.
 3. [`../10-guided-trajectory-prototype/evaluator/evaluate_zip_inspector.py`](../10-guided-trajectory-prototype/evaluator/evaluate_zip_inspector.py): independent probes and evaluator isolation.
 4. [`../../packages/workflows/src/logger.ts`](../../packages/workflows/src/logger.ts) and [`../../packages/workflows/src/dag-executor.ts`](../../packages/workflows/src/dag-executor.ts): workflow observation path.
+5. [`../13-smoke-dataset/`](../13-smoke-dataset/): cross-task source lock,
+   manifest, adjudication, readiness gates, and oracle requirements. It defines
+   intended next callers, not already-implemented runtime behavior.
 
 ### 7.2 Goals and Non-Goals
 
@@ -473,6 +759,54 @@ The exact authorized write paths are:
 .pgacs-c2/zip/test_zip_inspector.py
 ```
 
+#### Frozen Task Manifest and Adapter Boundary
+
+The ZIP task is loaded from `scripts/pgacs-zip-task-v0.1.json`, not reconstructed
+from controller constants. Three BaxBench tasks are generated into
+`scripts/baxbench/task-manifests.v0.1.json` after verifying the dataset,
+selection, and activation-rule hashes. Each manifest binds the exact prompt and
+its raw SHA-256, task revision and kind, accepted behavior, prohibited contract
+changes, workspace adapter, authorized mutation paths, evaluator adapter,
+probe sets, timeout/idempotence properties, and selected policy obligations.
+Parsing fails on prompt drift, unsupported schema versions, path traversal,
+or an implementation/auxiliary path outside the authorized mutation set.
+
+The minimal task boundary has two typed contracts:
+
+```ts
+interface TaskWorkspaceAdapter {
+  readonly id: string;
+  prepare(
+    manifest: FrozenTaskManifest,
+    repositoryRoot: string
+  ): Promise<WorkspacePreparationReceipt>;
+}
+
+interface EvaluatorAdapter {
+  readonly id: string;
+  prepareInvocation(input: {
+    manifest: FrozenTaskManifest;
+    repositoryRoot: string;
+    frozenEvaluatorPath: string;
+    candidatePath: string;
+    outputRoot: string;
+    evaluationLabel?: string;
+  }): Promise<EvaluatorInvocation>;
+}
+```
+
+`local-fixture-v0.1` creates or reuses the manifest workspace and returns a
+manifest-bound preparation receipt. `python-json-v0.1` constructs the bounded
+ZIP evaluator invocation without executing candidate code inside the adapter.
+`baxbench-fastapi-v0.1` materializes the exact public prompt and initializes the
+generation workspace. `baxbench-official-v0.1` verifies the official evaluator
+commit and clean tracked checkout, stages only the authorized `app.py`, and
+returns the native command, result path, candidate digest, and staging receipt.
+It is declared non-idempotent until deterministic replay is recorded.
+Adapter resolution is explicit and fails closed for unknown IDs. Preparation
+receipts and invocations are orchestration evidence; they do not replace the
+independent evaluator result, runtime observations, or deterministic gate.
+
 #### Manually Adjudicated Surface
 
 | Field                                  | Value                                 |
@@ -508,7 +842,7 @@ if a record is missing or non-selectable. Selection is identified as
 
 ```mermaid
 flowchart LR
-  Inputs["Frozen task + corpus policies"] --> Prepare["Prepare and freeze"]
+  Inputs["Frozen manifest + corpus policies"] --> Prepare["Prepare through adapter and freeze"]
   Prepare --> Agent["Claude implementation"]
   Hooks["Pre/Post tool hooks"] <--> Agent
   Agent --> Log["Archon workflow JSONL"]
@@ -517,7 +851,7 @@ flowchart LR
   WT --> Harness
   Harness --> Eval["Isolated evaluator"]
   Eval --> Gate["Deterministic attempt gate"]
-  Gate -->|"blocked"| Repair["One Claude repair"]
+  Gate -->|"candidate failure"| Repair["One Claude repair"]
   Repair --> Harness
   Gate -->|"accepted"| Final["Terminal gate"]
   Harness --> Evidence["Ledger + artifacts"]
@@ -529,14 +863,14 @@ and a provider adapter (Claude SDK hook translation and event normalization).
 
 ### 7.5 Workflow DAG
 
-| Node                     | Type   | Responsibility                                                  |
-| ------------------------ | ------ | --------------------------------------------------------------- |
-| `prepare-policy-context` | Bash   | Load/freeze context and control plane; initialize ledger.       |
-| `implement`              | Claude | Write implementation and focused tests.                         |
-| `evaluate-initial`       | Bash   | Verify hashes, observe phase, run probes, compute initial gate. |
-| `repair-once`            | Claude | One repair using initial gate evidence; only after `blocked`.   |
-| `evaluate-repair`        | Bash   | Re-observe, re-probe, and gate the repair.                      |
-| `terminal-gate`          | Bash   | Select final evidence and emit terminal artifacts.              |
+| Node                     | Type   | Responsibility                                                                        |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------- |
+| `prepare-policy-context` | Bash   | Load/freeze context and control plane; initialize ledger.                             |
+| `implement`              | Claude | Write implementation and focused tests.                                               |
+| `evaluate-initial`       | Bash   | Verify hashes, observe phase, run probes, compute initial gate.                       |
+| `repair-once`            | Claude | One repair using initial gate evidence; only after an admissible `candidate_failure`. |
+| `evaluate-repair`        | Bash   | Re-observe, re-probe, and gate the repair.                                            |
+| `terminal-gate`          | Bash   | Select final evidence and emit terminal artifacts.                                    |
 
 The workflow enables worktree isolation and `mutates_checkout`. Agent nodes use
 `context: fresh`; repair receives the complete initial gate explicitly rather
@@ -563,6 +897,17 @@ static response. Workflow hooks are merged with provider-installed
 `PostToolUse` and `PostToolUseFailure` capture hooks. Claude runs with
 `permissionMode: bypassPermissions`, so PGACS hooks restrict agent behavior but
 do not create an OS sandbox around the provider process.
+
+The implementation and repair nodes expose only `Read`, `Write`, and `Edit`.
+Scoped deny rules block reads and edits under `scripts/`, `packages/`,
+`principle-guided-agent-research/`, `.archon/`, `.git/`, and `.codex/`.
+At workflow level, Claude's Bash sandbox is enabled with
+`failIfUnavailable: true`, `allowUnsandboxedCommands: false`, no allowed network
+domains, and read/write denials for the same control-plane roots. This is
+OS-enforced for Bash subprocesses and deny-first provider enforcement for
+built-in file tools. It does not isolate the Claude process itself; a
+sandbox-runtime, container, or VM boundary remains required before benchmark
+promotion.
 
 #### Pre-Action Controls
 
@@ -693,13 +1038,18 @@ This is detection after editing, not rollback or pre-write authorization.
 
 ### 7.9 Control-Plane Integrity
 
-During prepare, the harness writes `policy-context.json` and copies itself plus
-the Python evaluator into `control-plane/`. Its manifest contains:
+During prepare, the harness writes `policy-context.json` and copies itself, the
+activation compiler, runtime policy-state reducer, task adapters, frozen task
+manifest, and Python evaluator into `control-plane/`. Its manifest contains:
 
 ```ts
 interface ControlPlaneManifest {
   version: string;
   harnessSha256: string;
+  activationControllerSha256: string;
+  runtimeControllerSha256: string;
+  taskAdaptersSha256: string;
+  taskManifestSha256: string;
   evaluatorSha256: string;
   policyContextSha256: string;
 }
@@ -707,11 +1057,12 @@ interface ControlPlaneManifest {
 
 Before each evaluation/finalization:
 
-1. workflow Bash computes harness/evaluator hashes with `sha256sum` or
-   `shasum -a 256`;
+1. workflow Bash computes harness/activation/runtime/task-adapter/task-manifest/
+   evaluator hashes with `sha256sum` or `shasum -a 256`;
 2. it compares them with the prepare-node output retained by Archon;
 3. it runs the artifact copy of the harness; and
-4. the harness rechecks its manifest, evaluator, and policy context.
+4. the harness rechecks its manifest, controllers, evaluator, and policy
+   context.
 
 This detects ordinary control-file edits and avoids running the mutable
 repository harness after the agent phase. It is not remote attestation: all
@@ -807,7 +1158,7 @@ Policy evidence mapping is:
 
 `safe_metadata` and `malformed_archive` are globally required.
 
-Define:
+Define terminal admissibility separately from causal routing:
 
 ```text
 R = all required probes pass and requiredTotal > 0
@@ -819,15 +1170,30 @@ D = failed defense-in-depth probes
 Decision:
 
 ```text
-no admissible evaluator result -> blocked
-not R or not P or not T       -> blocked
+harness_error                 -> blocked, no repair
+inconclusive                  -> blocked, no repair
+control_violation             -> blocked, no repair
+candidate_failure             -> blocked, one repair may run
 D is non-empty                -> verified_with_risk
 otherwise                     -> verified
 ```
 
+Outcome precedence is `harness_error > inconclusive > control_violation >
+candidate_failure > success`. This prevents a candidate failure from consuming
+repair when the same evaluation lacks trusted harness or trajectory evidence.
 Missing evaluator evidence fails all policy statuses. A control-plane mismatch
-or malformed workflow log fails the deterministic node before structured
-`gate.json` creation; this distinction is a current limitation.
+or malformed workflow log still fails the deterministic node before structured
+`gate.json` creation; converting those operational failures into uniform typed
+artifacts remains pending.
+
+The ZIP gate now preserves these distinctions:
+
+| Oracle state    | Harness action                                                | Agent repair budget      |
+| --------------- | ------------------------------------------------------------- | ------------------------ |
+| `pass`          | Admit evidence.                                               | Unchanged.               |
+| `fail`          | Block candidate and prepare a targeted repair if allowed.     | May consume one attempt. |
+| `inconclusive`  | Terminate inconclusive; bounded idempotent retry remains TBD. | Must not consume it.     |
+| `harness_error` | Fail closed as an infrastructure/control-plane error.         | Must not consume it.     |
 
 ### 7.12 Bounded Repair
 
@@ -837,20 +1203,28 @@ stateDiagram-v2
   Prepared --> InitialAttempt
   InitialAttempt --> InitialGate
   InitialGate --> Terminal: verified / verified_with_risk
-  InitialGate --> RepairAttempt: blocked
+  InitialGate --> RepairAttempt: candidate_failure and repairEligible
+  InitialGate --> Terminal: control_violation / inconclusive / harness_error
   RepairAttempt --> RepairGate
   RepairGate --> Terminal
   Terminal --> [*]
 ```
 
-Repair runs only for initial `blocked`, receives complete gate evidence, uses a
-fresh context, retains all runtime controls, and cannot trigger another repair.
+Repair runs only for an initial `blocked` caused by an admissible candidate
+failure, receives complete functional and security evidence, uses a fresh
+context, retains all runtime controls, and cannot trigger another repair.
+Oracle failures bypass the repair node. A functional failure attributed to a
+policy-induced restriction is repaired only when an alternative implementation
+can preserve every required security invariant; otherwise the terminal result
+is `BLOCKED_POLICY_CONFLICT`, not an automatic policy downgrade.
 
 Final selection is deterministic:
 
 1. non-blocked initial result is final;
-2. blocked initial plus repair gate selects repair;
-3. blocked initial without repair evidence remains blocked with an added reason.
+2. blocked but non-repairable initial result is final;
+3. repair-eligible initial result plus repair gate selects repair; and
+4. repair-eligible initial result without repair evidence remains blocked with
+   an added reason.
 
 Finalization writes terminal JSON, audit Markdown, and ledger evidence before
 setting exit code 2 for `blocked`.
@@ -864,6 +1238,11 @@ setting exit code 2 for `blocked`.
   control-plane/
     manifest.json
     pgacs-c2-harness.ts
+    pgacs-policy-activation.ts
+    pgacs-behavior-taxonomy.ts
+    pgacs-runtime-policy-state.ts
+    pgacs-task-adapters.ts
+    pgacs-zip-task-v0.1.json
     evaluate_zip_inspector.py
   attempts/
     initial/
@@ -881,14 +1260,14 @@ setting exit code 2 for `blocked`.
 
 Ledger events are UUID/timestamped JSONL records:
 
-| Type                        | Core data                                                 |
-| --------------------------- | --------------------------------------------------------- |
-| `policy_selected`           | selection mode, pack hash, surface status, manifest       |
-| `runtime_control_activated` | provider mode, matchers, write paths, fallback            |
-| `trajectory_observed`       | phase, log state, count, paths, violations, interventions |
-| `implementation_observed`   | implementation hash and preserved path                    |
-| `probe_completed`           | decision, counts, isolation, evaluator error              |
-| `terminal_decision`         | final decision, repair state, risk, trajectory summary    |
+| Type                        | Core data                                                            |
+| --------------------------- | -------------------------------------------------------------------- |
+| `policy_selected`           | selection mode, pack hash, surface status, manifest                  |
+| `runtime_control_activated` | provider mode, matchers, write paths, fallback                       |
+| `trajectory_observed`       | phase, behavior annotations/counts, paths, violations, interventions |
+| `implementation_observed`   | implementation hash and preserved path                               |
+| `probe_completed`           | decision, counts, isolation, evaluator error                         |
+| `terminal_decision`         | final decision, repair state, risk, trajectory summary               |
 
 The ledger is append-only by use of `appendFile`; it is not hash-chained,
 signed, write-once, or protected from the same OS user.
@@ -899,6 +1278,7 @@ Evidence authority is explicit:
 | ---------------------------- | ------------------------------------------- |
 | Installed hook configuration | Intended control only.                      |
 | Matching tool request        | Agent behavior only; not hook-result proof. |
+| Primary behavior annotation  | Measurement and soft prompt routing only.   |
 | Unauthorized Git path        | Deterministically blocks.                   |
 | Independent probe result     | Satisfies/fails a control.                  |
 | Evaluator isolation result   | Satisfies/fails runtime policy.             |
@@ -906,10 +1286,11 @@ Evidence authority is explicit:
 
 ### 7.14 Trust and Threat Model
 
-Trusted for this experiment: Archon parent process, repository commit, frozen
-harness/evaluator after verification, Git and hash utilities, Python plus
-`sandbox-exec` or Docker/image, artifact filesystem, and retained prepare-node
-output.
+Trusted for this experiment: Archon parent process, source lock and task
+manifest after digest verification, repository/container state after adapter
+attestation, frozen harness/evaluator after verification, Git and hash
+utilities, Python plus `sandbox-exec` or a digest-pinned Docker image, artifact
+filesystem, and retained prepare-node output.
 
 Untrusted: model prose, generated code/tests, provider requests, candidate code
 imported by the evaluator, and all agent security claims.
@@ -929,6 +1310,16 @@ Residual attack surface includes writes outside the repository, ignored paths,
 excluded `.archon/artifacts/` and `.archon/logs/`, same-user process tampering,
 inherited Claude project/user settings, unmatched tools or channels, TOCTOU on
 the shared host, mutable Docker image tags, and mutable ledger files.
+
+Cross-benchmark execution adds leakage risks: gold patches, reference secure or
+vulnerable completions, hidden probe bodies, task labels that reveal the
+vulnerability, and gold-patch file scope. The agent receives only the pinned
+task statement and prepared subject workspace. Evaluator material remains in a
+separate control plane, and broad mutation boundaries are used where an exact
+gold file list would reveal the solution shape. A task cannot be promoted to
+`runnable` until its security oracle rejects a known-insecure candidate and the
+adapter demonstrates that evaluator-only artifacts are inaccessible to the
+agent.
 
 ### 7.15 Capability-Aware Degradation
 
@@ -964,8 +1355,9 @@ results so every run yields the same terminal contract.
 
 ### 7.17 Determinism, Cost, and Scale
 
-Deterministic: task constants, policy IDs/mapping, hashes, sorted paths, probes,
-repair budget, gate logic, and final selection.
+Deterministic: task constants, policy IDs/mapping, behavior-classification
+rules, hashes, sorted paths, probes, repair budget, gate logic, and final
+selection.
 
 Non-deterministic: Claude output, event UUID/timestamps, evaluator platform,
 mutable Docker tag, and model/provider version unless captured externally.
@@ -978,7 +1370,9 @@ Future scale requires log cursors/streaming and per-phase baselines.
 
 ### 7.18 Validation
 
-Harness tests cover phase normalization, matcher states, accepted/risk/blocked
+Reducer and harness tests cover deterministic replay, sequence/task/evidence
+validation, policy transitions, loop interventions, phase normalization,
+matcher states, behavior vocabulary/classification/routing, accepted/risk/blocked
 decisions, missing evidence, scope violations, repair selection, frozen policy
 loading, and control-plane tamper rejection. Logger tests cover node-attributed
 tool events. The full workflow package suite covers DAG, hooks, conditional
@@ -986,6 +1380,10 @@ nodes, output substitution, and subprocess behavior.
 
 ```bash
 bun test ./scripts/pgacs-c2-harness.test.ts
+bun test ./scripts/pgacs-behavior-taxonomy.test.ts
+bun test ./scripts/pgacs-policy-activation.test.ts
+bun test ./scripts/pgacs-runtime-policy-state.test.ts
+bun test ./scripts/pgacs-task-adapters.test.ts
 bun test packages/workflows/src/logger.test.ts
 bun --filter @archon/workflows test
 bun run type-check
@@ -1020,35 +1418,106 @@ terminal JSON, audit report, raw workflow log, and final worktree diff.
 7. **Separate required and hardening probes:** preserves contract while exposing risk.
 8. **Fail closed on missing evidence:** absence of evidence cannot become a pass.
 9. **Freeze/hash the control plane:** the subject should not alter its oracle.
+10. **Adjudicate obligations before activation:** contract-narrowing hardening is
+    advisory unless the frozen task contract authorizes it.
+11. **Repair candidate failures, not oracle failures:** inconclusive and harness
+    errors remain control-plane outcomes.
+12. **Keep behavior labels non-authoritative:** taxonomy annotations support
+    measurement and soft prompt routing; they cannot activate policies, satisfy
+    evidence, or change terminal decisions.
 
 ### 7.21 Mapping to Target PGACS
 
-| Target component       | Prototype                             | Coverage            |
-| ---------------------- | ------------------------------------- | ------------------- |
-| Surface extraction     | Frozen manual surface                 | Fixed only          |
-| Policy selection/state | Three explicit IDs in JSON            | Static only         |
-| Layer A                | Prompt and hook context               | Implemented         |
-| Layer B passive        | Tool observations and changed paths   | Partial             |
-| Layer B active         | 17 isolated ZIP probes                | One task            |
-| Layer C prediction     | Initial gate decides repair           | Minimal rule        |
-| Layer C conditioning   | One repair plus invariant reminder    | Partial             |
-| Tool broker            | Claude deny hooks                     | Provider-specific   |
-| Evidence ledger        | JSONL events                          | Not tamper-evident  |
-| Terminal gate          | Pure attempt/final selection          | Implemented         |
-| Capability adapter     | Claude mode plus fallback declaration | Native path only    |
-| Dynamic adoption       | None                                  | Not implemented     |
-| Monotonic hardening    | Controls retained during repair       | Fixed approximation |
-| Packs/plugins          | Hard-coded ZIP mapping                | Not implemented     |
+| Target component       | Prototype                               | Coverage               |
+| ---------------------- | --------------------------------------- | ---------------------- |
+| Surface extraction     | Frozen manual surface                   | Fixed only             |
+| Policy selection/state | Three explicit IDs in JSON              | Static only            |
+| Compatibility plan     | Manual ZIP compatibility assumptions    | Typed target only      |
+| Layer A                | Prompt and hook context                 | Implemented            |
+| Layer B passive        | Tool observations and changed paths     | Partial                |
+| Behavior taxonomy      | Versioned deterministic primary labels  | Partial, observational |
+| Layer B active         | 17 isolated ZIP probes                  | One task               |
+| Layer C prediction     | Initial gate decides repair             | Minimal rule           |
+| Layer C conditioning   | One repair plus invariant reminder      | Partial                |
+| Tool broker            | Claude deny hooks                       | Provider-specific      |
+| Evidence ledger        | JSONL events                            | Not tamper-evident     |
+| Terminal gate          | Pure attempt/final selection            | Implemented            |
+| Capability adapter     | Claude mode plus fallback declaration   | Native path only       |
+| Dynamic adoption       | None                                    | Not implemented        |
+| Monotonic hardening    | Controls retained during repair         | Fixed approximation    |
+| Packs/plugins          | Hard-coded ZIP mapping                  | Not implemented        |
+| Frozen task manifest   | ZIP + three source-pinned Bax manifests | Four mechanism tasks   |
+| Task workspace adapter | Local fixture + BaxBench FastAPI        | ZIP + Bax callers      |
+| Evaluator adapter      | ZIP JSON + official BaxBench adapter    | Two native paths       |
 
 ### 7.22 Recommended Next Revisions
 
-1. Run and inspect one model-backed C2 observation before abstracting.
-2. Log hook result events so deny outcomes are explicit.
-3. Convert operational failures to structured blocked results.
-4. Capture prepare-time Git baseline and compare per-phase deltas.
-5. Protect harness-managed paths from agent writes.
-6. Pin the evaluator image by digest.
-7. Hash-chain/sign evidence if tamper evidence becomes required.
-8. Implement and label the non-hook provider fallback separately.
-9. Freeze the cross-task C0/C1/C2 experiment before generalizing packs.
-10. Add generic bus/controller/pack interfaces only with a second concrete task family.
+The generic nine-task pipeline is downstream of a mechanism-readiness gate. Do
+not freeze common benchmark interfaces around the current partial controller.
+First complete and replay the control loop on the existing ZIP vertical slice.
+
+Completed in the current revision: deterministic obligation-level activation,
+compiled Layer A/B/C bindings, normalized runtime events, deterministic
+policy-state reduction, evidence-derived loop-boundary interventions, state
+hashes in gate artifacts, `policy_activated`/`policy_state_reduced` ledger
+records, typed oracle routing that reserves repair for admissible candidate
+failures, versioned deterministic primary behavior annotations with advisory
+repair routing, a hash-bound frozen ZIP task manifest, and three source-pinned
+BaxBench manifests routed through the same workspace/evaluator boundary. Real
+BaxBench staging was checked against the pinned evaluator without running a new
+model or claiming a new oracle result.
+
+1. Record known-vulnerable rejection, known-secure acceptance, and deterministic
+   replay receipts for the three BaxBench tasks.
+2. Pin the BaxBench evaluator environment/container inputs by digest before an
+   effectiveness run.
+3. Extend the bounded repair input with both functional regressions and failed
+   policy evidence, plus invariants for every previously passing control.
+4. Log hook result events and convert operational failures to structured
+   terminal outcomes.
+5. Wrap the complete coding-provider process in a sandbox-runtime, container,
+   or VM that mounts only the prepared public workspace; emit and verify an
+   isolation receipt before admitting agent output.
+6. Verify source locks and environment receipts in the multi-benchmark preflight.
+7. Promote the SWE-bench and SetupBench tasks in the order recorded by the
+   prototype registry.
+8. Run the four-condition, multi-seed study before expanding to PGACS-50,
+   dynamic policy adoption, or broad plugin infrastructure.
+9. Implement and label the non-hook provider fallback separately.
+10. Hash-chain/sign evidence only if tamper evidence becomes required.
+
+### 7.23 Revision Acceptance Criteria
+
+The prototype is ready for comparative benchmark execution only when
+deterministic tests demonstrate all of the following:
+
+1. identical event sequences produce byte-stable policy state and deltas;
+2. out-of-order, cross-task, or unknown policy/evidence events fail closed;
+3. at least one runtime event changes a policy from `active` to `satisfied`,
+   `violated`, or `uncertain`;
+4. loop-boundary intervention is derived from evidence state rather than agent
+   narration;
+5. a known-vulnerable candidate is rejected and a known-secure candidate is
+   accepted by independent probes;
+6. missing evidence and evaluator failures cannot become security success;
+7. identical task contract, selection, and corpus inputs produce a byte-stable
+   `PolicyActivationPlan` and content hash;
+8. the Login and UserCreation fixtures keep password hashing/authentication
+   controls required while classifying an unrequested minimum-length rejection
+   as advisory contract-narrowing hardening;
+9. newly proposed dynamic obligations pass compatibility adjudication before
+   any Layer A/B/C binding is activated;
+10. response-schema, database-path, and missing-temporary-file oracle failures
+    are classified as `inconclusive`, never as candidate vulnerability or pass;
+11. an evaluator integrity/configuration failure becomes `harness_error`, never
+    an agent repair request;
+12. a genuine functional or required-security candidate failure can trigger
+    exactly one repair, and the repair input includes every previously passing
+    required invariant;
+13. post-repair functional and security checks rerun before deterministic final
+    selection; and
+14. run artifacts report selected versus activated policy counts, rendered
+    policy tokens, oracle retries, repair use, total tokens, and elapsed time for
+    B0/C0/C1/C2 cost comparison; and
+15. behavior annotations are deterministic, traceable to normalized agent
+    events, exclude harness-owned probes, and cannot change gate outcomes.

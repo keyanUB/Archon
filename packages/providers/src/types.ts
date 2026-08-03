@@ -17,6 +17,12 @@ export interface ClaudeProviderDefaults {
    *  @default ['project', 'user']
    */
   settingSources?: ('project' | 'user')[];
+  /** Start Claude Code with all user/project customizations disabled.
+   * Translates to the CLI's `--safe-mode` flag; the similarly named
+   * environment variable is not a substitute for this startup option.
+   * @default false
+   */
+  safeMode?: boolean;
   /** Absolute path to the Claude Code SDK's `cli.js`. Required in compiled
    *  Archon builds when `CLAUDE_BIN_PATH` is not set; optional in dev mode
    *  (SDK resolves from node_modules). */
@@ -200,6 +206,8 @@ export type MessageChunk =
       stopReason?: string;
       numTurns?: number;
       modelUsage?: Record<string, unknown>;
+      /** Exact model identifiers reported by the provider runtime for this query. */
+      resolvedModelIds?: string[];
     }
   | { type: 'rate_limit'; rateLimitInfo: Record<string, unknown> }
   | {

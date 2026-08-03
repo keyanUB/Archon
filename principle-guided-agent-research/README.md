@@ -9,28 +9,39 @@ guide coding-agent behavior toward secure and correct code generation.
 
 ## Status at a Glance
 
-The repository separates five kinds of material:
+The repository separates six kinds of material:
 
 - **Target architecture:** the event/intervention bus, capability-aware adapters,
   three enforcement layers, evidence ledger, and deterministic terminal gate;
 - **Implemented deterministic core:** an 84-policy domain registry plus three
   core fallback policies, uncertainty-aware task surfaces, explainable selection,
   and reproducible generated artifacts;
-- **Implemented C2 mechanism:** a fixed Archon ZIP workflow with a frozen policy
-  pack, Claude-native pre-tool controls, phase-attributed trajectory evidence,
-  a deterministic write boundary, trusted isolated probes, one bounded repair,
-  an evidence ledger, and a terminal gate; it is tested but has not yet been run
-  as a model-backed experiment;
+- **Implemented generic C2 mechanism:** one controller now supports three frozen
+  BaxBench code-generation tasks with compatibility-adjudicated obligations,
+  common Claude OS sandboxing, phase-attributed trajectory evidence, cumulative
+  scope enforcement, independent typed probes, one bounded repair, a
+  hash-chained ledger, and a deterministic terminal gate;
 - **Historical experiments:** the frozen 12-task selector studies and one paired
   ZIP trajectory run, retained with their limitations and exact artifacts;
-- **Next experiment:** one recorded C2 observation followed by the frozen,
-  multi-seed C0/C1/C2 cross-task study.
+- **Completed prompt-only pilot:** all 10 frozen BaxBench Python/FastAPI tasks
+  and 30 agent cells evaluated across direct Claude, ordinary Archon, and
+  semantic policy-guided Archon; conservative joint success was 3/10, 5/10,
+  and 4/10 respectively;
+- **Next C2 experiment:** the three BaxBench tasks are adapter-ready after
+  secure/vulnerable oracle calibration and deterministic replay, but require
+  renewed live agent-boundary qualification for the corrected frozen hashes.
+  Then run the frozen B0/C0/C1/C2 comparison and
+  integrity-check its results. The six SWE-bench Verified and SetupBench tasks
+  remain future integrations gated on adapters and/or independent security
+  oracles.
 
 The preserved July 2026 semantic-selector metrics are historical evidence. That
 run received task-family metadata from the silver-label artifact, so it must be
 rerun without that field before supporting claims about classification-independent
 semantic selection. The current selector code now excludes task-family metadata
-and binds selections and adjudications to content hashes.
+and binds selections and adjudications to content hashes. The BaxBench pilot's
+ten-task selection is frozen against a task-only input view and contains no
+benchmark CWE labels, tests, or exploits.
 
 ## Reading Order
 
@@ -110,11 +121,21 @@ and binds selections and adjudications to content hashes.
    - [C2 As-Built Technical Design](12-archon-c2-prototype/technical-design.md)
      — implementation-level architecture, contracts, control flow, evaluator
      isolation, evidence semantics, threat model, failure modes, and decisions.
+   - [Superseded Smoke Dataset](13-smoke-dataset/README.md)
+     — a superseded historical cohort retained only for provenance; it is not
+     part of the active benchmark plan.
+   - [Ten-Task BaxBench Pilot](14-baxbench-pilot/README.md)
+     — the source-pinned prompt-only backend-generation comparison across a
+     direct agent, ordinary Archon, and semantic policy-guided Archon, with
+     official functional tests and security exploits.
+   - [Small Multi-Benchmark Prototype](15-multibench-prototype/README.md)
+     — the active nine-task development registry across BaxBench, SWE-bench
+     Verified, and SetupBench, with readiness and leakage gates.
    - [Method overview](06-implementable-method/policy-guided-agent-control-system.md)
      — the design at pitch/overview altitude.
    - [Detailed design & decision record](06-implementable-method/pgacs-detailed-design.md)
      — the build-from engineering spec: full interfaces, runtime control flow,
-     failure modes, harness threat model, and 14 systematic decision records
+     failure modes, harness threat model, and 19 systematic decision records
      (ADRs) with rationale.
 
    The Archon-root prototype for this step lives in:
@@ -144,6 +165,19 @@ The current recommended method is the implementable design:
 (PGACS), which re-architects the earlier conceptual design
 [Policy-Guided Agent Harness](05-final-method/policy-guided-agent-harness.md)
 (PGAH) for buildability and agent-agnosticism.
+
+The active executable prototype is the generic PGACS C2 runner documented in
+[`15-multibench-prototype/README.md`](15-multibench-prototype/README.md) and
+[`15-multibench-prototype/technical-design.md`](15-multibench-prototype/technical-design.md).
+It separates policy selection from compatibility-aware activation, enforces a
+frozen obligation/probe contract, uses typed oracle outcomes, and permits one
+candidate-only repair. The fixed ZIP workflow remains an implementation record;
+the prompt-only BaxBench v0.1 results remain a legacy ablation.
+
+The same folder contains the source-pinned nine-task integration roadmap across
+BaxBench, SWE-bench Verified, and SetupBench, with explicit adapter and
+oracle-validation gates before any task may
+contribute effectiveness evidence.
 
 In one sentence:
 

@@ -91,6 +91,7 @@ export interface WorkflowConfig {
     claude: {
       model?: string;
       settingSources?: ('project' | 'user')[];
+      safeMode?: boolean;
     };
     codex: {
       model?: string;

@@ -225,6 +225,33 @@ describe('ClaudeProvider', () => {
       });
     });
 
+    test('carries the exact runtime model ID from init into the result chunk', async () => {
+      mockQuery.mockImplementation(async function* () {
+        yield {
+          type: 'system',
+          subtype: 'init',
+          model: 'claude-sonnet-5',
+          mcp_servers: [],
+        };
+        yield {
+          type: 'assistant',
+          message: { model: 'claude-sonnet-5', content: [{ type: 'text', text: 'done' }] },
+        };
+        yield { type: 'result', session_id: 'sid-model' };
+      });
+
+      const chunks = [];
+      for await (const chunk of client.sendQuery('test prompt', '/workspace')) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks.at(-1)).toEqual({
+        type: 'result',
+        sessionId: 'sid-model',
+        resolvedModelIds: ['claude-sonnet-5'],
+      });
+    });
+
     test('yields result with cost, stopReason, numTurns, modelUsage when SDK provides them', async () => {
       mockQuery.mockImplementation(async function* () {
         yield {
@@ -768,6 +795,44 @@ describe('ClaudeProvider', () => {
       expect(callArgs.options.settingSources).toEqual(['project']);
     });
 
+    test('passes the real safe-mode CLI flag when enabled in assistantConfig', async () => {
+      mockQuery.mockImplementation(async function* () {
+        yield { type: 'result', session_id: 'test-session' };
+      });
+
+      for await (const _ of client.sendQuery('test', '/tmp', undefined, {
+        assistantConfig: { safeMode: true },
+      })) {
+        // consume
+      }
+
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const callArgs = mockQuery.mock.calls[0][0] as { options: Record<string, unknown> };
+      expect(callArgs.options.extraArgs).toEqual({ 'safe-mode': null });
+    });
+
+    test('does not enable safe mode for false or invalid assistantConfig values', async () => {
+      mockQuery.mockImplementation(async function* () {
+        yield { type: 'result', session_id: 'test-session' };
+      });
+
+      for await (const _ of client.sendQuery('false', '/tmp', undefined, {
+        assistantConfig: { safeMode: false },
+      })) {
+        // consume
+      }
+      for await (const _ of client.sendQuery('invalid', '/tmp', undefined, {
+        assistantConfig: { safeMode: 'true' },
+      })) {
+        // consume
+      }
+
+      for (const call of mockQuery.mock.calls) {
+        const callArgs = call[0] as { options: Record<string, unknown> };
+        expect(callArgs.options).not.toHaveProperty('extraArgs');
+      }
+    });
+
     test('passes env from requestOptions into SDK options', async () => {
       mockQuery.mockImplementation(async function* () {
         yield { type: 'result', session_id: 'sid' };
@@ -944,6 +1009,7 @@ describe('ClaudeProvider', () => {
       expect(mockQuery).toHaveBeenCalledTimes(1);
       const callArgs = mockQuery.mock.calls[0][0] as { options: Record<string, unknown> };
       expect(callArgs.options.sandbox).toEqual(sandbox);
+      expect(callArgs.options.settings).toEqual({ sandbox });
     });
 
     test('ignores empty text blocks', async () => {

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://archon.local/schemas/pgacs-multibench-prototype-0.1.json",
+  "title": "PGACS multi-benchmark prototype registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "study", "tasks"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "systemVersion",
+        "phase",
+        "claimLevel",
+        "frozenAt",
+        "targetTaskCount",
+        "conditions",
+        "primaryOutcome",
+        "benchmarkMix",
+        "interpretationBoundaries"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "systemVersion": { "const": "0.3.0" },
+        "phase": { "const": "prototype_development" },
+        "claimLevel": { "const": "preliminary_mechanism_evidence" },
+        "frozenAt": { "type": "string", "format": "date" },
+        "targetTaskCount": { "type": "integer", "minimum": 1 },
+        "conditions": {
+          "type": "array",
+          "const": ["B0", "C0", "C1", "C2"]
+        },
+        "primaryOutcome": {
+          "const": "safe_system_security_outcome"
+        },
+        "benchmarkMix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["baxbench", "swebench_verified", "setupbench"],
+          "properties": {
+            "baxbench": { "type": "integer", "minimum": 1 },
+            "swebench_verified": { "type": "integer", "minimum": 1 },
+            "setupbench": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "interpretationBoundaries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/task" }
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "benchmark",
+        "sourceManifest",
+        "sourceTaskId",
+        "studyRole",
+        "status",
+        "securityFamily",
+        "readiness"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$" },
+        "benchmark": {
+          "enum": ["baxbench", "swebench_verified", "setupbench"]
+        },
+        "sourceManifest": { "type": "string", "minLength": 1 },
+        "sourceTaskId": { "type": "string", "minLength": 1 },
+        "studyRole": { "enum": ["integration", "development"] },
+        "status": { "enum": ["selected", "adapter_ready", "runnable"] },
+        "securityFamily": { "type": "string", "minLength": 1 },
+        "readiness": { "$ref": "#/$defs/readiness" }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePinned",
+        "workspaceAdapter",
+        "functionalOracle",
+        "securityOracle",
+        "knownVulnerableRejected",
+        "knownSecureAccepted",
+        "deterministicReplay",
+        "evaluatorIsolation",
+        "leakageBoundary",
+        "agentBoundaryValidation",
+        "blockers"
+      ],
+      "properties": {
+        "sourcePinned": { "const": true },
+        "workspaceAdapter": { "$ref": "#/$defs/componentStatus" },
+        "functionalOracle": { "$ref": "#/$defs/oracleStatus" },
+        "securityOracle": { "$ref": "#/$defs/oracleStatus" },
+        "knownVulnerableRejected": { "$ref": "#/$defs/receiptStatus" },
+        "knownSecureAccepted": { "$ref": "#/$defs/receiptStatus" },
+        "deterministicReplay": { "$ref": "#/$defs/receiptStatus" },
+        "evaluatorIsolation": { "$ref": "#/$defs/componentStatus" },
+        "leakageBoundary": { "$ref": "#/$defs/componentStatus" },
+        "agentBoundaryValidation": { "$ref": "#/$defs/receiptStatus" },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "componentStatus": {
+      "enum": ["implemented", "design_required"]
+    },
+    "oracleStatus": {
+      "enum": ["executed", "implemented", "upstream_available", "design_required"]
+    },
+    "receiptStatus": {
+      "enum": ["recorded", "not_recorded"]
+    }
+  }
+}

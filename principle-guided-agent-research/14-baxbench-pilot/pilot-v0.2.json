@@ -1,0 +1,131 @@
+{
+  "version": "0.2.0",
+  "benchmark": {
+    "name": "BaxBench",
+    "datasetUrl": "https://huggingface.co/datasets/LogicStar/BaxBench/resolve/main/data/test-00000-of-00001.parquet",
+    "datasetSha256": "fcfb2fcfe081c439c6b6f75d789d994c6947332ff5741627300855d297988b40",
+    "evaluatorRepository": "https://github.com/logic-star-ai/baxbench.git",
+    "evaluatorCommit": "de885cd93d561682e203a5a0d57c33b08aac6f5e"
+  },
+  "cohort": {
+    "language": "Python",
+    "framework": "FastAPI",
+    "environmentId": "Python-FastAPI",
+    "sampleCountPerCell": 1,
+    "tasks": [
+      { "taskId": "Calculator-Python-FastAPI", "scenarioId": "Calculator", "role": "development" },
+      { "taskId": "FileSearch-Python-FastAPI", "scenarioId": "FileSearch", "role": "development" },
+      { "taskId": "Compiler-Python-FastAPI", "scenarioId": "Compiler", "role": "evaluation" },
+      {
+        "taskId": "ImageTransfer-Python-FastAPI",
+        "scenarioId": "ImageTransfer",
+        "role": "evaluation"
+      },
+      { "taskId": "Login-Python-FastAPI", "scenarioId": "Login", "role": "evaluation" },
+      { "taskId": "Monitor-Python-FastAPI", "scenarioId": "Monitor", "role": "evaluation" },
+      { "taskId": "RegexSearch-Python-FastAPI", "scenarioId": "RegexSearch", "role": "evaluation" },
+      {
+        "taskId": "SecretStorage-Python-FastAPI",
+        "scenarioId": "SecretStorage",
+        "role": "evaluation"
+      },
+      {
+        "taskId": "UserCreation-Python-FastAPI",
+        "scenarioId": "UserCreation",
+        "role": "evaluation"
+      },
+      { "taskId": "ZipToTxt-Python-FastAPI", "scenarioId": "ZipToTxt", "role": "evaluation" }
+    ]
+  },
+  "conditions": [
+    {
+      "id": "direct",
+      "mode": "direct",
+      "evaluatorModelName": "pgacs-direct-base-agent",
+      "defaultEnabled": true,
+      "label": "B0 direct agent",
+      "description": "Preserved v0.1 direct-agent result."
+    },
+    {
+      "id": "archon",
+      "mode": "archon",
+      "evaluatorModelName": "pgacs-archon-baseline",
+      "defaultEnabled": true,
+      "label": "C0 Archon baseline",
+      "description": "Preserved v0.1 ordinary-Archon result."
+    },
+    {
+      "id": "pgacs",
+      "mode": "pgacs_legacy",
+      "evaluatorModelName": "pgacs-archon-policy-guided",
+      "defaultEnabled": false,
+      "label": "Legacy PGACS C1",
+      "description": "Frozen v0.1 policy-guided ablation without compatibility activation; explicit opt-in only."
+    },
+    {
+      "id": "pgacs_v2",
+      "mode": "pgacs_compatible_repair",
+      "evaluatorModelName": "pgacs-archon-policy-guided-v2",
+      "defaultEnabled": true,
+      "label": "Compatibility-aware PGACS engineering condition",
+      "description": "Partial pre-C2 condition with compatibility-aware activation, typed evaluator outcomes, and at most one candidate-only repair; it does not implement the full C2 runtime controller."
+    }
+  ],
+  "agent": {
+    "provider": "claude",
+    "model": "sonnet",
+    "directPermissionMode": "bypassPermissions",
+    "allowedTools": ["Bash", "Read", "Write", "Edit", "MultiEdit", "LS"]
+  },
+  "policySelection": {
+    "path": "principle-guided-agent-research/14-baxbench-pilot/semantic-selection.v0.1.json",
+    "sha256": "d653d27b6ce7b2223dc3dddbc55759ecadddd764539e1fef66ad0ca2bdc4e0be",
+    "selector": "llm_semantic_proposal",
+    "toolsEnabled": false,
+    "taskFamilyProvided": false,
+    "maxPoliciesPerTask": 6
+  },
+  "activationRules": {
+    "path": "principle-guided-agent-research/14-baxbench-pilot/activation-rules.v0.2.json",
+    "sha256": "ac67eda01cd23f66c9948c0476ca717328c0ef816beae07b1bc49367bcb03357"
+  },
+  "promptPolicy": {
+    "baselineSafetyPrompt": "none",
+    "selectorVisibleFields": [
+      "task_id",
+      "scenario_id",
+      "env_id",
+      "env_language",
+      "env_framework",
+      "env_multifile",
+      "code_filename",
+      "entrypoint_cmd",
+      "port",
+      "needs_db",
+      "needs_secret",
+      "env_instructions",
+      "allowed_packages",
+      "needed_packages",
+      "text_specification",
+      "scenario_instructions",
+      "api_specification"
+    ],
+    "evaluatorOnlyFields": ["potential_cwes", "functional_tests", "security_tests", "exploits"]
+  },
+  "studyQualification": {
+    "exploratory": true,
+    "postHocRevision": true,
+    "reason": "The activation rules and repair design were informed by the completed v0.1 outcomes; this is an engineering regression test, not independent confirmatory evidence."
+  },
+  "metrics": {
+    "primary": "joint_functional_and_security_success",
+    "secondary": [
+      "functional_success",
+      "security_success_conditional_on_functional",
+      "oracle_outcome",
+      "repair_attempted",
+      "repair_success",
+      "wall_time_seconds"
+    ]
+  }
+}

@@ -11,7 +11,7 @@ export default tseslint.config(
       'packages/*/dist/**',
       'dist/**',
       'coverage/**',
-      '.agents/examples/**',
+      '.agents/**',
       'packages/docs-web/**',
       'workspace/**',
       'worktrees/**',

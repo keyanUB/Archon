@@ -30,6 +30,7 @@ import {
   logValidation,
   logWorkflowError,
   logWorkflowComplete,
+  logNodeComplete,
   type WorkflowEvent,
 } from './logger';
 
@@ -207,6 +208,17 @@ Line 3`;
       const events = await readLogFile('complete-test');
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('workflow_complete');
+    });
+  });
+
+  describe('logNodeComplete', () => {
+    it('records exact provider-reported model IDs', async () => {
+      await logNodeComplete(testDir, 'model-test', 'agent', '<inline>', {
+        resolvedModelIds: ['claude-sonnet-5'],
+      });
+
+      const events = await readLogFile('model-test');
+      expect(events[0].resolved_models).toEqual(['claude-sonnet-5']);
     });
   });
 

@@ -25,6 +25,7 @@
 import {
   query,
   type Options,
+  type Settings,
   type HookCallback,
   type HookCallbackMatcher,
 } from '@anthropic-ai/claude-agent-sdk';
@@ -408,6 +409,10 @@ async function applyNodeConfig(
   // sandbox
   if (nodeConfig.sandbox !== undefined) {
     options.sandbox = nodeConfig.sandbox as Options['sandbox'];
+    options.settings = {
+      ...(typeof options.settings === 'object' ? options.settings : {}),
+      sandbox: nodeConfig.sandbox as Settings['sandbox'],
+    };
   }
 
   // betas
@@ -534,6 +539,7 @@ function buildBaseClaudeOptions(
     allowDangerouslySkipPermissions: true,
     systemPrompt: requestOptions?.systemPrompt ?? { type: 'preset', preset: 'claude_code' },
     settingSources: assistantDefaults.settingSources ?? ['project', 'user'],
+    ...(assistantDefaults.safeMode ? { extraArgs: { 'safe-mode': null } } : {}),
     hooks: buildToolCaptureHooks(toolResultQueue),
     stderr: (data: string): void => {
       const output = data.trim();
@@ -634,6 +640,7 @@ async function* streamClaudeMessages(
   events: AsyncGenerator,
   toolResultQueue: ToolResultEntry[]
 ): AsyncGenerator<MessageChunk> {
+  const resolvedModelIds = new Set<string>();
   for await (const msg of events) {
     // Drain tool results captured by hooks before processing the next event
     while (toolResultQueue.length > 0) {
@@ -651,8 +658,11 @@ async function* streamClaudeMessages(
     const event = msg as { type: string };
 
     if (event.type === 'assistant') {
-      const message = msg as { message: { content: ContentBlock[] } };
+      const message = msg as { message: { content: ContentBlock[]; model?: string } };
       const content = message.message.content;
+      if (message.message.model && message.message.model !== '<synthetic>') {
+        resolvedModelIds.add(message.message.model);
+      }
 
       for (const block of content) {
         if (block.type === 'text' && block.text) {
@@ -669,8 +679,10 @@ async function* streamClaudeMessages(
     } else if (event.type === 'system') {
       const sysMsg = msg as {
         subtype?: string;
+        model?: string;
         mcp_servers?: { name: string; status: string }[];
       };
+      if (sysMsg.subtype === 'init' && sysMsg.model) resolvedModelIds.add(sysMsg.model);
       if (sysMsg.subtype === 'init' && sysMsg.mcp_servers) {
         const failed = sysMsg.mcp_servers.filter(s => s.status !== 'connected');
         if (failed.length > 0) {
@@ -748,6 +760,7 @@ async function* streamClaudeMessages(
         ...(resultMsg.model_usage
           ? { modelUsage: resultMsg.model_usage as Record<string, unknown> }
           : {}),
+        ...(resolvedModelIds.size > 0 ? { resolvedModelIds: [...resolvedModelIds].sort() } : {}),
       };
     }
   }

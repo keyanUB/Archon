@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.1.0",
+  "sources": {
+    "pgacs-custom": {
+      "kind": "local",
+      "revision": "pgacs-zip-c2-v1",
+      "url": "../10-guided-trajectory-prototype/artifacts/runs/2026-07-27-zip-prototype/baseline/implementation/TASK.md",
+      "sha256": "75f6cbe54b589f44c7a2463bae00cd972b9b5f7ec417c270386d1a80842b9896"
+    },
+    "swebench-verified": {
+      "kind": "dataset",
+      "revision": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+      "url": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified",
+      "artifact": "data/test-00000-of-00001.parquet",
+      "sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd"
+    },
+    "setupbench": {
+      "kind": "git",
+      "revision": "041a412f01348c2a6f8b1b6a910138fe01885aee",
+      "url": "https://github.com/microsoft/SetupBench",
+      "artifact": "setupbench/scenarios/background_service_setup.jsonl",
+      "sha256": "54c6c5f13b744decf9dd71ef69658af94141cc36b85590974aada47ff2c5b656"
+    }
+  }
+}

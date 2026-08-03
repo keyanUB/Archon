@@ -80,12 +80,20 @@ The harness is a runtime that speaks two message types.
 ```ts
 type ObservationEvent =
   | { kind: 'tool_call'; tool: string; args: unknown }
+  | {
+      kind: 'security_fact';
+      factId: SecurityFactId;
+      evidenceRef: string;
+      subjectRefs: string[];
+      subjectSha256: string;
+    }
   | { kind: 'file_edit'; path: string; diff: string }
   | { kind: 'command_run'; cmd: string; exitCode: number; stdout: string; stderr: string }
   | { kind: 'message'; role: 'agent'; text: string }
   | { kind: 'phase_hint'; phase: BehaviorPhase } // soft, best-effort
   | { kind: 'dependency_added'; manifest: string; packages: string[] }
-  | { kind: 'service_started'; bindAddress: string; port: number };
+  | { kind: 'service_started'; bindAddress: string; port: number }
+  | { kind: 'loop_boundary'; repairAvailable: boolean };
 ```
 
 ### Interventions (controller → agent, applied by the adapter)
@@ -230,19 +238,25 @@ Selection is **not one-shot**. It is a controller mutating shared state that all
 three layers observe.
 
 ```text
-initial task surface ──► select()   ──► PolicyState v0
-                                            │
-   ObservationEvent  ──► reassess() ──► PolicyState v1 (⊇ v0, monotonic)
-                                            │
-        (Layers A/B/C automatically pick up the delta)
+initial task surface ──► select() ──► activation plan ──► PolicyState v0
+                                                               │
+   ObservationEvent  ──► reassess() ───────────────────► PolicyState v1 (⊇ v0)
+                                                               │
+                             (Layers A/B/C pick up the delta)
 ```
+
+Selection is not activation. Before `PolicyState v0`, the controller produces a
+per-obligation activation plan against a frozen public compatibility envelope.
+Contract-preserving controls may be required; controls that narrow accepted
+inputs or change the public API default to advisory unless explicitly required
+by the task contract. A genuine required conflict stops before generation.
 
 - **v0** from task-surface extraction: LLM structured-output + deterministic repo
   scan (see §5 for the mechanism split).
 - **No empty selection:** the surface records `sufficient`, `ambiguous`, or
   `insufficient` status plus supporting evidence and unresolved questions. If
-  no reliable specific policy match exists, the controller activates a compact
-  core floor:
+  no reliable specific policy match exists, the selector adds a compact core
+  floor to the activation candidates:
   `core:security-surface-discovery`,
   `core:fail-safe-implementation`, and
   `core:evidence-based-validation`.
@@ -250,8 +264,9 @@ initial task surface ──► select()   ──► PolicyState v0
 - **Generic is not specific:** fallback policies shape discovery, fail-safe
   implementation, validation, and reporting. They cannot satisfy a missing
   known-mandatory control or prove that a concrete vulnerability is prevented.
-- **Deltas** fire on trigger events. Each delta simultaneously touches all three
-  layers _because the `Policy` object carries all three handlers_:
+- **Deltas** fire on trigger events. Each proposed obligation is compatibility-
+  adjudicated before activation; admitted decisions then touch all three layers
+  atomically _because the `Policy` object carries all three handlers_:
 
 | Trigger event                   | Delta effect (A / B / C)                                                                                     |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -320,6 +335,48 @@ logs) and Layer C invariants (no dropped validation step) unchanged.
 **Trust tiers** prevent an experimental pack from silently weakening core gates:
 `experimental`/`advisory` packs can _recommend_ policies but cannot _hard-gate_ a
 run; only `core`/`trusted` packs can raise severity to `fail_closed`.
+
+### Cross-Task Execution Contract
+
+Policy packs are not benchmark loaders, and agent adapters are not evaluator
+drivers. Cross-task execution uses three independent seams:
+
+```text
+AgentAdapter          agent events <-> PGACS interventions
+TaskWorkspaceAdapter frozen task -> verified prepared workspace
+EvaluatorAdapter     candidate artifact -> trusted functional/security evidence
+```
+
+A source-pinned `FrozenTaskManifest` binds the task identity, prompt digest,
+repository/container revision, allowed mutation paths, security claim, and
+required oracle classes. The manifest is control-plane input and is frozen
+before model output exists.
+
+Task readiness is explicit:
+
+- `selected`: cohort membership and source identity are frozen;
+- `runnable`: source verification, workspace preparation, functional oracle,
+  security oracle, isolation, and resource boundaries are all frozen; and
+- `excluded`: a recorded qualification or validity failure prevents use.
+
+An upstream benchmark's native success command is not automatically a security
+oracle. Functional tests, upstream security tests, PGACS-authored probes, and
+agent-authored tests remain separate evidence classes. Agent-authored tests
+never have terminal authority. Gold patches, reference completions, exact gold
+file scope, and hidden probe implementations remain outside the agent-visible
+workspace.
+
+Each evaluator invocation returns `pass`, `fail`, `inconclusive`, or
+`harness_error`. Only an admissible `fail` describes a candidate defect and may
+consume the single repair attempt. An idempotent inconclusive oracle may be
+retried once by the harness; persistent inconclusive and harness errors fail
+closed without being shown to the agent as repairable code defects.
+
+The active development contract is the source-pinned nine-task registry in
+[`../15-multibench-prototype/`](../15-multibench-prototype/): three BaxBench,
+three SWE-bench Verified, and three SetupBench tasks. ZIP remains the first
+complete vertical slice; one caller from each active source should drive the
+shared interfaces before broader plug-in infrastructure is introduced.
 
 ## 5. Policy Selection and Enforcement Mechanism
 
@@ -406,17 +463,31 @@ Every later capability is an addition at a stable seam, not a redesign.
    [`04-generic-security-floor-and-implementation-plan.md`](./04-generic-security-floor-and-implementation-plan.md).
 1. **Bus + `EvidenceLedger` + `PolicyState`** — pure data + a controller
    function.
-2. **One adapter** — the context+hook adapter for an agent already in use
+2. **One agent adapter** — the context+hook adapter for an agent already in use
    (Claude Code hooks or an MCP tool-proxy) — giving inject + interceptTools.
-3. **One pack, ~6 policies** (path traversal, input validation, safe parse,
+3. **Frozen task contract** — manifest, source lock, task workspace adapter,
+   evaluator adapter, and readiness receipts, first preserving ZIP behavior and
+   then preparing one caller from BaxBench, SWE-bench Verified, and SetupBench.
+4. **Compatibility activation** — a frozen compatibility envelope and typed
+   per-obligation `PolicyActivationPlan`.
+5. **Typed evaluator routing** — distinguish candidate failure from
+   inconclusive oracle and harness failure before repair.
+6. **One pack, ~6 policies** (path traversal, input validation, safe parse,
    error disclosure, command injection, dependency pinning), each with a prompt
    fragment + at least one passive monitor + one invariant.
-4. **Deterministic controller** with a handful of dynamic triggers and monotonic
-   hardening.
-5. **One active probe + one critic-LLM check** — to prove the expensive path
+7. **Deterministic controller** with typed trajectory facts,
+   compatibility-adjudicated dormant obligations, probe scheduling, and
+   monotonic activation. Add severity hardening only after this loop is
+   evaluated.
+8. **Versioned behavior annotation** — classify only unambiguous normalized
+   agent events, retain event/rule provenance, and use labels for measurement or
+   soft prompt routing only. Do not grant them activation, evidence, or gate
+   authority before a held-out classifier-validity study.
+9. **One active probe + one critic-LLM check** — to prove the expensive path
    works.
-6. **Then widen**: more adapters (Codex, log-only), more packs, the learned
-   ranker.
+10. **Nine-task development study** — promote every selected task to runnable,
+    then execute direct, ordinary Archon, compatibility-aware C1, and C2 before
+    widening to more agent adapters, packs, or a learned ranker.
 
 ## Interfaces At A Glance
 
@@ -426,9 +497,34 @@ interface PolicyController {
   state: PolicyState; // active policies (monotonic)
   ledger: EvidenceLedger; // append-only evidence
   ingest(e: ObservationEvent): Intervention[]; // event → deltas + interventions
-  select(surface: TaskSurface): PolicyState; // §5 proposer + rules
+  select(surface: TaskSurface): SelectedPolicySet; // §5 proposer + rules
+  activate(selection: SelectedPolicySet, envelope: CompatibilityEnvelope): PolicyState;
   reassess(e: ObservationEvent): PolicyDelta | null; // §3 dynamic adoption
   gate(): TerminalStatus; // deterministic final decision
+}
+
+interface CompatibilityEnvelope {
+  taskContractSha256: string;
+  acceptedBehavior: string[];
+  prohibitedContractChanges: string[];
+}
+
+interface OracleOutcome {
+  oracleId: string;
+  status: 'pass' | 'fail' | 'inconclusive' | 'harness_error';
+  evidenceRefs: string[];
+}
+
+interface TaskWorkspaceAdapter {
+  verifySource(task: FrozenTaskManifest): Promise<SourceReceipt>;
+  prepare(task: FrozenTaskManifest): Promise<PreparedWorkspace>;
+  deriveSurface(task: FrozenTaskManifest, workspace: PreparedWorkspace): Promise<TaskSurface>;
+}
+
+interface EvaluatorAdapter {
+  runFunctional(context: EvaluatorContext): Promise<OracleOutcome[]>;
+  runSecurity(context: EvaluatorContext): Promise<OracleOutcome[]>;
+  attest(context: EvaluatorContext): Promise<EvaluatorAttestation>;
 }
 
 type TerminalStatus =
@@ -438,6 +534,7 @@ type TerminalStatus =
   | 'BLOCKED_POLICY_CONFLICT'
   | 'FAILED_FUNCTIONAL_VALIDATION'
   | 'FAILED_POLICY_VALIDATION'
+  | 'FAILED_ORACLE_INCONCLUSIVE'
   | 'FAILED_HARNESS_ERROR';
 ```
 
@@ -450,8 +547,9 @@ repair invariants; selects a compact policy set from task surface and adapts it
 dynamically across the trajectory; enforces it through three graceful-degrading
 layers (proactive prompt, detective monitoring/probing, corrective loop
 conditioning) driven by an event/intervention bus that any agent joins via a
-capability-declaring adapter; keeps all enforcement deterministic while using
-LLMs only to propose and to supply evidence; and extends to new task families by
-writing plug-in packs over a fixed surface vocabulary — never by editing the
-core.
+capability-declaring agent adapter; prepares source-pinned tasks and isolated
+oracles through separate workspace/evaluator adapters; keeps all enforcement
+deterministic while using LLMs only to propose and to supply evidence; and
+extends to new task families by writing plug-in packs over a fixed surface
+vocabulary — never by editing the core.
 ```

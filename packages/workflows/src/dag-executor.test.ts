@@ -3783,7 +3783,7 @@ describe('executeDagWorkflow -- resume with priorCompletedNodes', () => {
 
     mockSendQueryDag.mockImplementation(function* () {
       yield { type: 'assistant', content: 'the node output text' };
-      yield { type: 'result', sessionId: 'sid' };
+      yield { type: 'result', sessionId: 'sid', resolvedModelIds: ['claude-sonnet-5'] };
     });
 
     await executeDagWorkflow(
@@ -3812,6 +3812,9 @@ describe('executeDagWorkflow -- resume with priorCompletedNodes', () => {
     expect((completedEvent![0] as { data: { node_output: string } }).data.node_output).toBe(
       'the node output text'
     );
+    expect(
+      (completedEvent![0] as { data: { resolved_model_ids: string[] } }).data.resolved_model_ids
+    ).toEqual(['claude-sonnet-5']);
   });
 
   // ─── Loop Node Tests ─────────────────────────────────────────────────────

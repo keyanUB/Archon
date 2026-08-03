@@ -9,6 +9,29 @@ worktree:
   enabled: true
 mutates_checkout: true
 tags: [research, pgacs, security-harness, c2]
+sandbox:
+  enabled: true
+  failIfUnavailable: true
+  autoAllowBashIfSandboxed: false
+  allowUnsandboxedCommands: false
+  network:
+    allowedDomains: []
+    deniedDomains: ["*"]
+  filesystem:
+    denyRead:
+      - ./scripts
+      - ./packages
+      - ./principle-guided-agent-research
+      - ./.archon
+      - ./.git
+      - ./.codex
+    denyWrite:
+      - ./scripts
+      - ./packages
+      - ./principle-guided-agent-research
+      - ./.archon
+      - ./.git
+      - ./.codex
 
 nodes:
   - id: prepare-policy-context
@@ -38,6 +61,20 @@ nodes:
     context: fresh
     idle_timeout: 600000
     output_type: pgacs-agent-attempt
+    allowed_tools: [Read, Write, Edit]
+    denied_tools:
+      - Read(/scripts/**)
+      - Read(/packages/**)
+      - Read(/principle-guided-agent-research/**)
+      - Read(/.archon/**)
+      - Read(/.git/**)
+      - Read(/.codex/**)
+      - Edit(/scripts/**)
+      - Edit(/packages/**)
+      - Edit(/principle-guided-agent-research/**)
+      - Edit(/.archon/**)
+      - Edit(/.git/**)
+      - Edit(/.codex/**)
     hooks:
       PreToolUse:
         - matcher: "Bash"
@@ -74,14 +111,34 @@ nodes:
       CONTROL_DIR="$ARTIFACTS_DIR/control-plane"
       if command -v sha256sum >/dev/null 2>&1; then
         ACTUAL_HARNESS=$(sha256sum "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(sha256sum "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(sha256sum "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(sha256sum "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(sha256sum "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       else
         ACTUAL_HARNESS=$(shasum -a 256 "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(shasum -a 256 "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(shasum -a 256 "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(shasum -a 256 "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(shasum -a 256 "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       fi
       EXPECTED_HARNESS=$prepare-policy-context.output.controlPlane.harnessSha256
+      EXPECTED_ACTIVATION_CONTROLLER=$prepare-policy-context.output.controlPlane.activationControllerSha256
+      EXPECTED_BEHAVIOR_TAXONOMY=$prepare-policy-context.output.controlPlane.behaviorTaxonomySha256
+      EXPECTED_RUNTIME_CONTROLLER=$prepare-policy-context.output.controlPlane.runtimeControllerSha256
+      EXPECTED_TASK_ADAPTERS=$prepare-policy-context.output.controlPlane.taskAdaptersSha256
+      EXPECTED_TASK_MANIFEST=$prepare-policy-context.output.controlPlane.taskManifestSha256
       EXPECTED_EVALUATOR=$prepare-policy-context.output.controlPlane.evaluatorSha256
       test "$ACTUAL_HARNESS" = "$EXPECTED_HARNESS"
+      test "$ACTUAL_ACTIVATION_CONTROLLER" = "$EXPECTED_ACTIVATION_CONTROLLER"
+      test "$ACTUAL_BEHAVIOR_TAXONOMY" = "$EXPECTED_BEHAVIOR_TAXONOMY"
+      test "$ACTUAL_RUNTIME_CONTROLLER" = "$EXPECTED_RUNTIME_CONTROLLER"
+      test "$ACTUAL_TASK_ADAPTERS" = "$EXPECTED_TASK_ADAPTERS"
+      test "$ACTUAL_TASK_MANIFEST" = "$EXPECTED_TASK_MANIFEST"
       test "$ACTUAL_EVALUATOR" = "$EXPECTED_EVALUATOR"
       bun "$ARTIFACTS_DIR/control-plane/pgacs-c2-harness.ts" evaluate \
         ".pgacs-c2/zip/zip_inspector.py" \
@@ -101,16 +158,34 @@ nodes:
 
       $evaluate-initial.output
 
+      Taxonomy-routed adaptation guidance:
+
+      $evaluate-initial.output.repairRouting.guidance
+
       Perform exactly one bounded repair. Modify only `.pgacs-c2/zip/zip_inspector.py` and
       `.pgacs-c2/zip/test_zip_inspector.py`. Address the reported failed probes and policy
       evidence directly. Preserve already passing behavior. Do not modify or bypass the
       evaluator, workflow, policy context, evidence ledger, or terminal gate. The harness owns
       test and probe execution; do not invoke a shell. Stop after this repair attempt.
     depends_on: [evaluate-initial]
-    when: "$evaluate-initial.output.decision == 'blocked'"
+    when: "$evaluate-initial.output.repairEligible == true"
     context: fresh
     idle_timeout: 600000
     output_type: pgacs-repair-attempt
+    allowed_tools: [Read, Write, Edit]
+    denied_tools:
+      - Read(/scripts/**)
+      - Read(/packages/**)
+      - Read(/principle-guided-agent-research/**)
+      - Read(/.archon/**)
+      - Read(/.git/**)
+      - Read(/.codex/**)
+      - Edit(/scripts/**)
+      - Edit(/packages/**)
+      - Edit(/principle-guided-agent-research/**)
+      - Edit(/.archon/**)
+      - Edit(/.git/**)
+      - Edit(/.codex/**)
     hooks:
       PreToolUse:
         - matcher: "Bash"
@@ -146,14 +221,34 @@ nodes:
       CONTROL_DIR="$ARTIFACTS_DIR/control-plane"
       if command -v sha256sum >/dev/null 2>&1; then
         ACTUAL_HARNESS=$(sha256sum "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(sha256sum "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(sha256sum "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(sha256sum "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(sha256sum "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       else
         ACTUAL_HARNESS=$(shasum -a 256 "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(shasum -a 256 "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(shasum -a 256 "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(shasum -a 256 "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(shasum -a 256 "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       fi
       EXPECTED_HARNESS=$prepare-policy-context.output.controlPlane.harnessSha256
+      EXPECTED_ACTIVATION_CONTROLLER=$prepare-policy-context.output.controlPlane.activationControllerSha256
+      EXPECTED_BEHAVIOR_TAXONOMY=$prepare-policy-context.output.controlPlane.behaviorTaxonomySha256
+      EXPECTED_RUNTIME_CONTROLLER=$prepare-policy-context.output.controlPlane.runtimeControllerSha256
+      EXPECTED_TASK_ADAPTERS=$prepare-policy-context.output.controlPlane.taskAdaptersSha256
+      EXPECTED_TASK_MANIFEST=$prepare-policy-context.output.controlPlane.taskManifestSha256
       EXPECTED_EVALUATOR=$prepare-policy-context.output.controlPlane.evaluatorSha256
       test "$ACTUAL_HARNESS" = "$EXPECTED_HARNESS"
+      test "$ACTUAL_ACTIVATION_CONTROLLER" = "$EXPECTED_ACTIVATION_CONTROLLER"
+      test "$ACTUAL_BEHAVIOR_TAXONOMY" = "$EXPECTED_BEHAVIOR_TAXONOMY"
+      test "$ACTUAL_RUNTIME_CONTROLLER" = "$EXPECTED_RUNTIME_CONTROLLER"
+      test "$ACTUAL_TASK_ADAPTERS" = "$EXPECTED_TASK_ADAPTERS"
+      test "$ACTUAL_TASK_MANIFEST" = "$EXPECTED_TASK_MANIFEST"
       test "$ACTUAL_EVALUATOR" = "$EXPECTED_EVALUATOR"
       bun "$ARTIFACTS_DIR/control-plane/pgacs-c2-harness.ts" evaluate \
         ".pgacs-c2/zip/zip_inspector.py" \
@@ -162,7 +257,7 @@ nodes:
         "$LOG_DIR/$WORKFLOW_ID.jsonl" \
         "repair-once"
     depends_on: [evaluate-initial, repair-once]
-    when: "$evaluate-initial.output.decision == 'blocked'"
+    when: "$evaluate-initial.output.repairEligible == true"
     timeout: 120000
     output_type: pgacs-gate-result
 
@@ -172,14 +267,34 @@ nodes:
       CONTROL_DIR="$ARTIFACTS_DIR/control-plane"
       if command -v sha256sum >/dev/null 2>&1; then
         ACTUAL_HARNESS=$(sha256sum "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(sha256sum "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(sha256sum "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(sha256sum "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(sha256sum "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(sha256sum "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       else
         ACTUAL_HARNESS=$(shasum -a 256 "$CONTROL_DIR/pgacs-c2-harness.ts" | cut -d ' ' -f 1)
+        ACTUAL_ACTIVATION_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-policy-activation.ts" | cut -d ' ' -f 1)
+        ACTUAL_BEHAVIOR_TAXONOMY=$(shasum -a 256 "$CONTROL_DIR/pgacs-behavior-taxonomy.ts" | cut -d ' ' -f 1)
+        ACTUAL_RUNTIME_CONTROLLER=$(shasum -a 256 "$CONTROL_DIR/pgacs-runtime-policy-state.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_ADAPTERS=$(shasum -a 256 "$CONTROL_DIR/pgacs-task-adapters.ts" | cut -d ' ' -f 1)
+        ACTUAL_TASK_MANIFEST=$(shasum -a 256 "$CONTROL_DIR/pgacs-zip-task-v0.1.json" | cut -d ' ' -f 1)
         ACTUAL_EVALUATOR=$(shasum -a 256 "$CONTROL_DIR/evaluate_zip_inspector.py" | cut -d ' ' -f 1)
       fi
       EXPECTED_HARNESS=$prepare-policy-context.output.controlPlane.harnessSha256
+      EXPECTED_ACTIVATION_CONTROLLER=$prepare-policy-context.output.controlPlane.activationControllerSha256
+      EXPECTED_BEHAVIOR_TAXONOMY=$prepare-policy-context.output.controlPlane.behaviorTaxonomySha256
+      EXPECTED_RUNTIME_CONTROLLER=$prepare-policy-context.output.controlPlane.runtimeControllerSha256
+      EXPECTED_TASK_ADAPTERS=$prepare-policy-context.output.controlPlane.taskAdaptersSha256
+      EXPECTED_TASK_MANIFEST=$prepare-policy-context.output.controlPlane.taskManifestSha256
       EXPECTED_EVALUATOR=$prepare-policy-context.output.controlPlane.evaluatorSha256
       test "$ACTUAL_HARNESS" = "$EXPECTED_HARNESS"
+      test "$ACTUAL_ACTIVATION_CONTROLLER" = "$EXPECTED_ACTIVATION_CONTROLLER"
+      test "$ACTUAL_BEHAVIOR_TAXONOMY" = "$EXPECTED_BEHAVIOR_TAXONOMY"
+      test "$ACTUAL_RUNTIME_CONTROLLER" = "$EXPECTED_RUNTIME_CONTROLLER"
+      test "$ACTUAL_TASK_ADAPTERS" = "$EXPECTED_TASK_ADAPTERS"
+      test "$ACTUAL_TASK_MANIFEST" = "$EXPECTED_TASK_MANIFEST"
       test "$ACTUAL_EVALUATOR" = "$EXPECTED_EVALUATOR"
       bun "$ARTIFACTS_DIR/control-plane/pgacs-c2-harness.ts" finalize "$ARTIFACTS_DIR"
     depends_on: [evaluate-initial, evaluate-repair]

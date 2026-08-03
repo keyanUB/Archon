@@ -27,6 +27,10 @@ export function parseClaudeConfig(raw: Record<string, unknown>): ClaudeProviderD
     }
   }
 
+  if (typeof raw.safeMode === 'boolean') {
+    result.safeMode = raw.safeMode;
+  }
+
   if (typeof raw.claudeBinaryPath === 'string') {
     result.claudeBinaryPath = raw.claudeBinaryPath;
   }
