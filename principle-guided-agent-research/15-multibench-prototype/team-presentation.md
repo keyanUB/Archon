@@ -446,8 +446,10 @@ Each result is bound to:
 - a verified evidence-ledger head.
 
 The raw result root archives the exact experiment contract and each cell's task
-manifest. Frozen implementation hashes are rechecked around every cell so a
-long run cannot silently span two control-plane revisions.
+manifest, plus the admitted readiness registry and its live boundary receipt.
+The runner requires that receipt's Claude version and Archon commit to match
+the executing host. Frozen implementation hashes are rechecked around every
+cell so a long run cannot silently span two control-plane revisions.
 
 Each ledger follows:
 
@@ -484,6 +486,43 @@ The security hypothesis has priority: C2 should increase `safeSystemOutcome`
 and `secureGeneration` relative to the controls. Functional preservation is
 evaluated simultaneously through `functionalCorrectness` and `jointAccepted`;
 it is not substituted for the security objective.
+
+The evaluation protocol can be summarized as follows:
+
+| Protocol element       | Frozen v0.1 choice                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Unit of analysis       | One fresh, independent task-condition coding-agent cell                                                    |
+| Development cohort     | Three BaxBench prompt-to-code tasks spanning authentication, path confinement, and archive processing      |
+| Treatments             | `B0`, `C0`, `C1`, and `C2`                                                                                 |
+| Total cells            | 12: one generation for each of 3 tasks x 4 conditions                                                      |
+| Primary endpoints      | `safeSystemOutcome` at system level and `secureGeneration` at artifact level                               |
+| Preservation endpoints | `functionalCorrectness` and `jointAccepted`                                                                |
+| C2 diagnostic endpoint | `correctSecurityBlock`, plus repair recovery and regression                                                |
+| Admission rule         | All 12 cells measurable; no harness-error or inconclusive gating cell                                      |
+| Analysis               | Per-task outcomes first, then descriptive condition counts and C2-minus-control count differences          |
+| Permitted claim        | Preliminary mechanism and feasibility evidence on the three development tasks, not statistical superiority |
+
+#### Hypotheses and Decision Criteria
+
+- **H1, secure artifact generation:** C1 or C2 produces more terminal
+  `secureGeneration` outcomes than C0, indicating benefit from policy guidance
+  or the complete harness respectively.
+- **H2, security-safe system behavior:** C2 produces more
+  `safeSystemOutcome` outcomes than B0, C0, and C1 by either releasing secure
+  code or correctly blocking an independently identified insecure candidate.
+- **H3, functional preservation:** any security improvement is interpreted
+  together with `functionalCorrectness` and `jointAccepted`; a security gain
+  accompanied by lost useful completion is reported as a tradeoff rather than
+  an unconditional improvement.
+- **H4, bounded intervention:** among repair-eligible C2 cells, terminal
+  recoveries should outnumber regressions and every unrepaired insecure result
+  should be blocked for an attributable required-security failure.
+
+The current cohort is too small for a significance threshold or a stable
+effect-size estimate. Consequently, the prototype demonstration accepts or
+rejects these hypotheses only as task-specific descriptive evidence. A mixed
+result is retained as mixed evidence; it is not converted into a single score
+or a post hoc pass criterion.
 
 ### 8.2 Frozen Experimental Design
 
@@ -611,6 +650,21 @@ implemented mechanism executes, catches declared failures, repairs or blocks
 specific candidates, and changes outcomes on these development tasks. It
 cannot estimate general secure-generation improvement, benchmark-wide effect
 size, statistical significance, or unseen-vulnerability coverage.
+
+### 8.8 Validity Threats and Mitigations
+
+| Validity dimension | Main threat in v0.1                                                                                      | Current mitigation                                                                                                                | Remaining limitation                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Internal           | Provider drift, quota state, temporal order, or unequal execution boundaries can mimic treatment effects | Exact runtime model evidence, live boundary receipt, frozen interleaved schedule, common sandbox, fresh cells, and logged retries | One execution period and one provider still permit unmeasured service-side variation                      |
+| Construct          | Passing a bounded oracle may be mistaken for general program security                                    | Typed obligation-to-probe bindings, secure/vulnerable calibration, advisory/required separation, and explicit claim boundary      | The oracle covers declared properties, not all weaknesses or semantic attack variants                     |
+| External           | Three small single-file development tasks may not represent repository-scale coding agents               | Tasks span three distinct security mechanisms; SWE-bench and SetupBench adapters are planned as separate strata                   | No generalization beyond the active BaxBench tasks is justified                                           |
+| Statistical        | One sample per task-condition pair gives unstable counts and no variance estimate                        | Report exact cell outcomes and counts without significance tests or precision-implying percentages                                | Replicated generations are required before inferential claims                                             |
+| Instrumentation    | Harness or evaluator failure may be mislabeled as candidate insecurity                                   | Typed failure attribution, fail-closed run admission, digest-bound evidence, and analyzer recomputation                           | The trusted host, Docker daemon, provider binary, harness, and oracle implementations remain in scope     |
+| Researcher degrees | Tasks, metrics, or exclusions could be changed after outcomes are observed                               | Frozen contract, execution order, hashes, endpoint definitions, no cell replacement, and preserved inadmissible runs              | The current tasks are development data; a future held-out confirmatory cohort must be selected in advance |
+
+The primary residual risk is oracle incompleteness, not missing attribution.
+Accordingly, the report must state which required probes passed or failed for
+each task and must not replace that evidence with the label "secure" alone.
 
 ## 9. Current Status
 

@@ -9,6 +9,7 @@ import { stableSha256 } from './pgacs-runtime-policy-state';
 import {
   CONDITION_IDS,
   assessScope,
+  assertBoundaryRuntimeMatches,
   assertRunnableExperimentTasks,
   assertRequiredProbeCoverage,
   assertExternalExperimentRoot,
@@ -154,6 +155,26 @@ describe('PGACS BaxBench C2 runner', () => {
         byBenchmark: { baxbench: { total: 3, runnable: 3 } },
       })
     ).not.toThrow();
+  });
+
+  test('binds experiment execution to the qualified Claude and Archon runtime', () => {
+    const host = {
+      claudeVersion: '2.1.220 (Claude Code)',
+      archonVersion: 'Archon CLI v0.4.1',
+      archonCommit: 'a'.repeat(40),
+      dockerVersion: '28.5.1',
+    };
+    const receipt = {
+      claudeVersion: host.claudeVersion,
+      archonCommit: host.archonCommit,
+    };
+    expect(() => assertBoundaryRuntimeMatches(receipt, host)).not.toThrow();
+    expect(() =>
+      assertBoundaryRuntimeMatches({ ...receipt, claudeVersion: 'different' }, host)
+    ).toThrow('different Claude version');
+    expect(() =>
+      assertBoundaryRuntimeMatches({ ...receipt, archonCommit: 'b'.repeat(40) }, host)
+    ).toThrow('different Archon commit');
   });
 
   test('refuses to reuse an existing experiment output', async () => {

@@ -94,6 +94,12 @@ AND blocker list empty
 The gate is intentionally conjunctive. Missing evidence produces a blocked or
 inconclusive study cell, never a security pass.
 
+The experiment runner enforces this state rather than treating the registry as
+documentation: no filtered or complete model run starts unless all three
+active BaxBench tasks are `runnable`. It also requires the admitted boundary
+receipt's Claude version and Archon commit to match the executing host. Each
+run archives that receipt and the admitted registry for analyzer revalidation.
+
 An oracle may be marked `implemented` after its executable and focused logic
 tests exist. This is an engineering milestone only. It does not satisfy the
 `executed` runnable gate and does not establish that the oracle is sound for a

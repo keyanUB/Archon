@@ -41,6 +41,7 @@ import {
   loadPrototypeInputs,
   summarizeReadiness,
   validatePrototypeRegistry,
+  type PrototypeInputs,
   type ReadinessSummary,
 } from './validate-pgacs-multibench-prototype';
 
@@ -191,6 +192,13 @@ interface ProcessResult {
   durationMs: number;
 }
 
+export interface HostPreflight {
+  claudeVersion: string;
+  archonVersion: string;
+  archonCommit: string;
+  dockerVersion: string;
+}
+
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const CONTRACT_PATH = join(
   REPO_ROOT,
@@ -306,13 +314,25 @@ export function assertRunnableExperimentTasks(summary: ReadinessSummary): void {
   }
 }
 
-async function assertCurrentExperimentReadiness(): Promise<void> {
+export function assertBoundaryRuntimeMatches(receipt: unknown, host: HostPreflight): void {
+  if (!isRecord(receipt)) throw new Error('PGACS active boundary receipt is missing');
+  if (receipt.claudeVersion !== host.claudeVersion) {
+    throw new Error('PGACS active boundary receipt was produced by a different Claude version');
+  }
+  if (receipt.archonCommit !== host.archonCommit) {
+    throw new Error('PGACS active boundary receipt was produced by a different Archon commit');
+  }
+}
+
+async function assertCurrentExperimentReadiness(host: HostPreflight): Promise<PrototypeInputs> {
   const inputs = await loadPrototypeInputs();
   const errors = validatePrototypeRegistry(inputs);
   if (errors.length > 0) {
     throw new Error(`PGACS readiness validation failed:\n- ${errors.join('\n- ')}`);
   }
   assertRunnableExperimentTasks(summarizeReadiness(inputs.registry));
+  assertBoundaryRuntimeMatches(inputs.agentBoundaryReceipt, host);
+  return inputs;
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -479,7 +499,9 @@ export function buildCrossCellDeniedPaths(workspace: string): string[] {
       ),
       join(runRoot, 'run-manifest.json'),
       join(runRoot, 'results.json'),
-      join(runRoot, 'experiment-contract.json')
+      join(runRoot, 'experiment-contract.json'),
+      join(runRoot, 'agent-boundary-receipt.json'),
+      join(runRoot, 'readiness-registry.json')
     );
   }
   return paths;
@@ -1665,7 +1687,7 @@ async function verifyFrozenInputHashes(contract: ExperimentContract): Promise<vo
   }
 }
 
-async function preflight(contract: ExperimentContract): Promise<void> {
+async function preflight(contract: ExperimentContract): Promise<HostPreflight> {
   const registry = loadFrozenTaskRegistry(
     join(REPO_ROOT, contract.frozenInputs.taskManifestRegistry.path)
   );
@@ -1676,28 +1698,30 @@ async function preflight(contract: ExperimentContract): Promise<void> {
     assertRequiredProbeCoverage(taskId, bindings);
   }
   validateGeneratedWorkflows(join(tmpdir(), 'pgacs-preflight', 'cell', 'workspace'));
-  const [claudeVersion, archonVersion, dockerVersion] = await Promise.all([
+  const [claudeVersion, archonVersion, archonCommit, dockerVersion] = await Promise.all([
     spawnCapture(['claude', '--version'], REPO_ROOT, 30_000),
     spawnCapture([process.execPath, 'run', 'cli', 'version'], REPO_ROOT, 30_000),
+    spawnCapture(['git', 'rev-parse', 'HEAD'], REPO_ROOT, 30_000),
     spawnCapture(['docker', 'version', '--format', '{{.Server.Version}}'], REPO_ROOT, 30_000),
   ]);
   for (const [name, receipt] of [
     ['claude', claudeVersion],
     ['archon', archonVersion],
+    ['git', archonCommit],
     ['docker', dockerVersion],
   ] as const) {
     if (receipt.exitCode !== 0) throw new Error(`${name} preflight failed: ${receipt.stderr}`);
   }
+  const host = {
+    claudeVersion: claudeVersion.stdout.trim(),
+    archonVersion: archonVersion.stdout.trim(),
+    archonCommit: archonCommit.stdout.trim(),
+    dockerVersion: dockerVersion.stdout.trim(),
+  };
   console.log(
-    JSON.stringify({
-      status: 'ready',
-      claudeVersion: claudeVersion.stdout.trim(),
-      archonVersion: archonVersion.stdout.trim(),
-      dockerVersion: dockerVersion.stdout.trim(),
-      tasks: TASK_IDS,
-      conditions: CONDITION_IDS,
-    })
+    JSON.stringify({ status: 'ready', ...host, tasks: TASK_IDS, conditions: CONDITION_IDS })
   );
+  return host;
 }
 
 async function main(): Promise<void> {
@@ -1706,8 +1730,8 @@ async function main(): Promise<void> {
     await preflight(contract);
     return;
   }
-  await preflight(contract);
-  await assertCurrentExperimentReadiness();
+  const host = await preflight(contract);
+  const readinessInputs = await assertCurrentExperimentReadiness(host);
   const outputIndex = process.argv.indexOf('--output');
   const taskIndex = process.argv.indexOf('--task');
   const conditionIndex = process.argv.indexOf('--condition');
@@ -1738,6 +1762,11 @@ async function main(): Promise<void> {
   await writeFile(join(runRoot, 'experiment-contract.json'), await readFile(CONTRACT_PATH), {
     flag: 'wx',
   });
+  await writeJson(
+    join(runRoot, 'agent-boundary-receipt.json'),
+    readinessInputs.agentBoundaryReceipt
+  );
+  await writeJson(join(runRoot, 'readiness-registry.json'), readinessInputs.registry);
   const registry = loadFrozenTaskRegistry(
     join(REPO_ROOT, contract.frozenInputs.taskManifestRegistry.path)
   );
@@ -1753,6 +1782,9 @@ async function main(): Promise<void> {
     configuredModelId: contract.sampling.configuredModelId,
     claudeVersion: versions[0].stdout.trim(),
     archonVersion: versions[1].stdout.trim(),
+    archonCommit: host.archonCommit,
+    boundaryReceiptSha256: stableSha256(readinessInputs.agentBoundaryReceipt),
+    readinessRegistrySha256: stableSha256(readinessInputs.registry),
     tasks: selectedTasks,
     conditions: selectedConditions,
     executionOrder,

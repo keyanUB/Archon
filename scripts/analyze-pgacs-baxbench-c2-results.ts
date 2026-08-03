@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import {
   CONDITION_IDS,
   FROZEN_MODEL_ID,
+  assertRunnableExperimentTasks,
   deriveTerminalOutcome,
   mergeScopeAssessments,
   repairEligible,
@@ -17,6 +18,11 @@ import {
   type ExperimentTaskId,
   type TerminalOutcome,
 } from './run-pgacs-baxbench-c2';
+import {
+  loadPrototypeInputs,
+  summarizeReadiness,
+  validatePrototypeRegistry,
+} from './validate-pgacs-multibench-prototype';
 import { stableSha256 } from './pgacs-runtime-policy-state';
 import { loadFrozenTaskRegistry, type FrozenTaskManifest } from './pgacs-task-adapters';
 
@@ -63,6 +69,9 @@ interface ResultsDocument {
 interface RunManifest {
   contractSha256: string;
   configuredModelId: string;
+  archonCommit: string;
+  boundaryReceiptSha256: string;
+  readinessRegistrySha256: string;
   tasks: string[];
   conditions: string[];
   executionOrder: { taskId: string; condition: string }[];
@@ -78,6 +87,8 @@ interface IntegrityReceipt {
   resultsSha256: string;
   runManifestSha256: string;
   contractSha256: string;
+  boundaryReceiptSha256: string;
+  readinessRegistrySha256: string;
   cellResultsVerified: number;
   taskManifestsVerified: number;
   evidenceLedgersVerified: number;
@@ -377,6 +388,10 @@ function validateRunManifest(
   if (
     raw.contractSha256 !== contractSha256 ||
     raw.configuredModelId !== FROZEN_MODEL_ID ||
+    typeof raw.archonCommit !== 'string' ||
+    !/^[0-9a-f]{40}$/u.test(raw.archonCommit) ||
+    typeof raw.boundaryReceiptSha256 !== 'string' ||
+    typeof raw.readinessRegistrySha256 !== 'string' ||
     JSON.stringify(raw.tasks) !== JSON.stringify(TASK_IDS) ||
     JSON.stringify(raw.conditions) !== JSON.stringify(CONDITION_IDS) ||
     JSON.stringify(raw.executionOrder) !== JSON.stringify(executionOrder)
@@ -553,11 +568,22 @@ async function main(): Promise<void> {
   const resultsPath = join(runRoot, 'results.json');
   const manifestPath = join(runRoot, 'run-manifest.json');
   const archivedContractPath = join(runRoot, 'experiment-contract.json');
-  const [resultsBytes, manifestBytes, contractBytes, currentContractBytes] = await Promise.all([
+  const boundaryReceiptPath = join(runRoot, 'agent-boundary-receipt.json');
+  const readinessRegistryPath = join(runRoot, 'readiness-registry.json');
+  const [
+    resultsBytes,
+    manifestBytes,
+    contractBytes,
+    currentContractBytes,
+    boundaryReceiptBytes,
+    readinessRegistryBytes,
+  ] = await Promise.all([
     readFile(resultsPath),
     readFile(manifestPath),
     readFile(archivedContractPath),
     readFile(CONTRACT_PATH),
+    readFile(boundaryReceiptPath),
+    readFile(readinessRegistryPath),
   ]);
   if (sha256(contractBytes) !== sha256(currentContractBytes)) {
     throw new Error('Archived experiment contract does not match the current frozen contract');
@@ -573,11 +599,32 @@ async function main(): Promise<void> {
   if (JSON.stringify(observedOrder) !== JSON.stringify(contract.executionOrder)) {
     throw new Error('Result cell order does not match the frozen executionOrder');
   }
-  validateRunManifest(
+  const runManifest = validateRunManifest(
     JSON.parse(manifestBytes.toString('utf8')) as unknown,
     contractSha256,
     contract.executionOrder
   );
+  const boundaryReceipt = JSON.parse(boundaryReceiptBytes.toString('utf8')) as unknown;
+  const readinessRegistry = JSON.parse(readinessRegistryBytes.toString('utf8')) as unknown;
+  if (
+    stableSha256(boundaryReceipt) !== runManifest.boundaryReceiptSha256 ||
+    stableSha256(readinessRegistry) !== runManifest.readinessRegistrySha256
+  ) {
+    throw new Error('Archived readiness evidence does not match the run manifest');
+  }
+  const currentInputs = await loadPrototypeInputs();
+  const readinessErrors = validatePrototypeRegistry({
+    ...currentInputs,
+    registry: readinessRegistry,
+    agentBoundaryReceipt: boundaryReceipt,
+  });
+  if (readinessErrors.length > 0) {
+    throw new Error(`Archived readiness evidence is invalid:\n- ${readinessErrors.join('\n- ')}`);
+  }
+  assertRunnableExperimentTasks(summarizeReadiness(readinessRegistry));
+  if (!isObject(boundaryReceipt) || boundaryReceipt.archonCommit !== runManifest.archonCommit) {
+    throw new Error('Archived boundary receipt does not match the run Archon commit');
+  }
   const taskRegistryInput = contract.frozenInputs.taskManifestRegistry;
   if (!taskRegistryInput) {
     throw new Error('Experiment contract does not freeze the task manifest registry');
@@ -599,6 +646,8 @@ async function main(): Promise<void> {
     resultsSha256: sha256(resultsBytes),
     runManifestSha256: sha256(manifestBytes),
     contractSha256,
+    boundaryReceiptSha256: runManifest.boundaryReceiptSha256,
+    readinessRegistrySha256: runManifest.readinessRegistrySha256,
     ...artifactIntegrity,
   });
   const text = `${JSON.stringify(analysis, null, 2)}\n`;

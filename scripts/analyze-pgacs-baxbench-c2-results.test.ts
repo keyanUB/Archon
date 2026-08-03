@@ -126,6 +126,8 @@ const integrity = {
   resultsSha256: 'results',
   runManifestSha256: 'manifest',
   contractSha256: 'contract',
+  boundaryReceiptSha256: 'boundary',
+  readinessRegistrySha256: 'readiness',
   cellResultsVerified: 12,
   taskManifestsVerified: 12,
   evidenceLedgersVerified: 12,

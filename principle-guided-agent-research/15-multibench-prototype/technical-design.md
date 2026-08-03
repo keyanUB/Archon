@@ -492,8 +492,10 @@ Structural `--preflight` stops after these checks so it remains usable before
 live qualification. Any actual filtered or full experiment additionally loads
 the readiness registry, validates its active boundary receipt against the
 current verifier, contract, and runner hashes, and requires all three active
-BaxBench tasks to be `runnable`. The readiness validator is itself a frozen
-experiment input. Any discrepancy terminates before a model call.
+BaxBench tasks to be `runnable`. It also requires the installed Claude version
+and current Archon commit to equal the values in that receipt. The readiness
+validator is itself a frozen experiment input. Any discrepancy terminates
+before a model call.
 
 ### 5.4 Workspace and Artifact Layout
 
@@ -503,6 +505,8 @@ Archon repository. A full run has this structure:
 ```text
 <run-root>/
   experiment-contract.json              # archived byte-exact frozen contract
+  agent-boundary-receipt.json            # archived live qualification evidence
+  readiness-registry.json                # archived admitted task states
   run-manifest.json
   results.json
   <task-id>/<condition>/
@@ -734,6 +738,8 @@ The analyzer does not trust `results.json` as an aggregate. It requires:
   fresh SHA-256 check of every contract-frozen implementation input;
 - exactly 12 unique task-condition cells in frozen schedule order;
 - run-manifest task, condition, model, contract hash, and schedule agreement;
+- archived boundary-receipt and readiness-registry digests, runtime revision
+  agreement, and complete runnable-gate revalidation;
 - a recomputed aggregate summary;
 - byte-semantic equality between every archived task manifest and its entry in
   the contract-frozen task registry;

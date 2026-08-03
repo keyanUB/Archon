@@ -120,7 +120,7 @@
   "frozenInputs": {
     "experimentRunner": {
       "path": "scripts/run-pgacs-baxbench-c2.ts",
-      "sha256": "13962773302377423698192c03f000c3f637dc2566bc59ada2c236f2aef23fec"
+      "sha256": "06614150538e51fc89dab13555cba45afd4ec7f2f610db95371e203b20b37f43"
     },
     "claudeProviderAdapter": {
       "path": "packages/providers/src/claude/provider.ts",
@@ -144,7 +144,7 @@
     },
     "resultAnalyzer": {
       "path": "scripts/analyze-pgacs-baxbench-c2-results.ts",
-      "sha256": "c2da8802def30a35b9c2d5a8718407dfd2d583ba5fb16173f97b26f3f693ff93"
+      "sha256": "e55c6520387cd5079bcd1942fa22e5aca1ad9a68e919b8a4a70620de05997990"
     },
     "readinessValidator": {
       "path": "scripts/validate-pgacs-multibench-prototype.ts",
