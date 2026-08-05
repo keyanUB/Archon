@@ -111,13 +111,19 @@ denial, and explicit repository/control-path denial. Before runnable promotion,
 an agent-backed smoke must prove that both direct Claude and Archon-mediated
 execution honor those controls in the installed runtime versions.
 
+The current
+[`agent-boundary-validation.v0.1.json`](./agent-boundary-validation.v0.1.json)
+records passing B0, C0, and C2 checks for Claude Code 2.1.220, exact runtime
+model `claude-sonnet-5`, and Archon commit `d65383ed`. Its verifier, experiment
+contract, and runner hashes match the current frozen inputs, so the three
+BaxBench tasks satisfy the live boundary gate and are `runnable`.
+
 The historical
 [`agent-boundary-validation.pre-fixture-fix.v0.1.json`](./agent-boundary-validation.pre-fixture-fix.v0.1.json)
 records passing B0, C0, and C2 checks for Claude Code 2.1.220 and the earlier
 frozen Archon/provider control path. It proves the qualification mechanism was
 exercised, but it is not admitted for the current corrected runner because its
-runner and experiment-contract hashes differ. The three BaxBench tasks remain
-`adapter_ready` until a fresh receipt passes the same checks.
+runner and experiment-contract hashes differ.
 
 Experiment execution must use previously absent external output roots and
 task-condition directories. Task/condition filters and the provenance-recording

@@ -18,11 +18,11 @@ not part of the current effectiveness run.
 This is a small mechanism and preliminary-effectiveness study, not a
 large-scale benchmark. The current executable tranche is:
 
-| Task | Security family | Required gate |
-| --- | --- | --- |
-| `Login-Python-FastAPI` | credential storage and authentication | generic failure response, hashed storage, bounded established auth primitives, identity-bound signed-shape JWT |
-| `RegexSearch-Python-FastAPI` | file-root confinement | direct/encoded traversal, unsafe encoded input, symlink escape |
-| `ZipToTxt-Python-FastAPI` | archive safety | path/symlink rejection and resource bounds |
+| Task                         | Security family                       | Required gate                                                                                                  |
+| ---------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `Login-Python-FastAPI`       | credential storage and authentication | generic failure response, hashed storage, bounded established auth primitives, identity-bound signed-shape JWT |
+| `RegexSearch-Python-FastAPI` | file-root confinement                 | direct/encoded traversal, unsafe encoded input, symlink escape                                                 |
+| `ZipToTxt-Python-FastAPI`    | archive safety                        | path/symlink rejection and resource bounds                                                                     |
 
 Regex resource-exhaustion evidence is recorded as `advisory_security`. It does
 not trigger repair, rejection, or security-success credit because the frozen
@@ -35,12 +35,12 @@ relabeled as held out.
 
 ## Conditions
 
-| Condition | Mechanism |
-| --- | --- |
-| `B0` | Direct Claude coding agent |
-| `C0` | Ordinary one-node Archon workflow |
-| `C1` | Archon plus compatibility-adjudicated policy guidance |
-| `C2` | C1 plus restricted capabilities, typed probes, one bounded repair, cumulative scope enforcement, evidence ledger, and deterministic terminal gate |
+| Condition | Mechanism                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `B0`      | Direct Claude coding agent                                                                                                                        |
+| `C0`      | Ordinary one-node Archon workflow                                                                                                                 |
+| `C1`      | Archon plus compatibility-adjudicated policy guidance                                                                                             |
+| `C2`      | C1 plus restricted capabilities, typed probes, one bounded repair, cumulative scope enforcement, evidence ledger, and deterministic terminal gate |
 
 All conditions use the same Sonnet alias, public task input, fresh external
 workspace, safe mode, OS sandbox, disabled external network, isolated ambient
@@ -121,19 +121,22 @@ must have a frozen required-probe binding before a cell can run.
 
 ## Readiness
 
-| Benchmark | Selected | Adapter-ready | Runnable now |
-| --- | ---: | ---: | ---: |
-| BaxBench | 3 | 3 | 0 |
-| SWE-bench Verified | 3 | 0 | 0 |
-| SetupBench | 3 | 0 | 0 |
+| Benchmark          | Selected | Adapter-ready | Runnable now |
+| ------------------ | -------: | ------------: | -----------: |
+| BaxBench           |        3 |             0 |            3 |
+| SWE-bench Verified |        3 |             0 |            0 |
+| SetupBench         |        3 |             0 |            0 |
 
 The exact conjunctive admission rule is in
-[`readiness-protocol.md`](./readiness-protocol.md). The prior passing receipt is
-retained as
+[`readiness-protocol.md`](./readiness-protocol.md). The current passing receipt
+is admitted as
+[`agent-boundary-validation.v0.1.json`](./agent-boundary-validation.v0.1.json).
+It qualifies B0, C0, and C2 against Claude Code 2.1.220 and Archon commit
+`d65383ed`; all three BaxBench tasks are runnable for the frozen experiment.
+The prior receipt is retained as
 [`agent-boundary-validation.pre-fixture-fix.v0.1.json`](./agent-boundary-validation.pre-fixture-fix.v0.1.json),
-but it is stale against the corrected runner and experiment-contract hashes.
-Fresh B0/C0/C2 boundary qualification and admission are required before the
-frozen 12-cell run.
+but remains historical because it is stale against the corrected runner and
+experiment-contract hashes.
 
 ## Commands
 
@@ -182,7 +185,21 @@ task-condition cell. Results must be reported per task and condition before a
 pooled summary. They can establish mechanism feasibility and identify design
 failures; they cannot establish population-level effectiveness or superiority.
 
-Use [`team-presentation.md`](./team-presentation.md) for a direct system-design
+## Measured Prototype Result
+
+The admissible 2026-08-05 frozen run completed all 12 cells with no harness
+error or inconclusive terminal outcome. C2 produced 3/3 safe system outcomes:
+two secure-and-functional candidates and one correctly attributed security
+block. B0 and C0 each produced 1/3 safe system outcomes; C1 produced 2/3.
+
+See [`baxbench-c2-evaluation-v0.1.md`](./baxbench-c2-evaluation-v0.1.md) for
+probe-level outcomes, repair transitions, integrity hashes, limitations, and
+the security-first interpretation. These are descriptive results from one
+development sample per task-condition pair.
+
+Use
+[`pgacs-v0.3-prototype-tracker.md`](./pgacs-v0.3-prototype-tracker.md)
+for a direct system-design
 walkthrough. The complete implementation-conformance specification is
 [`technical-design.md`](./technical-design.md). The earlier fixed ZIP workflow
 is retained in [`../12-archon-c2-prototype/`](../12-archon-c2-prototype/) as a

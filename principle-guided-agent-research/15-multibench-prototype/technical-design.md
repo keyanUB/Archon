@@ -943,39 +943,39 @@ bun run scripts/analyze-pgacs-baxbench-c2-results.ts \
 
 ## 9. Current Status and Work Plan
 
-Status snapshot: 2026-08-03. This section is the operational tracking record
+Status snapshot: 2026-08-05. This section is the operational tracking record
 for the current v0.3 prototype. A checked item means that its evidence exists
 and has passed the corresponding validator; it does not imply that a later
 experimental claim has already been established.
 
 ### 9.1 Current Status
 
-| Workstream                    | State                   | Current evidence or blocker                                                                                        |
-| ----------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| v0.3 technical design         | complete                | Mechanism, contracts, threat boundary, acceptance criteria, and implementation traceability are documented here.   |
-| harness implementation        | complete                | Generic task adapter, B0/C0/C1/C2 controller, probes, repair loop, deterministic gate, and evidence ledger exist.  |
-| focused implementation checks | passed                  | Focused tests, type checking, formatting, oracle replay, and frozen-input preflight pass.                          |
-| full repository validation    | passed                  | Full generated-artifact, schema, type, lint, format, and package-test validation passes after integrity hardening. |
-| BaxBench oracle calibration   | passed                  | Oracle v0.5 records 18 isolated secure/vulnerable replay evaluations and the exact evaluator boundary.             |
-| BaxBench task readiness       | adapter-ready 3/3       | Source, adapter, oracle, calibration, and evaluator isolation gates pass.                                          |
-| live agent boundary           | requalification pending | The earlier passing receipt is historical because the corrected runner and contract have new hashes.               |
-| runnable BaxBench tasks       | 0/3                     | Readiness fails closed until a fresh B0/C0/C2 receipt is admitted for the current frozen inputs.                   |
-| frozen effectiveness run      | pending                 | No final 12-cell B0/C0/C1/C2 run is yet admissible.                                                                |
-| effectiveness analysis        | pending                 | Must be computed from one complete, fresh, integrity-verified 12-cell root.                                        |
-| SWE-bench/SetupBench adapters | roadmap                 | Six selected tasks remain outside the active v0.3 experiment until benchmark-specific adapters are implemented.    |
+| Workstream                    | State        | Current evidence or blocker                                                                                        |
+| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| v0.3 technical design         | complete     | Mechanism, contracts, threat boundary, acceptance criteria, and implementation traceability are documented here.   |
+| harness implementation        | complete     | Generic task adapter, B0/C0/C1/C2 controller, probes, repair loop, deterministic gate, and evidence ledger exist.  |
+| focused implementation checks | passed       | Focused tests, type checking, formatting, oracle replay, and frozen-input preflight pass.                          |
+| full repository validation    | passed       | Full generated-artifact, schema, type, lint, format, and package-test validation passes after integrity hardening. |
+| BaxBench oracle calibration   | passed       | Oracle v0.5 records 18 isolated secure/vulnerable replay evaluations and the exact evaluator boundary.             |
+| BaxBench task readiness       | runnable 3/3 | Source, adapter, oracle, calibration, evaluator isolation, and live boundary gates pass.                           |
+| live agent boundary           | passed       | Current B0/C0/C2 receipt binds Claude Code 2.1.220, `claude-sonnet-5`, and Archon commit `d65383ed`.               |
+| runnable BaxBench tasks       | 3/3          | The admitted receipt and registry pass the conjunctive readiness validator.                                        |
+| frozen effectiveness run      | complete     | All 12 frozen cells completed with no harness-error or inconclusive terminal outcome.                              |
+| effectiveness analysis        | passed       | Analyzer verified every cell, manifest, ledger, and final candidate; C2 achieved 3/3 safe system outcomes.         |
+| SWE-bench/SetupBench adapters | roadmap      | Six selected tasks remain outside the active v0.3 experiment until benchmark-specific adapters are implemented.    |
 
-The implementation is therefore ready for operational qualification, but the
-prototype does not yet have final effectiveness evidence. No security or
-functional-maintenance conclusion should be inferred from implementation
-completion alone.
+The prototype now has admissible preliminary mechanism evidence. C2 produced
+3/3 safe system outcomes, including two secure-and-functional releases and one
+correctly attributed security block. These three development samples do not
+support a population-level superiority claim.
 
 ### 9.2 Next Working Steps
 
-- [ ] **N1: Execute live agent-boundary qualification.** Run the verifier in a
+- [x] **N1: Execute live agent-boundary qualification.** Run the verifier in a
       fresh external directory after Claude access is available. Completion
       requires one passing B0, C0, and C2 cell with authorized writes, denied-read
       attempts, non-disclosure, B0/C0 network denial, and C2 Bash absence.
-- [ ] **N2: Admit the qualification receipt.** Review the external receipt,
+- [x] **N2: Admit the qualification receipt.** Review the external receipt,
       place the accepted `boundary-receipt.json` at
       `agent-boundary-validation.v0.1.json`, change all three BaxBench
       `agentBoundaryValidation` fields to `recorded`, remove only the satisfied
@@ -987,22 +987,23 @@ completion alone.
       availability, Docker evaluator, schedule, and fresh output-root invariant.
       Any drift requires correction or an explicitly versioned new contract before
       model execution.
-- [ ] **N4: Execute one fresh full experiment.** Run the exact interleaved
+- [x] **N4: Execute one fresh full experiment.** Run the exact interleaved
       three-task by four-condition schedule in a new external root. Development
       filters and merged replacement cells are prohibited for this final run.
       Completion requires all 12 terminal cells with no harness error or
       inconclusive outcome.
-- [ ] **N5: Verify and analyze results.** Run the integrity-checking analyzer
+- [x] **N5: Verify and analyze results.** Run the integrity-checking analyzer
       over the untouched raw root. It must verify schedule order, copied
       contracts, manifests, candidate digests, recomputed terminal outcomes, and
       evidence-ledger chains before calculating contrasts.
-- [ ] **N6: Perform security-first interpretation.** Report every task and
-      condition separately, then descriptive pooled results. The primary endpoint
-      is secure-and-functional success; secure rejection is separately credited
-      only when the security issue is correctly identified. Also report functional
-      retention, false rejection, repair behavior, harness errors, and residual
-      risk. With one sample per cell, claims remain preliminary mechanism evidence.
-- [ ] **N7: Decide the next prototype revision from observed failure modes.**
+- [x] **N6: Perform security-first interpretation.** Report every task and
+      condition separately, then descriptive pooled results. The primary system
+      endpoint is safe system outcome; secure generation and joint acceptance
+      remain separate artifact endpoints. Secure rejection is credited only when
+      the security issue is correctly identified. Also report functional retention,
+      false rejection, repair behavior, harness errors, and residual risk. With one
+      sample per cell, claims remain preliminary mechanism evidence.
+- [x] **N7: Decide the next prototype revision from observed failure modes.**
       Change policy activation, probes, loop conditioning, or adapters only when
       supported by ledger evidence. Freeze any changed mechanism as a new system
       or component version before rerunning it; do not tune v0.3 and report the
@@ -1012,10 +1013,10 @@ completion alone.
       is a generality study and must not be mixed retrospectively into the frozen
       BaxBench v0.1 experiment.
 
-The current preflight in N3 passes, but the new runner/contract hashes make the
-earlier N1/N2 receipt historical. The immediate critical path is therefore
-`N1 -> N2 -> N4 -> N5 -> N6`. Steps N7 and N8 depend on measured evidence and
-are intentionally not implementation prerequisites for the current experiment.
+Steps N1-N7 now have validated evidence. N8 remains a separate generality
+study, not an implementation prerequisite or retrospective extension of the
+completed BaxBench experiment. Detailed measured results are recorded in
+`baxbench-c2-evaluation-v0.1.md`.
 
 ### 9.3 Status Update Rule
 
@@ -1046,20 +1047,21 @@ These criteria are currently satisfied.
 The three active tasks become `runnable` only after an agent-backed smoke
 confirms safe mode, allowed writes, repository/cross-cell non-disclosure,
 network denial, and C2 Bash absence in the installed Claude and Archon
-versions. The historical receipt
-`agent-boundary-validation.pre-fixture-fix.v0.1.json` satisfied this criterion
-for Claude Code 2.1.220 and Archon source revision `963c0d9d` before the
-fixture-order correction. It does not satisfy the current runner/contract hash
-gate; a new `agent-boundary-validation.v0.1.json` must be generated and
-validated.
+versions. The admitted `agent-boundary-validation.v0.1.json` satisfies this
+criterion for Claude Code 2.1.220, runtime model `claude-sonnet-5`, and Archon
+commit `d65383ed`. The historical pre-fixture-fix receipt remains diagnostic
+only.
 
 ### 10.3 Experiment Completion
 
 The v0.1 experiment protocol completes only when one fresh full run executes
 all 12 frozen cells, produces no harness-error or inconclusive terminal cell,
 and passes analyzer verification of schedule, manifests, cell copies, candidate
-digests, terminal recomputation, and evidence ledgers. This experiment remains
-pending and determines measured effectiveness, not implementation existence.
+digests, terminal recomputation, and evidence ledgers. This criterion is
+satisfied by the 2026-08-05 run: the analyzer marked the exact design complete
+and valid for effectiveness comparison with no excluded outcome cell. The
+evidence remains preliminary because each task-condition pair has one
+development sample.
 
 ## 11. Implementation Traceability
 
@@ -1077,4 +1079,5 @@ pending and determines measured effectiveness, not implementation existence.
 
 The frozen experiment contract and external raw artifacts remain the canonical
 record for a particular run. This document explains the implemented mechanism;
-it does not substitute for receipts or measured results.
+it does not substitute for receipts or measured results. The admitted v0.1
+result interpretation is recorded in `baxbench-c2-evaluation-v0.1.md`.

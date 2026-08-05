@@ -35,8 +35,8 @@ describe('PGACS multi-benchmark prototype registry', (): void => {
     expect(validatePrototypeRegistry(inputs)).toEqual([]);
     expect(summarizeReadiness(inputs.registry)).toMatchObject({
       total: 9,
-      runnable: 0,
-      adapterReady: 3,
+      runnable: 3,
+      adapterReady: 0,
       selected: 6,
     });
   });

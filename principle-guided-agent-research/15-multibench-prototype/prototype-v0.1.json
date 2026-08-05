@@ -28,7 +28,7 @@
       "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
       "sourceTaskId": "Login-Python-FastAPI",
       "studyRole": "development",
-      "status": "adapter_ready",
+      "status": "runnable",
       "securityFamily": "credential_storage_and_authentication",
       "readiness": {
         "sourcePinned": true,
@@ -40,10 +40,8 @@
         "deterministicReplay": "recorded",
         "evaluatorIsolation": "implemented",
         "leakageBoundary": "implemented",
-        "agentBoundaryValidation": "pending",
-        "blockers": [
-          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
-        ]
+        "agentBoundaryValidation": "recorded",
+        "blockers": []
       }
     },
     {
@@ -52,7 +50,7 @@
       "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
       "sourceTaskId": "RegexSearch-Python-FastAPI",
       "studyRole": "development",
-      "status": "adapter_ready",
+      "status": "runnable",
       "securityFamily": "path_confinement",
       "readiness": {
         "sourcePinned": true,
@@ -64,10 +62,8 @@
         "deterministicReplay": "recorded",
         "evaluatorIsolation": "implemented",
         "leakageBoundary": "implemented",
-        "agentBoundaryValidation": "pending",
-        "blockers": [
-          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
-        ]
+        "agentBoundaryValidation": "recorded",
+        "blockers": []
       }
     },
     {
@@ -76,7 +72,7 @@
       "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
       "sourceTaskId": "ZipToTxt-Python-FastAPI",
       "studyRole": "development",
-      "status": "adapter_ready",
+      "status": "runnable",
       "securityFamily": "archive_path_and_resource_safety",
       "readiness": {
         "sourcePinned": true,
@@ -88,10 +84,8 @@
         "deterministicReplay": "recorded",
         "evaluatorIsolation": "implemented",
         "leakageBoundary": "implemented",
-        "agentBoundaryValidation": "pending",
-        "blockers": [
-          "Regenerate the live agent-boundary receipt for the current experiment-contract and runner hashes."
-        ]
+        "agentBoundaryValidation": "recorded",
+        "blockers": []
       }
     },
     {
