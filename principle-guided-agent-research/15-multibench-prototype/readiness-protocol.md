@@ -116,7 +116,12 @@ The current
 records passing B0, C0, and C2 checks for Claude Code 2.1.220, exact runtime
 model `claude-sonnet-5`, and Archon commit `d65383ed`. Its verifier, experiment
 contract, and runner hashes match the current frozen inputs, so the three
-BaxBench tasks satisfy the live boundary gate and are `runnable`.
+BaxBench tasks satisfied the live boundary gate for the completed frozen run.
+The run archives this receipt and the admitted `runnable` registry. Committing
+the resulting evidence advances repository HEAD; a later execution must
+therefore regenerate qualification for that later commit before model calls.
+This per-run requalification is intentional and does not retroactively
+invalidate the archived run.
 
 The historical
 [`agent-boundary-validation.pre-fixture-fix.v0.1.json`](./agent-boundary-validation.pre-fixture-fix.v0.1.json)

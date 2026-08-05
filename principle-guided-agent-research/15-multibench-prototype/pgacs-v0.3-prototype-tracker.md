@@ -901,10 +901,10 @@ Status snapshot: 2026-08-05.
 | v0.3 design and implementation              | Complete                                            |
 | Focused implementation and integrity checks | Passed                                              |
 | Full repository validation                  | Passed after latest integrity hardening             |
-| Three BaxBench adapters                     | Runnable                                            |
+| Three BaxBench adapters                     | Admitted for completed run                          |
 | Oracle v0.5 calibration                     | Passed, 18 evaluations with bound isolation receipt |
 | Live B0/C0/C2 agent-boundary qualification  | Passed for current frozen hashes and commit         |
-| Runnable BaxBench tasks                     | 3/3                                                 |
+| Runnable BaxBench tasks                     | 3/3 at completed-run start                          |
 | Frozen 12-cell effectiveness run            | Complete; 12/12 measurable cells                    |
 | Integrity-checked result analysis           | Passed for descriptive effectiveness comparison     |
 | SWE-bench and SetupBench integrations       | Roadmap, outside the active experiment              |
@@ -915,6 +915,8 @@ inconclusive cell, and the integrity analyzer accepted it for descriptive
 effectiveness comparison. C2 achieved 3/3 safe system outcomes: two secure and
 functional candidates and one correctly attributed security block. This is
 preliminary mechanism evidence, not a population-level superiority result.
+The archived run remains bound to Archon commit `d65383ed`; a future run after
+the evidence commit requires a new live receipt for its current HEAD.
 
 A **live agent-boundary qualification** is a small real execution that checks
 the assumptions static tests cannot prove: the requested model is the model

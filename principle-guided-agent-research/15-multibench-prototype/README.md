@@ -121,18 +121,21 @@ must have a frozen required-probe binding before a cell can run.
 
 ## Readiness
 
-| Benchmark          | Selected | Adapter-ready | Runnable now |
-| ------------------ | -------: | ------------: | -----------: |
-| BaxBench           |        3 |             0 |            3 |
-| SWE-bench Verified |        3 |             0 |            0 |
-| SetupBench         |        3 |             0 |            0 |
+| Benchmark          | Selected | Admitted completed run | Future integration |
+| ------------------ | -------: | ---------------------: | -----------------: |
+| BaxBench           |        3 |                      3 |                  0 |
+| SWE-bench Verified |        3 |                      0 |                  3 |
+| SetupBench         |        3 |                      0 |                  3 |
 
 The exact conjunctive admission rule is in
 [`readiness-protocol.md`](./readiness-protocol.md). The current passing receipt
 is admitted as
 [`agent-boundary-validation.v0.1.json`](./agent-boundary-validation.v0.1.json).
-It qualifies B0, C0, and C2 against Claude Code 2.1.220 and Archon commit
-`d65383ed`; all three BaxBench tasks are runnable for the frozen experiment.
+It qualified B0, C0, and C2 against Claude Code 2.1.220 and Archon commit
+`d65383ed`; all three BaxBench tasks were runnable when the frozen experiment
+started. Because the evidence was committed afterward, any new run must
+generate a receipt for its then-current HEAD. This does not invalidate the
+completed run, which archives the admitted receipt and registry.
 The prior receipt is retained as
 [`agent-boundary-validation.pre-fixture-fix.v0.1.json`](./agent-boundary-validation.pre-fixture-fix.v0.1.json),
 but remains historical because it is stale against the corrected runner and

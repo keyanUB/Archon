@@ -957,9 +957,9 @@ experimental claim has already been established.
 | focused implementation checks | passed       | Focused tests, type checking, formatting, oracle replay, and frozen-input preflight pass.                          |
 | full repository validation    | passed       | Full generated-artifact, schema, type, lint, format, and package-test validation passes after integrity hardening. |
 | BaxBench oracle calibration   | passed       | Oracle v0.5 records 18 isolated secure/vulnerable replay evaluations and the exact evaluator boundary.             |
-| BaxBench task readiness       | runnable 3/3 | Source, adapter, oracle, calibration, evaluator isolation, and live boundary gates pass.                           |
+| BaxBench task readiness       | admitted 3/3 | Source, adapter, oracle, calibration, evaluator isolation, and live boundary gates passed for the completed run.   |
 | live agent boundary           | passed       | Current B0/C0/C2 receipt binds Claude Code 2.1.220, `claude-sonnet-5`, and Archon commit `d65383ed`.               |
-| runnable BaxBench tasks       | 3/3          | The admitted receipt and registry pass the conjunctive readiness validator.                                        |
+| runnable BaxBench tasks       | 3/3 at start | The completed run archives the receipt and registry that passed the conjunctive readiness validator.               |
 | frozen effectiveness run      | complete     | All 12 frozen cells completed with no harness-error or inconclusive terminal outcome.                              |
 | effectiveness analysis        | passed       | Analyzer verified every cell, manifest, ledger, and final candidate; C2 achieved 3/3 safe system outcomes.         |
 | SWE-bench/SetupBench adapters | roadmap      | Six selected tasks remain outside the active v0.3 experiment until benchmark-specific adapters are implemented.    |
@@ -968,6 +968,10 @@ The prototype now has admissible preliminary mechanism evidence. C2 produced
 3/3 safe system outcomes, including two secure-and-functional releases and one
 correctly attributed security block. These three development samples do not
 support a population-level superiority claim.
+
+The receipt is bound to the experiment's Archon commit `d65383ed`. Committing
+the evidence advances HEAD and intentionally requires requalification before
+any future run; it does not invalidate the completed run's archived inputs.
 
 ### 9.2 Next Working Steps
 

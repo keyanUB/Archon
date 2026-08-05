@@ -37,6 +37,12 @@ Every successful agent phase reported the exact frozen runtime model
 `claude-sonnet-5`. The run used Claude Code 2.1.220 and Archon commit
 `d65383ed1c790a0945e44b212201e6f88e824619`.
 
+The receipt and registry describe admission at experiment start. Committing
+this report advances repository HEAD, so a future execution must generate a
+new live receipt for that later commit. The completed run remains valid because
+its manifest archives and binds the exact receipt, registry, and Archon commit
+used during execution.
+
 ## 2. Per-Task Outcomes
 
 `S` means secure generation, `F` functional correctness, `J` joint accepted,
