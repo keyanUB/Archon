@@ -10,7 +10,7 @@ import { stableSha256 } from './pgacs-runtime-policy-state';
 type JsonObject = Record<string, unknown>;
 
 export interface FrozenTaskManifest {
-  schemaVersion: '0.1.0' | '0.2.0';
+  schemaVersion: '0.1.0' | '0.2.0' | '0.3.0';
   id: string;
   revision: string;
   taskKind: 'repository_code_generation' | 'repository_code_modification';
@@ -52,6 +52,17 @@ export interface FrozenTaskManifest {
       temperature: number;
       sampleId: string;
       outputVariant: string;
+    };
+    secRepoBench?: {
+      taskId: string;
+      projectName: string;
+      fixingCommit: string;
+      changedFile: string;
+      cweId: string;
+      crashType: string;
+      completionMarker: string;
+      maskedFileSha256: string;
+      arvoImage: string;
     };
   };
   obligations: SelectedPolicyObligation[];
@@ -214,8 +225,12 @@ function parseObligations(value: unknown): SelectedPolicyObligation[] {
 
 export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
   const root = requireObject(value, 'taskManifest');
-  if (root.schemaVersion !== '0.1.0' && root.schemaVersion !== '0.2.0') {
-    throw new Error('taskManifest.schemaVersion must be 0.1.0 or 0.2.0');
+  if (
+    root.schemaVersion !== '0.1.0' &&
+    root.schemaVersion !== '0.2.0' &&
+    root.schemaVersion !== '0.3.0'
+  ) {
+    throw new Error('taskManifest.schemaVersion must be 0.1.0, 0.2.0, or 0.3.0');
   }
   const contract = requireObject(root.contract, 'taskManifest.contract');
   const workspace = requireObject(root.workspace, 'taskManifest.workspace');
@@ -262,7 +277,8 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
   }
   let provenance: FrozenTaskManifest['provenance'];
   let native: FrozenTaskManifest['evaluator']['native'];
-  if (root.schemaVersion === '0.2.0') {
+  let secRepoBench: FrozenTaskManifest['evaluator']['secRepoBench'];
+  if (root.schemaVersion === '0.2.0' || root.schemaVersion === '0.3.0') {
     const source = requireObject(root.provenance, 'taskManifest.provenance');
     if (source.sourceType !== 'benchmark') {
       throw new Error('taskManifest.provenance.sourceType must be benchmark');
@@ -303,30 +319,103 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
       activationRulesSha256,
       corpusSha256,
     };
-    const nativeInput = requireObject(evaluator.native, 'taskManifest.evaluator.native');
-    if (typeof nativeInput.temperature !== 'number' || !Number.isFinite(nativeInput.temperature)) {
-      throw new Error('taskManifest.evaluator.native.temperature must be finite');
+    if (root.schemaVersion === '0.2.0') {
+      const nativeInput = requireObject(evaluator.native, 'taskManifest.evaluator.native');
+      if (
+        typeof nativeInput.temperature !== 'number' ||
+        !Number.isFinite(nativeInput.temperature)
+      ) {
+        throw new Error('taskManifest.evaluator.native.temperature must be finite');
+      }
+      native = {
+        scenarioId: requirePathSegment(
+          requireString(nativeInput, 'scenarioId', 'taskManifest.evaluator.native'),
+          'taskManifest.evaluator.native.scenarioId'
+        ),
+        environmentId: requirePathSegment(
+          requireString(nativeInput, 'environmentId', 'taskManifest.evaluator.native'),
+          'taskManifest.evaluator.native.environmentId'
+        ),
+        specType: requireString(nativeInput, 'specType', 'taskManifest.evaluator.native'),
+        safetyPrompt: requireString(nativeInput, 'safetyPrompt', 'taskManifest.evaluator.native'),
+        temperature: nativeInput.temperature,
+        sampleId: requirePathSegment(
+          requireString(nativeInput, 'sampleId', 'taskManifest.evaluator.native'),
+          'taskManifest.evaluator.native.sampleId'
+        ),
+        outputVariant: requirePathSegment(
+          requireString(nativeInput, 'outputVariant', 'taskManifest.evaluator.native'),
+          'taskManifest.evaluator.native.outputVariant'
+        ),
+      };
     }
-    native = {
-      scenarioId: requirePathSegment(
-        requireString(nativeInput, 'scenarioId', 'taskManifest.evaluator.native'),
-        'taskManifest.evaluator.native.scenarioId'
+  }
+  if (root.schemaVersion === '0.3.0') {
+    if (provenance?.benchmark !== 'SecRepoBench') {
+      throw new Error('taskManifest schema 0.3.0 requires SecRepoBench provenance');
+    }
+    const benchmark = requireObject(evaluator.secRepoBench, 'taskManifest.evaluator.secRepoBench');
+    const fixingCommit = requireString(
+      benchmark,
+      'fixingCommit',
+      'taskManifest.evaluator.secRepoBench'
+    );
+    const maskedFileSha256 = requireString(
+      benchmark,
+      'maskedFileSha256',
+      'taskManifest.evaluator.secRepoBench'
+    );
+    if (!/^[a-f0-9]{40}$/.test(fixingCommit)) {
+      throw new Error('taskManifest.evaluator.secRepoBench.fixingCommit must be a Git commit');
+    }
+    if (!/^[a-f0-9]{64}$/.test(maskedFileSha256)) {
+      throw new Error(
+        'taskManifest.evaluator.secRepoBench.maskedFileSha256 must be a SHA-256 digest'
+      );
+    }
+    const completionMarker = requireString(
+      benchmark,
+      'completionMarker',
+      'taskManifest.evaluator.secRepoBench'
+    );
+    if (completionMarker.includes('\n') || completionMarker.includes('\r')) {
+      throw new Error('taskManifest.evaluator.secRepoBench.completionMarker must be one line');
+    }
+    const changedFile = requireRelativePath(
+      requireString(benchmark, 'changedFile', 'taskManifest.evaluator.secRepoBench'),
+      'taskManifest.evaluator.secRepoBench.changedFile'
+    );
+    if (changedFile !== implementationPath) {
+      throw new Error('SecRepoBench changedFile must equal the workspace implementationPath');
+    }
+    const taskId = requirePathSegment(
+      requireString(benchmark, 'taskId', 'taskManifest.evaluator.secRepoBench'),
+      'taskManifest.evaluator.secRepoBench.taskId'
+    );
+    if (taskId !== provenance.sourceTaskId) {
+      throw new Error('SecRepoBench taskId must equal provenance.sourceTaskId');
+    }
+    const cweId = requireString(benchmark, 'cweId', 'taskManifest.evaluator.secRepoBench');
+    if (!/^CWE-\d+$/.test(cweId)) {
+      throw new Error('taskManifest.evaluator.secRepoBench.cweId must use CWE-<number>');
+    }
+    const arvoImage = requireString(benchmark, 'arvoImage', 'taskManifest.evaluator.secRepoBench');
+    if (arvoImage !== `n132/arvo:${taskId}-fix`) {
+      throw new Error('SecRepoBench arvoImage must bind the task-specific fixed image');
+    }
+    secRepoBench = {
+      taskId,
+      projectName: requirePathSegment(
+        requireString(benchmark, 'projectName', 'taskManifest.evaluator.secRepoBench'),
+        'taskManifest.evaluator.secRepoBench.projectName'
       ),
-      environmentId: requirePathSegment(
-        requireString(nativeInput, 'environmentId', 'taskManifest.evaluator.native'),
-        'taskManifest.evaluator.native.environmentId'
-      ),
-      specType: requireString(nativeInput, 'specType', 'taskManifest.evaluator.native'),
-      safetyPrompt: requireString(nativeInput, 'safetyPrompt', 'taskManifest.evaluator.native'),
-      temperature: nativeInput.temperature,
-      sampleId: requirePathSegment(
-        requireString(nativeInput, 'sampleId', 'taskManifest.evaluator.native'),
-        'taskManifest.evaluator.native.sampleId'
-      ),
-      outputVariant: requirePathSegment(
-        requireString(nativeInput, 'outputVariant', 'taskManifest.evaluator.native'),
-        'taskManifest.evaluator.native.outputVariant'
-      ),
+      fixingCommit,
+      changedFile,
+      cweId,
+      crashType: requireString(benchmark, 'crashType', 'taskManifest.evaluator.secRepoBench'),
+      completionMarker,
+      maskedFileSha256,
+      arvoImage,
     };
   }
   return {
@@ -370,6 +459,7 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
       idempotent: evaluator.idempotent,
       timeoutSeconds: evaluator.timeoutSeconds,
       native,
+      secRepoBench,
     },
     obligations: parseObligations(root.obligations),
   };
@@ -691,13 +781,156 @@ class BaxBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
   }
 }
 
+class SecRepoBenchMaskedWorkspaceAdapter implements TaskWorkspaceAdapter {
+  readonly id = 'secrepobench-masked-repo-v0.1';
+
+  async prepare(
+    manifest: FrozenTaskManifest,
+    repositoryRoot: string
+  ): Promise<WorkspacePreparationReceipt> {
+    const benchmark = manifest.evaluator.secRepoBench;
+    if (
+      manifest.workspace.adapterId !== this.id ||
+      manifest.provenance?.benchmark !== 'SecRepoBench' ||
+      benchmark === undefined
+    ) {
+      throw new Error(`${this.id} requires a SecRepoBench manifest`);
+    }
+    const workspaceRoot = resolve(repositoryRoot, manifest.workspace.root);
+    await requireContainedDirectory(repositoryRoot, workspaceRoot, 'workspace');
+    const targetPath = join(workspaceRoot, manifest.workspace.implementationPath);
+    const targetStatus = await lstat(targetPath);
+    if (!targetStatus.isFile() || targetStatus.isSymbolicLink()) {
+      throw new Error('SecRepoBench target must be a regular, non-symlinked file');
+    }
+    const targetBytes = await readFile(targetPath);
+    const targetSha256 = createHash('sha256').update(targetBytes).digest('hex');
+    if (targetSha256 !== benchmark.maskedFileSha256) {
+      throw new Error('SecRepoBench masked target digest does not match the manifest');
+    }
+    const markerCount = targetBytes.toString('utf8').split(benchmark.completionMarker).length - 1;
+    if (markerCount !== 1) {
+      throw new Error('SecRepoBench masked target must contain exactly one completion marker');
+    }
+    return {
+      adapterId: this.id,
+      taskId: manifest.id,
+      taskRevision: manifest.revision,
+      manifestSha256: stableSha256(manifest),
+      workspaceRoot: relative(repositoryRoot, workspaceRoot),
+      workspaceCreated: false,
+      implementationPath: manifest.workspace.implementationPath,
+      auxiliaryPaths: manifest.workspace.auxiliaryPaths,
+      allowedMutationPaths: manifest.workspace.allowedMutationPaths,
+    };
+  }
+}
+
+class SecRepoBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
+  readonly id = 'secrepobench-official-v0.1';
+
+  async prepareInvocation(input: {
+    manifest: FrozenTaskManifest;
+    repositoryRoot: string;
+    frozenEvaluatorPath: string;
+    candidatePath: string;
+    outputRoot: string;
+    evaluationLabel?: string;
+  }): Promise<EvaluatorInvocation> {
+    const { manifest } = input;
+    const benchmark = manifest.evaluator.secRepoBench;
+    const provenance = manifest.provenance;
+    if (
+      manifest.evaluator.adapterId !== this.id ||
+      provenance?.benchmark !== 'SecRepoBench' ||
+      benchmark === undefined
+    ) {
+      throw new Error(`${this.id} requires a SecRepoBench manifest`);
+    }
+    const actualRevision = await gitRevision(input.frozenEvaluatorPath);
+    if (actualRevision !== provenance.evaluatorRevision) {
+      throw new Error(
+        `SecRepoBench evaluator revision mismatch: expected=${provenance.evaluatorRevision} actual=${actualRevision}`
+      );
+    }
+    if ((await gitTrackedChanges(input.frozenEvaluatorPath)) !== '') {
+      throw new Error('SecRepoBench evaluator has modified tracked files');
+    }
+    await requireContainedDirectory(input.repositoryRoot, input.candidatePath, 'candidate');
+    const evaluatorExecutable = join(input.frozenEvaluatorPath, '.venv/bin/python');
+    const evaluatorSource = resolve(input.repositoryRoot, manifest.evaluator.sourcePath);
+    const sourceCandidate = join(
+      input.candidatePath,
+      basename(manifest.workspace.implementationPath)
+    );
+    const [executableStatus, sourceStatus, candidateStatus] = await Promise.all([
+      stat(evaluatorExecutable),
+      stat(evaluatorSource),
+      lstat(sourceCandidate),
+    ]);
+    if (!executableStatus.isFile() || (executableStatus.mode & 0o111) === 0) {
+      throw new Error('SecRepoBench evaluator Python must be executable');
+    }
+    if (!sourceStatus.isFile()) {
+      throw new Error('SecRepoBench PGACS oracle wrapper must be a file');
+    }
+    if (!candidateStatus.isFile() || candidateStatus.isSymbolicLink()) {
+      throw new Error('SecRepoBench candidate must be a regular, non-symlinked file');
+    }
+    await mkdir(input.outputRoot, { recursive: true });
+    await requireContainedDirectory(input.repositoryRoot, input.outputRoot, 'evaluator output');
+    const candidateBytes = await readFile(sourceCandidate);
+    const candidateSha256 = createHash('sha256').update(candidateBytes).digest('hex');
+    const requestPath = join(input.outputRoot, 'request.json');
+    const resultPath = join(input.outputRoot, 'evaluation.json');
+    await rm(resultPath, { force: true });
+    await writeFile(
+      requestPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: '0.1.0',
+          taskId: benchmark.taskId,
+          projectName: benchmark.projectName,
+          fixingCommit: benchmark.fixingCommit,
+          changedFile: benchmark.changedFile,
+          cweId: benchmark.cweId,
+          crashType: benchmark.crashType,
+          arvoImage: benchmark.arvoImage,
+          candidatePath: sourceCandidate,
+          candidateSha256,
+          benchmarkRoot: input.frozenEvaluatorPath,
+          resultPath,
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    return {
+      adapterId: this.id,
+      command: [evaluatorExecutable, evaluatorSource, requestPath],
+      cwd: input.repositoryRoot,
+      resultPath,
+      timeoutSeconds: manifest.evaluator.timeoutSeconds,
+      idempotent: manifest.evaluator.idempotent,
+      preparation: {
+        candidateSha256,
+        stagedPath: requestPath,
+        evaluatorRevision: actualRevision,
+      },
+    };
+  }
+}
+
 const workspaceAdapters: Record<string, TaskWorkspaceAdapter> = {
   'local-fixture-v0.1': new LocalFixtureWorkspaceAdapter(),
   'baxbench-fastapi-v0.1': new BaxBenchFastApiWorkspaceAdapter(),
+  'secrepobench-masked-repo-v0.1': new SecRepoBenchMaskedWorkspaceAdapter(),
 };
 const evaluatorAdapters: Record<string, EvaluatorAdapter> = {
   'python-json-v0.1': new PythonJsonEvaluatorAdapter(),
   'baxbench-official-v0.1': new BaxBenchOfficialEvaluatorAdapter(),
+  'secrepobench-official-v0.1': new SecRepoBenchOfficialEvaluatorAdapter(),
 };
 
 export function resolveWorkspaceAdapter(manifest: FrozenTaskManifest): TaskWorkspaceAdapter {

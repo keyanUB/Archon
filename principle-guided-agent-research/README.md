@@ -131,6 +131,10 @@ benchmark CWE labels, tests, or exploits.
    - [Small Multi-Benchmark Prototype](15-multibench-prototype/README.md)
      — the active nine-task development registry across BaxBench, SWE-bench
      Verified, and SetupBench, with readiness and leakage gates.
+   - [SecRepoBench Customization](16-secrepobench-customization/README.md)
+     — an experimental branch extension for masked C/C++ repository completion,
+     ARVO/OSS-Fuzz evaluation, evaluator-label isolation, and a three-task
+     feasibility study.
    - [Method overview](06-implementable-method/policy-guided-agent-control-system.md)
      — the design at pitch/overview altitude.
    - [Detailed design & decision record](06-implementable-method/pgacs-detailed-design.md)

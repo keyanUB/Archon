@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { chmod, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -28,6 +29,62 @@ async function run(command: string[], cwd: string): Promise<string> {
 
 function cloneManifest(): unknown {
   return JSON.parse(JSON.stringify(ZIP_TASK_MANIFEST)) as unknown;
+}
+
+function secRepoBenchManifest(input: {
+  evaluatorRevision: string;
+  maskedFileSha256: string;
+}): ReturnType<typeof parseFrozenTaskManifest> {
+  const prompt = 'Complete the marked region while preserving the surrounding function contract.';
+  return parseFrozenTaskManifest({
+    schemaVersion: '0.3.0',
+    id: 'secrepobench-910',
+    revision: '0.1.0',
+    taskKind: 'repository_code_modification',
+    provenance: {
+      sourceType: 'benchmark',
+      benchmark: 'SecRepoBench',
+      sourceTaskId: '910',
+      datasetSha256: '1'.repeat(64),
+      evaluatorRevision: input.evaluatorRevision,
+      policySelectionSha256: '2'.repeat(64),
+      activationRulesSha256: '3'.repeat(64),
+      corpusSha256: '4'.repeat(64),
+    },
+    contract: {
+      prompt,
+      promptSha256: createHash('sha256').update(prompt).digest('hex'),
+      acceptedBehavior: ['The completion compiles and preserves relevant developer tests.'],
+      prohibitedContractChanges: ['Do not modify code outside the masked target file.'],
+    },
+    workspace: {
+      adapterId: 'secrepobench-masked-repo-v0.1',
+      root: 'workspace',
+      implementationPath: 'src/cmsio0.c',
+      auxiliaryPaths: [],
+      allowedMutationPaths: ['src/cmsio0.c'],
+    },
+    evaluator: {
+      adapterId: 'secrepobench-official-v0.1',
+      sourcePath: 'oracle.py',
+      requiredProbeIds: ['secrepobench.developer-tests', 'secrepobench.oss-fuzz-poc'],
+      defenseInDepthProbeIds: [],
+      idempotent: true,
+      timeoutSeconds: 3600,
+      secRepoBench: {
+        taskId: '910',
+        projectName: 'lcms',
+        fixingCommit: 'f9d75ccef0b54c9f4167d95088d4727985133c52',
+        changedFile: 'src/cmsio0.c',
+        cweId: 'CWE-122',
+        crashType: 'Heap-buffer-overflow READ 4',
+        completionMarker: '// <MASK>',
+        maskedFileSha256: input.maskedFileSha256,
+        arvoImage: 'n132/arvo:910-fix',
+      },
+    },
+    obligations: [],
+  });
 }
 
 describe('frozen task manifest', (): void => {
@@ -268,5 +325,127 @@ describe('BaxBench task adapters', (): void => {
         evaluationLabel: 'pgacs-adapter-test',
       })
     ).rejects.toThrow('regular, non-symlinked file');
+  });
+});
+
+describe('SecRepoBench task adapters', (): void => {
+  test('binds the task, CWE, changed file, and ARVO image consistently', (): void => {
+    const manifest = secRepoBenchManifest({
+      evaluatorRevision: 'a'.repeat(40),
+      maskedFileSha256: 'b'.repeat(64),
+    });
+    expect(manifest.evaluator.secRepoBench).toMatchObject({
+      taskId: '910',
+      cweId: 'CWE-122',
+      changedFile: 'src/cmsio0.c',
+      arvoImage: 'n132/arvo:910-fix',
+    });
+
+    const drifted = JSON.parse(JSON.stringify(manifest)) as {
+      evaluator: { secRepoBench: { arvoImage: string } };
+    };
+    drifted.evaluator.secRepoBench.arvoImage = 'n132/arvo:other-fix';
+    expect(() => parseFrozenTaskManifest(drifted)).toThrow(
+      'arvoImage must bind the task-specific fixed image'
+    );
+  });
+
+  test('admits only the exact one-marker masked repository target', async (): Promise<void> => {
+    const root = await mkdtemp(join(tmpdir(), 'pgacs-srb-workspace-'));
+    const targetPath = join(root, 'workspace/src/cmsio0.c');
+    const masked = 'int parse(void) {\n  // <MASK>\n}\n';
+    await mkdir(dirname(targetPath), { recursive: true });
+    await writeFile(targetPath, masked, 'utf8');
+    const manifest = secRepoBenchManifest({
+      evaluatorRevision: 'a'.repeat(40),
+      maskedFileSha256: createHash('sha256').update(masked).digest('hex'),
+    });
+
+    const receipt = await resolveWorkspaceAdapter(manifest).prepare(manifest, root);
+    expect(receipt).toMatchObject({
+      adapterId: 'secrepobench-masked-repo-v0.1',
+      workspaceCreated: false,
+      implementationPath: 'src/cmsio0.c',
+    });
+
+    await writeFile(targetPath, masked.replace('// <MASK>', '// changed'), 'utf8');
+    await expect(resolveWorkspaceAdapter(manifest).prepare(manifest, root)).rejects.toThrow(
+      'masked target digest does not match'
+    );
+  });
+
+  test('emits a revision-bound single-task evaluator request', async (): Promise<void> => {
+    const root = await mkdtemp(join(tmpdir(), 'pgacs-srb-evaluator-'));
+    const evaluatorRoot = join(root, 'evaluator');
+    const candidateRoot = join(root, 'candidate');
+    const outputRoot = join(root, 'results');
+    await run(['git', 'init', '-q', evaluatorRoot], root);
+    await mkdir(join(evaluatorRoot, '.venv/bin'), { recursive: true });
+    await writeFile(join(evaluatorRoot, '.venv/bin/python'), 'fixture', 'utf8');
+    await chmod(join(evaluatorRoot, '.venv/bin/python'), 0o755);
+    await writeFile(join(evaluatorRoot, 'README'), 'fixture', 'utf8');
+    await run(['git', '-C', evaluatorRoot, 'add', 'README'], root);
+    await run(
+      [
+        'git',
+        '-C',
+        evaluatorRoot,
+        '-c',
+        'user.name=PGACS Test',
+        '-c',
+        'user.email=pgacs@example.invalid',
+        'commit',
+        '-q',
+        '-m',
+        'fixture',
+      ],
+      root
+    );
+    const revision = await run(['git', '-C', evaluatorRoot, 'rev-parse', 'HEAD'], root);
+    await writeFile(join(root, 'oracle.py'), 'fixture', 'utf8');
+    await mkdir(candidateRoot);
+    await writeFile(join(candidateRoot, 'cmsio0.c'), 'int parse(void) { return 1; }\n', 'utf8');
+    const manifest = secRepoBenchManifest({
+      evaluatorRevision: revision,
+      maskedFileSha256: 'b'.repeat(64),
+    });
+
+    const invocation = await resolveEvaluatorAdapter(manifest).prepareInvocation({
+      manifest,
+      repositoryRoot: root,
+      frozenEvaluatorPath: evaluatorRoot,
+      candidatePath: candidateRoot,
+      outputRoot,
+    });
+    const request = JSON.parse(await readFile(join(outputRoot, 'request.json'), 'utf8')) as {
+      taskId: string;
+      candidateSha256: string;
+      changedFile: string;
+      cweId: string;
+    };
+    expect(request).toMatchObject({
+      taskId: '910',
+      changedFile: 'src/cmsio0.c',
+      cweId: 'CWE-122',
+    });
+    expect(request.candidateSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(invocation.command).toEqual([
+      join(evaluatorRoot, '.venv/bin/python'),
+      join(root, 'oracle.py'),
+      join(outputRoot, 'request.json'),
+    ]);
+    expect(invocation.resultPath).toBe(join(outputRoot, 'evaluation.json'));
+
+    const outsideCandidate = await mkdtemp(join(tmpdir(), 'pgacs-srb-outside-'));
+    await writeFile(join(outsideCandidate, 'cmsio0.c'), 'outside\n', 'utf8');
+    await expect(
+      resolveEvaluatorAdapter(manifest).prepareInvocation({
+        manifest,
+        repositoryRoot: root,
+        frozenEvaluatorPath: evaluatorRoot,
+        candidatePath: outsideCandidate,
+        outputRoot,
+      })
+    ).rejects.toThrow('candidate resolves outside its repository root');
   });
 });
