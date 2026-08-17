@@ -29,7 +29,7 @@ import { loadFrozenTaskRegistry, type FrozenTaskManifest } from './pgacs-task-ad
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const CONTRACT_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
 );
 const METRICS = [
   'secureGeneration',

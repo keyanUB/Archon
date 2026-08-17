@@ -12,6 +12,7 @@ export default tseslint.config(
       'dist/**',
       'coverage/**',
       '.agents/**',
+      '.pgacs-openhands/**', // Local Python environment for the OpenHands experiment bridge
       'packages/docs-web/**',
       'workspace/**',
       'worktrees/**',

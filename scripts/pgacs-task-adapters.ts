@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { copyFile, lstat, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { SelectedPolicyObligation } from './pgacs-policy-activation';
@@ -40,6 +40,7 @@ export interface FrozenTaskManifest {
   evaluator: {
     adapterId: string;
     sourcePath: string;
+    sourceSha256?: string;
     requiredProbeIds: string[];
     defenseInDepthProbeIds: string[];
     idempotent: boolean;
@@ -63,6 +64,7 @@ export interface FrozenTaskManifest {
       completionMarker: string;
       maskedFileSha256: string;
       arvoImage: string;
+      baselinePassingTests: string[];
     };
   };
   obligations: SelectedPolicyObligation[];
@@ -278,6 +280,7 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
   let provenance: FrozenTaskManifest['provenance'];
   let native: FrozenTaskManifest['evaluator']['native'];
   let secRepoBench: FrozenTaskManifest['evaluator']['secRepoBench'];
+  let evaluatorSourceSha256: string | undefined;
   if (root.schemaVersion === '0.2.0' || root.schemaVersion === '0.3.0') {
     const source = requireObject(root.provenance, 'taskManifest.provenance');
     if (source.sourceType !== 'benchmark') {
@@ -354,6 +357,10 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
     if (provenance?.benchmark !== 'SecRepoBench') {
       throw new Error('taskManifest schema 0.3.0 requires SecRepoBench provenance');
     }
+    evaluatorSourceSha256 = requireString(evaluator, 'sourceSha256', 'taskManifest.evaluator');
+    if (!/^[a-f0-9]{64}$/.test(evaluatorSourceSha256)) {
+      throw new Error('taskManifest.evaluator.sourceSha256 must be a SHA-256 digest');
+    }
     const benchmark = requireObject(evaluator.secRepoBench, 'taskManifest.evaluator.secRepoBench');
     const fixingCommit = requireString(
       benchmark,
@@ -416,6 +423,11 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
       completionMarker,
       maskedFileSha256,
       arvoImage,
+      baselinePassingTests: requireStringArray(
+        benchmark,
+        'baselinePassingTests',
+        'taskManifest.evaluator.secRepoBench'
+      ),
     };
   }
   return {
@@ -450,6 +462,7 @@ export function parseFrozenTaskManifest(value: unknown): FrozenTaskManifest {
         requireString(evaluator, 'sourcePath', 'taskManifest.evaluator'),
         'taskManifest.evaluator.sourcePath'
       ),
+      sourceSha256: evaluatorSourceSha256,
       requiredProbeIds: requireStringArray(evaluator, 'requiredProbeIds', 'taskManifest.evaluator'),
       defenseInDepthProbeIds: requireStringArray(
         evaluator,
@@ -847,22 +860,15 @@ class SecRepoBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
     ) {
       throw new Error(`${this.id} requires a SecRepoBench manifest`);
     }
-    const actualRevision = await gitRevision(input.frozenEvaluatorPath);
-    if (actualRevision !== provenance.evaluatorRevision) {
-      throw new Error(
-        `SecRepoBench evaluator revision mismatch: expected=${provenance.evaluatorRevision} actual=${actualRevision}`
-      );
-    }
-    if ((await gitTrackedChanges(input.frozenEvaluatorPath)) !== '') {
-      throw new Error('SecRepoBench evaluator has modified tracked files');
-    }
+    await verifySecRepoBenchBenchmarkSurface(manifest, input.frozenEvaluatorPath);
     await requireContainedDirectory(input.repositoryRoot, input.candidatePath, 'candidate');
-    const evaluatorExecutable = join(input.frozenEvaluatorPath, '.venv/bin/python');
+    const evaluatorExecutable = Bun.which('python3');
     const evaluatorSource = resolve(input.repositoryRoot, manifest.evaluator.sourcePath);
     const sourceCandidate = join(
       input.candidatePath,
       basename(manifest.workspace.implementationPath)
     );
+    if (!evaluatorExecutable) throw new Error('python3 must be available for the evaluator');
     const [executableStatus, sourceStatus, candidateStatus] = await Promise.all([
       stat(evaluatorExecutable),
       stat(evaluatorSource),
@@ -873,6 +879,12 @@ class SecRepoBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
     }
     if (!sourceStatus.isFile()) {
       throw new Error('SecRepoBench PGACS oracle wrapper must be a file');
+    }
+    const evaluatorSourceSha256 = createHash('sha256')
+      .update(await readFile(evaluatorSource))
+      .digest('hex');
+    if (evaluatorSourceSha256 !== manifest.evaluator.sourceSha256) {
+      throw new Error('SecRepoBench PGACS oracle wrapper digest does not match the manifest');
     }
     if (!candidateStatus.isFile() || candidateStatus.isSymbolicLink()) {
       throw new Error('SecRepoBench candidate must be a regular, non-symlinked file');
@@ -898,7 +910,7 @@ class SecRepoBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
           arvoImage: benchmark.arvoImage,
           candidatePath: sourceCandidate,
           candidateSha256,
-          benchmarkRoot: input.frozenEvaluatorPath,
+          baselinePassingTests: benchmark.baselinePassingTests,
           resultPath,
         },
         null,
@@ -916,10 +928,53 @@ class SecRepoBenchOfficialEvaluatorAdapter implements EvaluatorAdapter {
       preparation: {
         candidateSha256,
         stagedPath: requestPath,
-        evaluatorRevision: actualRevision,
+        evaluatorRevision: provenance.evaluatorRevision,
       },
     };
   }
+}
+
+export async function verifySecRepoBenchBenchmarkSurface(
+  manifest: FrozenTaskManifest,
+  benchmarkRoot: string
+): Promise<string> {
+  const benchmark = manifest.evaluator.secRepoBench;
+  const provenance = manifest.provenance;
+  if (benchmark === undefined || provenance?.benchmark !== 'SecRepoBench') {
+    throw new Error('SecRepoBench benchmark-surface verification requires benchmark metadata');
+  }
+  const extension = extname(benchmark.changedFile);
+  if (extension !== '.c' && extension !== '.cc' && extension !== '.cpp' && extension !== '.cxx') {
+    throw new Error('SecRepoBench target extension is unsupported');
+  }
+  const relativePaths = [
+    'sample_metadata.json',
+    'assets/projects.py',
+    `descriptions/${benchmark.taskId}/desc.txt`,
+    `descriptions/${benchmark.taskId}/mask_base${extension}`,
+    'report.json.gz',
+  ];
+  const files = [];
+  for (const path of relativePaths) {
+    const absolutePath = resolve(benchmarkRoot, path);
+    const status = await lstat(absolutePath);
+    if (!status.isFile() || status.isSymbolicLink()) {
+      throw new Error(`SecRepoBench benchmark surface contains an invalid file: ${path}`);
+    }
+    files.push({
+      path,
+      sha256: createHash('sha256')
+        .update(await readFile(absolutePath))
+        .digest('hex'),
+    });
+  }
+  const digest = stableSha256(files);
+  if (digest !== provenance.datasetSha256) {
+    throw new Error(
+      `SecRepoBench benchmark-surface digest mismatch: expected=${provenance.datasetSha256} actual=${digest}`
+    );
+  }
+  return digest;
 }
 
 const workspaceAdapters: Record<string, TaskWorkspaceAdapter> = {

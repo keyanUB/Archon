@@ -6,7 +6,7 @@ const REPO_ROOT = resolve(import.meta.dir, '..');
 const DEFAULT_WORK_ROOT = resolve(REPO_ROOT, '.pgacs-multibench');
 const SETUP_MANIFEST = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/setupbench-selection-v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/setupbench-selection-v0.1.json'
 );
 
 type JsonObject = Record<string, unknown>;

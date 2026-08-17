@@ -21,7 +21,7 @@ const TIMEOUT_MS = 10 * 60 * 1000;
 const WORKFLOW_NAME = 'pgacs-experiment-cell';
 const EXPERIMENT_CONTRACT_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
 );
 const EXPERIMENT_RUNNER_PATH = join(REPO_ROOT, 'scripts/run-pgacs-baxbench-c2.ts');
 

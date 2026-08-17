@@ -58,13 +58,13 @@ interface SemanticAdjudication {
 }
 
 const REPO_ROOT = resolve(import.meta.dir, '..');
-const EVALUATION_DIR = 'principle-guided-agent-research/09-semantic-selector-evaluation';
+const EVALUATION_DIR = 'principle-guided-agent-research/archive/09-semantic-selector-evaluation';
 const LABELS_PATH = join(REPO_ROOT, EVALUATION_DIR, 'expanded-silver-labels.json');
 const SELECTION_PATH = join(REPO_ROOT, EVALUATION_DIR, 'semantic-selection.generated.json');
 const ADJUDICATION_PATH = join(REPO_ROOT, EVALUATION_DIR, 'semantic-adjudication.json');
 const BASELINE_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/07-prototype-evaluation/selector-evaluation.generated.json'
+  'principle-guided-agent-research/archive/07-prototype-evaluation/selector-evaluation.generated.json'
 );
 const OUTPUT_PATH = join(REPO_ROOT, EVALUATION_DIR, 'semantic-selector-comparison.generated.json');
 

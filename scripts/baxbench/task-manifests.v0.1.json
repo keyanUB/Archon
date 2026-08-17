@@ -1,7 +1,7 @@
 {
   "generator": "scripts/baxbench/generate_task_manifests.py",
   "schemaVersion": "0.1.0",
-  "sourceManifest": "principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json",
+  "sourceManifest": "principle-guided-agent-research/archive/14-baxbench-pilot/pilot-v0.2.json",
   "tasks": [
     {
       "contract": {

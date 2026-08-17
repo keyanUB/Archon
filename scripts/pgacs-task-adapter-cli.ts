@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-import { resolve } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
 
 import {
   loadFrozenTaskRegistry,
@@ -7,12 +8,23 @@ import {
   resolveWorkspaceAdapter,
   type FrozenTaskManifest,
 } from './pgacs-task-adapters';
+import {
+  assertFreshSanitizedWorkspace,
+  createSecRepoBenchTaskViews,
+  materializeSecRepoBenchWorkspace,
+} from './pgacs-secrepobench-materializer';
 
 function usage(): never {
   throw new Error(
     'Usage: pgacs-task-adapter-cli.ts prepare REGISTRY TASK_ID ROOT | ' +
+      'materialize REGISTRY TASK_ID SOURCE_REPO MASKED_TARGET RUN_ROOT CONTROL_ROOT | ' +
       'stage REGISTRY TASK_ID EVALUATOR_ROOT CANDIDATE_ROOT RESULTS_ROOT LABEL'
   );
+}
+
+function isContainedBy(root: string, candidate: string): boolean {
+  const fromRoot = relative(root, candidate);
+  return fromRoot === '' || (!fromRoot.startsWith('..') && !isAbsolute(fromRoot));
 }
 
 function findManifest(registryPath: string, taskId: string): FrozenTaskManifest {
@@ -36,6 +48,45 @@ async function main(args: string[]): Promise<void> {
       resolve(repositoryRoot)
     );
     process.stdout.write(`${JSON.stringify(receipt)}\n`);
+    return;
+  }
+  if (command === 'materialize') {
+    const [sourceRepositoryRoot, maskedTargetPath, rawRepositoryRoot, rawControlRoot] = rest;
+    if (
+      !sourceRepositoryRoot ||
+      !maskedTargetPath ||
+      !rawRepositoryRoot ||
+      !rawControlRoot ||
+      rest.length !== 4
+    ) {
+      usage();
+    }
+    const repositoryRoot = resolve(rawRepositoryRoot);
+    const controlRoot = resolve(rawControlRoot);
+    const receipt = await materializeSecRepoBenchWorkspace({
+      manifest,
+      sourceRepositoryRoot: resolve(sourceRepositoryRoot),
+      maskedTargetPath: resolve(maskedTargetPath),
+      repositoryRoot,
+    });
+    const workspaceRoot = resolve(repositoryRoot, receipt.workspaceRoot);
+    if (isContainedBy(workspaceRoot, controlRoot)) {
+      throw new Error('SecRepoBench control artifacts must remain outside the agent workspace');
+    }
+    await assertFreshSanitizedWorkspace(workspaceRoot);
+    await mkdir(controlRoot, { recursive: false });
+    const views = createSecRepoBenchTaskViews(manifest, receipt);
+    const receiptPath = resolve(controlRoot, 'materialization-receipt.json');
+    const generationTaskPath = resolve(controlRoot, 'generation-task.json');
+    const evaluatorTaskPath = resolve(controlRoot, 'evaluator-task.json');
+    await Promise.all([
+      writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, 'utf8'),
+      writeFile(generationTaskPath, `${JSON.stringify(views.generation, null, 2)}\n`, 'utf8'),
+      writeFile(evaluatorTaskPath, `${JSON.stringify(views.evaluator, null, 2)}\n`, 'utf8'),
+    ]);
+    process.stdout.write(
+      `${JSON.stringify({ receipt, receiptPath, generationTaskPath, evaluatorTaskPath })}\n`
+    );
     return;
   }
   if (command === 'stage') {

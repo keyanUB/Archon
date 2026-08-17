@@ -20,6 +20,13 @@
 
 ---
 
+> **PGACS research branch:** This branch also contains the security-harness
+> prototype for secure repository-level code completion. New contributors
+> should start with the
+> [PGACS developer README](principle-guided-agent-research/README.md) and run
+> `bun run pgacs:doctor`. The
+> upstream Archon platform documentation continues below.
+
 Archon is a workflow engine for AI coding agents. Define your development processes as YAML workflows - planning, implementation, validation, code review, PR creation - and run them reliably across all your projects.
 
 Like what Dockerfiles did for infrastructure and GitHub Actions did for CI/CD - Archon does for AI coding workflows. Think n8n, but for software development.

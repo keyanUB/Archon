@@ -122,3 +122,6 @@ test-results/
 .archon/ralph/
 .pgacs-baxbench/
 .pgacs-multibench/
+.pgacs-secrepobench/
+.pgacs-secrepobench-calibration*/
+.pgacs-openhands/

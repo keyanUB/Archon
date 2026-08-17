@@ -31,12 +31,12 @@ const REPO_ROOT = resolve(import.meta.dir, '..');
 const TASK_ID = 'file-parser-untrusted-archive';
 const OUTPUT_ROOT = join(
   REPO_ROOT,
-  'principle-guided-agent-research/10-guided-trajectory-prototype/artifacts/runs'
+  'principle-guided-agent-research/archive/10-guided-trajectory-prototype/artifacts/runs'
 );
 const CORPUS_PATH = join(REPO_ROOT, '.archon/data/research/pgacs/principle-corpus.expanded.json');
 const SELECTION_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/09-semantic-selector-evaluation/semantic-selection.generated.json'
+  'principle-guided-agent-research/archive/09-semantic-selector-evaluation/semantic-selection.generated.json'
 );
 
 const TASK = `# ZIP Metadata Inspector Task

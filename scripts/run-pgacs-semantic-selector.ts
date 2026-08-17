@@ -53,9 +53,9 @@ interface ClaudeEnvelope {
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const CORPUS_PATH = '.archon/data/research/pgacs/principle-corpus.expanded.json';
 const DEFAULT_LABELS_PATH =
-  'principle-guided-agent-research/09-semantic-selector-evaluation/expanded-silver-labels.json';
+  'principle-guided-agent-research/archive/09-semantic-selector-evaluation/expanded-silver-labels.json';
 const DEFAULT_OUTPUT_PATH =
-  'principle-guided-agent-research/09-semantic-selector-evaluation/semantic-selection.generated.json';
+  'principle-guided-agent-research/archive/09-semantic-selector-evaluation/semantic-selection.generated.json';
 const MODEL = process.env.PGACS_SELECTOR_MODEL || 'sonnet';
 const MAX_POLICIES_PER_TASK = 6;
 

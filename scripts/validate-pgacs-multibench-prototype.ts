@@ -8,39 +8,41 @@ import { parseFrozenTaskRegistry } from './pgacs-task-adapters';
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const REGISTRY_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/prototype-v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/prototype-v0.1.json'
 );
 const BAXBENCH_MANIFEST_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json'
+  'principle-guided-agent-research/archive/14-baxbench-pilot/pilot-v0.2.json'
 );
 const BAXBENCH_TASK_REGISTRY_PATH = resolve(REPO_ROOT, 'scripts/baxbench/task-manifests.v0.1.json');
 const SMOKE_MANIFEST_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/13-smoke-dataset/smoke-v0.1.json'
+  'principle-guided-agent-research/archive/13-smoke-dataset/smoke-v0.1.json'
 );
 const SETUPBENCH_MANIFEST_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/setupbench-selection-v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/setupbench-selection-v0.1.json'
 );
 const BAXBENCH_ORACLE_RECEIPT_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/baxbench-oracle-validation.v0.5.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/baxbench-oracle-validation.v0.5.json'
 );
 const BAXBENCH_ORACLE_PATH = resolve(REPO_ROOT, 'scripts/baxbench/pgacs_baxbench_oracle.py');
 const AGENT_BOUNDARY_RECEIPT_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/agent-boundary-validation.v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/agent-boundary-validation.v0.1.json'
 );
 const AGENT_BOUNDARY_VERIFIER_PATH = resolve(REPO_ROOT, 'scripts/verify-pgacs-agent-boundary.ts');
 const BAXBENCH_EXPERIMENT_CONTRACT_PATH = resolve(
   REPO_ROOT,
-  'principle-guided-agent-research/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
+  'principle-guided-agent-research/archive/15-multibench-prototype/baxbench-c2-experiment.v0.1.json'
 );
 const BAXBENCH_EXPERIMENT_RUNNER_PATH = resolve(REPO_ROOT, 'scripts/run-pgacs-baxbench-c2.ts');
 const EXPECTED_MODEL_ID = 'claude-sonnet-5';
 
-const EXPECTED_SOURCE_MANIFESTS: Record<string, string> = {
+// Frozen manifests retain their pre-archive provenance identifiers. These are
+// evidence values, not filesystem lookup paths; see archive/RELOCATION.md.
+const EXPECTED_LEGACY_SOURCE_MANIFEST_IDS: Record<string, string> = {
   baxbench: 'principle-guided-agent-research/14-baxbench-pilot/pilot-v0.2.json',
   swebench_verified: 'principle-guided-agent-research/13-smoke-dataset/smoke-v0.1.json',
   setupbench:
@@ -413,12 +415,12 @@ export function validatePrototypeRegistry(inputs: PrototypeInputs): string[] {
     seenIds.add(taskId);
 
     const benchmark = readString(taskValue, 'benchmark');
-    if (!benchmark || !(benchmark in EXPECTED_SOURCE_MANIFESTS)) {
+    if (!benchmark || !(benchmark in EXPECTED_LEGACY_SOURCE_MANIFEST_IDS)) {
       errors.push(`${taskId}: unsupported benchmark`);
       continue;
     }
     benchmarkCounts[benchmark] = (benchmarkCounts[benchmark] ?? 0) + 1;
-    if (taskValue.sourceManifest !== EXPECTED_SOURCE_MANIFESTS[benchmark]) {
+    if (taskValue.sourceManifest !== EXPECTED_LEGACY_SOURCE_MANIFEST_IDS[benchmark]) {
       errors.push(`${taskId}: sourceManifest does not match benchmark`);
     }
     const sourceTaskId = readString(taskValue, 'sourceTaskId');
@@ -483,7 +485,7 @@ export function validatePrototypeRegistry(inputs: PrototypeInputs): string[] {
   if (!isObject(benchmarkMix)) {
     errors.push('study.benchmarkMix must be an object');
   } else {
-    for (const benchmark of Object.keys(EXPECTED_SOURCE_MANIFESTS)) {
+    for (const benchmark of Object.keys(EXPECTED_LEGACY_SOURCE_MANIFEST_IDS)) {
       if (benchmarkMix[benchmark] !== (benchmarkCounts[benchmark] ?? 0)) {
         errors.push(`${benchmark}: task count does not match study.benchmarkMix`);
       }

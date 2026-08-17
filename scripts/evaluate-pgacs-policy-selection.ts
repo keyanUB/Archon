@@ -42,11 +42,11 @@ interface TaskEvaluation {
 const REPO_ROOT = resolve(import.meta.dir, '..');
 const LABELS_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/07-prototype-evaluation/silver-policy-selection-labels.json'
+  'principle-guided-agent-research/archive/07-prototype-evaluation/silver-policy-selection-labels.json'
 );
 const OUTPUT_PATH = join(
   REPO_ROOT,
-  'principle-guided-agent-research/07-prototype-evaluation/selector-evaluation.generated.json'
+  'principle-guided-agent-research/archive/07-prototype-evaluation/selector-evaluation.generated.json'
 );
 const POLICY_SOURCE = join(
   REPO_ROOT,

@@ -1,199 +1,235 @@
-# Principle-Guided Agent Research
+# PGACS Secure Repository Completion Prototype
 
-This folder collects the research design artifacts for the project:
+This branch contains the active prototype of the **Policy-Guided Agent Control
+System (PGACS)** for secure repository-level code completion. It uses Archon as
+the host platform and currently targets three masked C/C++ tasks from
+SecRepoBench.
 
-```text
-Use software engineering and security principles as executable policies that
-guide coding-agent behavior toward secure and correct code generation.
+Start here for development. Prior proposals, superseded designs, selector
+experiments, BaxBench work, and generated historical artifacts are preserved in
+[`archive/`](archive/README.md), but they are not normative for this branch.
+
+## Understand It in Five Minutes
+
+PGACS mediates a coding agent while it completes one security-sensitive region
+in a real repository. It does more than scan the final patch:
+
+1. Materialize a sanitized repository without upstream fixes or benchmark
+   labels.
+2. Extract bounded, security-relevant repository facts.
+3. Select and activate repository-derived policy obligations.
+4. Give the agent only controlled repository read/search and target-edit tools.
+5. Normalize agent actions into trajectory evidence and enforce deterministic
+   scope controls.
+6. Admit only a target-scoped candidate with an intact protected tree.
+7. Evaluate functionality and security independently in pinned SecRepoBench
+   containers.
+8. Permit at most one obligation-specific repair in C2/C3.
+9. Produce a deterministic terminal decision and auditable evidence ledger.
+
+```mermaid
+flowchart LR
+    I["Pinned task and repository"] --> W["Sanitized workspace"]
+    W --> P["Repository facts and active policies"]
+    P --> A["Controlled coding agent"]
+    A --> T["Typed trajectory events"]
+    T --> C["Deterministic controls"]
+    C --> A
+    A --> G["Candidate integrity gate"]
+    G --> E["Independent functional and security probes"]
+    E --> R["Bounded repair or terminal decision"]
 ```
 
-## Status at a Glance
+The central research hypothesis is that security-relevant agent behavior can be
+observed and conditioned before it becomes an insecure artifact. Repository
+facts, trajectory signals, and evaluator outcomes remain separate to avoid
+circular evaluation.
 
-The repository separates six kinds of material:
+## Active Documentation
 
-- **Target architecture:** the event/intervention bus, capability-aware adapters,
-  three enforcement layers, evidence ledger, and deterministic terminal gate;
-- **Implemented deterministic core:** an 84-policy domain registry plus three
-  core fallback policies, uncertainty-aware task surfaces, explainable selection,
-  and reproducible generated artifacts;
-- **Implemented generic C2 mechanism:** one controller now supports three frozen
-  BaxBench code-generation tasks with compatibility-adjudicated obligations,
-  common Claude OS sandboxing, phase-attributed trajectory evidence, cumulative
-  scope enforcement, independent typed probes, one bounded repair, a
-  hash-chained ledger, and a deterministic terminal gate;
-- **Historical experiments:** the frozen 12-task selector studies and one paired
-  ZIP trajectory run, retained with their limitations and exact artifacts;
-- **Completed prompt-only pilot:** all 10 frozen BaxBench Python/FastAPI tasks
-  and 30 agent cells evaluated across direct Claude, ordinary Archon, and
-  semantic policy-guided Archon; conservative joint success was 3/10, 5/10,
-  and 4/10 respectively;
-- **Next C2 experiment:** the three BaxBench tasks are adapter-ready after
-  secure/vulnerable oracle calibration and deterministic replay, but require
-  renewed live agent-boundary qualification for the corrected frozen hashes.
-  Then run the frozen B0/C0/C1/C2 comparison and
-  integrity-check its results. The six SWE-bench Verified and SetupBench tasks
-  remain future integrations gated on adapters and/or independent security
-  oracles.
+| Document | Use it for |
+| --- | --- |
+| [Current runbook](current-secrepobench/README.md) | Scope, experiment conditions, status, commands, and immediate next steps |
+| [Technical design](current-secrepobench/technical-design.md) | Normative contracts, trust boundaries, event model, failure semantics, and design decisions |
+| [Feasibility results](current-secrepobench/feasibility-results.md) | Frozen three-task results, findings, limitations, and claim boundary |
+| [Archive index](archive/README.md) | Retrieving prior designs, datasets, experiments, and generated evidence |
 
-The preserved July 2026 semantic-selector metrics are historical evidence. That
-run received task-family metadata from the silver-label artifact, so it must be
-rerun without that field before supporting claims about classification-independent
-semantic selection. The current selector code now excludes task-family metadata
-and binds selections and adjudications to content hashes. The BaxBench pilot's
-ten-task selection is frozen against a task-only input view and contains no
-benchmark CWE labels, tests, or exploits.
+The technical design is normative and the current runbook operationalizes it.
+The implementation must conform to both; treat a mismatch as a defect to
+resolve explicitly. Treat archived documents only as provenance.
 
-## Reading Order
+## Experiment Conditions
 
-0. [Team Proposal / Pitch](00-pitch/security-by-design-agents-proposal.md)
-   - The persuasive entry point: motivation (agentic coding shifts authorship to
-     people without secure-coding knowledge), the evidence that agent-generated
-     code is measurably insecure, the idea (an automatic security harness that
-     binds principles to each intervention point), the design choices with
-     rationales, why build on Archon, risks, and the first milestone to fund.
+All PGACS conditions use the same sanitized workspace, restricted agent
+capabilities, evaluator, and integrity checks.
 
-1. [Research Foundation](01-foundation/research-foundation.md)
-   - Defines the project idea, the two core research questions, available
-     principle/policy resources, BaxBench behavior taxonomy, and initial
-     method architecture.
+| Condition | Policy guidance | Terminal security gate | Repair / trajectory conditioning |
+| --- | --- | --- | --- |
+| C0 | neutral | observe only | none |
+| C1 | repository-derived | observe only | none |
+| C2 | repository-derived | enforce | one evaluator-bound repair |
+| C3 | repository-derived | enforce | C2 plus trajectory conditioning |
 
-2. [Expert Proposals](02-expert-proposals/)
-   - Five role-specific methodology proposals:
-     - software architecture;
-     - software security;
-     - machine learning;
-     - AI agent security;
-     - empirical evaluation.
+B0 is an external native-agent reference. It is not an Archon/PGACS condition
+and must not be interpreted as a treatment contrast with C0-C3.
 
-3. [Five-Agent Synthesis](03-synthesis/five-agent-methodology-synthesis.md)
-   - Integrates the first round of expert discussion into a coherent method
-     direction.
+## Code Structure
 
-4. [Review and Scoring](04-review/proposal-review-and-evaluation.md)
-   - Reviews the five detailed proposals, scores them, identifies strengths
-     and weaknesses, and recommends how to combine them.
+The PGACS prototype is intentionally implemented as research scripts rather
+than production Archon packages.
 
-5. [Final Method](05-final-method/policy-guided-agent-harness.md)
-   - The recommended conceptual design: **Policy-Guided Agent Harness (PGAH)**.
+| Area | Primary files |
+| --- | --- |
+| Task schema and redacted views | `scripts/pgacs-task-adapters.ts`, `scripts/pgacs-task-adapter-cli.ts` |
+| Sample preparation | `scripts/prepare-pgacs-secrepobench-samples.ts` |
+| Workspace sanitization | `scripts/pgacs-secrepobench-materializer.ts` |
+| Candidate and region integrity | `scripts/pgacs-secrepobench-candidate.ts` |
+| Repository facts and policy activation | `scripts/pgacs-secrepobench-policy.ts` |
+| Trajectory events and predicates | `scripts/pgacs-secrepobench-trajectory.ts` |
+| C0-C3 controller and evidence ledger | `scripts/pgacs-secrepobench-controller.ts` |
+| Claude adapter | `scripts/pgacs-secrepobench-claude-driver.ts` |
+| OpenHands adapter | `scripts/pgacs-secrepobench-openhands-driver.ts` |
+| Restricted OpenHands bridge | `scripts/openhands/` |
+| Evaluator adapter and typed results | `scripts/pgacs-secrepobench-evaluation.ts`, `scripts/pgacs-secrepobench-official-evaluator.ts` |
+| Frozen Python oracle | `scripts/secrepobench/pgacs_secrepobench_oracle.py` |
+| Calibration | `scripts/calibrate-pgacs-secrepobench.ts` |
+| Experiment entry point | `scripts/run-pgacs-secrepobench.ts` |
+| Tests | adjacent `*.test.ts` files and `scripts/openhands/test_pgacs_workspace_policy.py` |
 
-6. Implementable Method: **Policy-Guided Agent Control System (PGACS)**.
-   Re-architects PGAH to be agent/LLM-agnostic (event/intervention bus +
-   capability-declaring adapters), separates policy data from three enforcement
-   layers (proactive prompt / detective monitoring / corrective loop
-   conditioning), makes dynamic policy selection touch all three layers, and
-   extends to new task families via plug-in packs. Two documents:
-   - [Milestone 1: Policy Registry and Task-Surface Extraction](06-implementable-method/01-policy-registry-and-task-surface.md)
-     — the first implementation step: normalize the policy corpus and the task
-     surface so selection has a stable input.
-   - [Milestone 1 Validation](06-implementable-method/02-milestone-1-validation.md)
-     — the first validation pass: check representative task families and the
-     expected registry/surface behavior.
-   - [Milestone 2: Explainable Policy Selection](06-implementable-method/03-policy-selection.md)
-     — deterministic safety rules plus budgeted ranking, optional LLM proposals,
-     replayable decisions, and monotonic dynamic adoption.
-   - [Milestone 2.1: Generic Security Floor and Implementation Record](06-implementable-method/04-generic-security-floor-and-implementation-plan.md)
-     — prevents sparse or failed surface extraction from producing an empty
-     security decision through explicit surface status, a three-policy core
-     fallback floor, reassessment triggers, and focused tests.
-   - [Prototype Policy-Selection Evaluation](07-prototype-evaluation/README.md)
-     — independent subagent-generated silver labels for 12 cross-family tasks,
-     reproducible metrics, observed limitations, and the next minimal update.
-   - [Expanded Principle Corpus](08-expanded-principle-corpus/README.md)
-     — a compact, provenance-preserving catalog of all 367 prepared records,
-     with 298 granular principles/policies available for semantic selection.
-   - [LLM Semantic Selector Prototype](09-semantic-selector-evaluation/README.md)
-     — a tool-less, schema-constrained semantic selector, its historical
-     task-family-confounded 12-task run, and the corrected hash-bound input and
-     adjudication path.
-   - [Policy-Guided Coding Trajectory Prototype](10-guided-trajectory-prototype/README.md)
-     — a paired Codex experiment on one untrusted-file task, with raw
-     trajectories and independent required-versus-hardening probes showing both
-     the added defenses and the cost/maintainability tradeoffs of policy
-     injection.
-   - [Comprehensive Prototype Report and Roadmap](11-prototype-report-and-roadmap/README.md)
-     — consolidates the implemented prototype, all selector and trajectory
-     experiments, supported and unsupported claims, threats to validity, and
-     the controlled cross-task plan for prompt-only versus minimal-harness
-     evaluation.
-   - [Archon C2 Security-Harness Prototype](12-archon-c2-prototype/README.md)
-     — the first actual Archon workflow combining frozen policies, isolated
-     deterministic evidence, one bounded repair, and a terminal gate.
-   - [C2 As-Built Technical Design](12-archon-c2-prototype/technical-design.md)
-     — implementation-level architecture, contracts, control flow, evaluator
-     isolation, evidence semantics, threat model, failure modes, and decisions.
-   - [Superseded Smoke Dataset](13-smoke-dataset/README.md)
-     — a superseded historical cohort retained only for provenance; it is not
-     part of the active benchmark plan.
-   - [Ten-Task BaxBench Pilot](14-baxbench-pilot/README.md)
-     — the source-pinned prompt-only backend-generation comparison across a
-     direct agent, ordinary Archon, and semantic policy-guided Archon, with
-     official functional tests and security exploits.
-   - [Small Multi-Benchmark Prototype](15-multibench-prototype/README.md)
-     — the active nine-task development registry across BaxBench, SWE-bench
-     Verified, and SetupBench, with readiness and leakage gates.
-   - [SecRepoBench Customization](16-secrepobench-customization/README.md)
-     — an experimental branch extension for masked C/C++ repository completion,
-     ARVO/OSS-Fuzz evaluation, evaluator-label isolation, and a three-task
-     feasibility study.
-   - [Method overview](06-implementable-method/policy-guided-agent-control-system.md)
-     — the design at pitch/overview altitude.
-   - [Detailed design & decision record](06-implementable-method/pgacs-detailed-design.md)
-     — the build-from engineering spec: full interfaces, runtime control flow,
-     failure modes, harness threat model, and 19 systematic decision records
-     (ADRs) with rationale.
+Generated workspaces and run artifacts use ignored `.pgacs-*` directories.
+They are evidence from a particular execution, not source files.
 
-   The Archon-root prototype for this step lives in:
-   - `scripts/generate-pgacs-research-artifacts.ts`
-   - `scripts/pgacs-policy-registry.ts`
-   - `scripts/pgacs-task-surface.ts`
-   - `.archon/data/research/pgacs/`
+## Current Status
 
-## Supporting External Inputs
+Implemented and validated:
 
-These documents are referenced by the research artifacts but live outside this
-folder:
+- sanitized, history-free repository materialization;
+- structural generation/evaluator information separation;
+- exact candidate byte envelope and protected-tree integrity;
+- bounded C/C++ repository facts and policy obligations;
+- typed trajectory events and deterministic control predicates;
+- C0-C3 execution with one bounded C2/C3 repair;
+- pinned task-specific functional and OSS-Fuzz evaluation;
+- Claude and OpenHands agent adapters;
+- OpenHands with Qwen through Hugging Face's OpenAI-compatible router;
+- bridge protocol `1.1` with explicit cost availability and budget-enforcement
+  receipts; and
+- result schema `0.5.0`.
 
-- `reports/baxbench_agent_behavior_codex.md`
-- `reports/grasp-secure-coding/workflow-comparison.md`
-- `reports/secure-environment-setup/docker-comparison.md`
-- `reports/agent-behavior-comparison/swebench-django-sonnet-vs-archon.md`
-- `.archon/data/research/grasp-secure-coding/owasp-scp.md`
-- `.archon/data/research/grasp-secure-coding/scp-graph.json`
-- `.archon/data/research/secure-environment-setup/setup-environment-policies.json`
+The three-task, 12-cell Claude feasibility study is complete. It demonstrates
+mechanism feasibility and security-first blocking, not population-level
+effectiveness. The OpenHands/Qwen route has passed a restricted live smoke task
+and is pinned for the next qualification run to Scaleway through Hugging Face,
+but has not yet produced a SecRepoBench benchmark result.
 
-## Core Output
+## Development Setup
 
-The current recommended method is the implementable design:
+Prerequisites:
 
-[Policy-Guided Agent Control System](06-implementable-method/policy-guided-agent-control-system.md)
-(PGACS), which re-architects the earlier conceptual design
-[Policy-Guided Agent Harness](05-final-method/policy-guided-agent-harness.md)
-(PGAH) for buildability and agent-agnosticism.
+- Bun and the repository dependencies;
+- Docker for task-specific ARVO evaluator images;
+- Python 3.13 and `uv` for OpenHands; and
+- a funded model-provider credential supplied only through the environment.
 
-The active executable prototype is the generic PGACS C2 runner documented in
-[`15-multibench-prototype/README.md`](15-multibench-prototype/README.md) and
-[`15-multibench-prototype/technical-design.md`](15-multibench-prototype/technical-design.md).
-It separates policy selection from compatibility-aware activation, enforces a
-frozen obligation/probe contract, uses typed oracle outcomes, and permits one
-candidate-only repair. The fixed ZIP workflow remains an implementation record;
-the prompt-only BaxBench v0.1 results remain a legacy ablation.
+```bash
+bun install
+bun run pgacs:doctor
 
-The same folder contains the source-pinned nine-task integration roadmap across
-BaxBench, SWE-bench Verified, and SetupBench, with explicit adapter and
-oracle-validation gates before any task may
-contribute effectiveness evidence.
+uv venv --python 3.13 .pgacs-openhands
+uv pip install --python .pgacs-openhands/bin/python \
+  -r scripts/openhands/requirements.txt
+```
 
-In one sentence:
+Never place API keys in a request, manifest, artifact, or committed environment
+file. Supported variables include `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`HF_TOKEN`, and the explicit generic pair `LLM_API_KEY`/`LLM_BASE_URL`.
+`pgacs:doctor` is an offline, non-mutating preflight. It reports offline
+development and live OpenHands experiment readiness separately, never prints
+credential or pricing values, and supports `--json` for agent-readable output.
+
+Run focused validation while editing:
+
+```bash
+bun test ./scripts/pgacs-secrepobench-candidate.test.ts \
+  ./scripts/pgacs-secrepobench-controller.test.ts \
+  ./scripts/pgacs-secrepobench-openhands-driver.test.ts
+
+cd scripts/openhands
+OPENHANDS_SUPPRESS_BANNER=1 ../../.pgacs-openhands/bin/python \
+  -m unittest test_pgacs_workspace_policy.py
+```
+
+Before handing off or committing:
+
+```bash
+bun run validate
+git diff --check
+```
+
+Preparation, calibration, and experiment commands are kept in the
+[current runbook](current-secrepobench/README.md#8-commands). Use a fresh output
+directory for every experiment.
+
+## Continuing with Codex
+
+Give Codex this initial instruction:
 
 ```text
-PGACS converts principles into Policy objects that each carry a prompt fragment,
-runtime monitors, and repair invariants; selects a compact policy set from task
-surface, activates a compact generic security floor when specific matching is
-not supported, and adapts policy state dynamically across the trajectory;
-enforces it through three graceful-degrading layers (proactive prompt,
-detective monitoring/probing, corrective loop conditioning) driven by an
-event/intervention bus that any agent joins via a capability-declaring adapter;
-keeps enforcement deterministic while using LLMs only to propose and supply
-evidence; and extends to new task families via plug-in packs over a fixed
-surface vocabulary.
+Continue the PGACS SecRepoBench prototype on the current branch. First read
+AGENTS.md, principle-guided-agent-research/README.md,
+principle-guided-agent-research/current-secrepobench/README.md, and
+principle-guided-agent-research/current-secrepobench/technical-design.md. Inspect
+git status before editing. Treat principle-guided-agent-research/archive as
+historical evidence, not the current specification. Preserve generation/evaluator
+separation, deterministic enforcement, candidate integrity, and typed failure
+semantics. Run focused tests and bun run validate before reporting completion.
 ```
+
+Development rules for humans and agents:
+
+1. Read the implementation before proposing a new abstraction.
+2. Do not expose CWE labels, PoCs, developer fixes, or hidden evaluator output
+   to generation or repair.
+3. Do not count refusal or non-submission as secure unless an independent probe
+   identifies the relevant security failure.
+4. Keep model/agent runtime changes separate from PGACS treatment changes.
+5. Version any result or bridge contract whose meaning or required fields
+   change.
+6. Preserve old experiment artifacts; add new runs in fresh directories.
+7. Update the technical design and runbook whenever implementation semantics
+   change.
+
+## Next Development Steps
+
+The immediate task is to qualify the OpenHands/Qwen path on task 910 using
+`openai/Qwen/Qwen3.6-35B-A3B:scaleway`. It is complete only when all of the
+following acceptance criteria hold:
+
+- `bun run pgacs:doctor` reports `Offline development: READY` and
+  `Live OpenHands experiment: READY`;
+- the provider route, exact model identifier, OpenHands versions, and explicit
+  input/output token rates are recorded in the run receipt;
+- one fresh C0 run completes with target-only edits and an intact protected
+  tree;
+- independent functional and security probes reach typed terminal outcomes;
+- the transcript digest, normalized trajectory, candidate digest, evaluator
+  receipts, timing, and cost-accounting status are present; and
+- focused tests, `bun run validate`, and `git diff --check` pass.
+
+After that qualification:
+
+1. Move C3 from a post-write reminder to a pre-edit, evidence-triggered
+   conditioning point.
+2. Add per-probe timing and freeze the next result-schema revision.
+3. Run at least three independent generations per condition before making an
+   effectiveness claim.
+4. Expand beyond three tasks only after the small protocol is stable and the
+   analysis plan is preregistered.
+
+## Claim Boundary
+
+This branch can support claims about prototype feasibility, deterministic
+control behavior, candidate integrity, and outcomes on the frozen three-task
+study. It cannot yet support claims of general secure-code-generation
+improvement, broad SecRepoBench performance, or superiority across agents and
+models.

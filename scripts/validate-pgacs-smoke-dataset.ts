@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const DATASET_DIRECTORY = resolve(
   import.meta.dir,
-  '../principle-guided-agent-research/13-smoke-dataset'
+  '../principle-guided-agent-research/archive/13-smoke-dataset'
 );
 
 const MANIFEST_PATH = resolve(DATASET_DIRECTORY, 'smoke-v0.1.json');

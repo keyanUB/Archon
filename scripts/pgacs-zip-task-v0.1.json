@@ -28,7 +28,7 @@
   },
   "evaluator": {
     "adapterId": "python-json-v0.1",
-    "sourcePath": "principle-guided-agent-research/10-guided-trajectory-prototype/evaluator/evaluate_zip_inspector.py",
+    "sourcePath": "principle-guided-agent-research/archive/10-guided-trajectory-prototype/evaluator/evaluate_zip_inspector.py",
     "requiredProbeIds": [
       "safe_metadata",
       "malformed_archive",
