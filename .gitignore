@@ -61,6 +61,7 @@ e2e-screenshots/
 
 # Agent artifacts (generated, local only)
 .agents/
+.codex/
 .agents/rca-reports/
 .agents/plans/
 .agents/pr-reviews
