@@ -208,6 +208,89 @@ describe('SecRepoBench trajectory controller', (): void => {
     expect(controlResult.interventions[0]?.action).toBe('deny');
   });
 
+  test('defers C3 target mutation until target and repository context are observed', async () => {
+    const context = await fixture();
+    let state = createSecRepoBenchTrajectoryState({
+      taskId: context.task.taskId,
+      targetPath: context.task.workspace.targetPath,
+      requiredProbeIds: REQUIRED_PROBES,
+      controlMode: 'pre-action-context-evidence',
+    });
+    const events: SecRepoBenchTrajectoryEvent[] = [
+      event({
+        eventId: 'premature-write',
+        sequence: 0,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'file_write_attempt',
+        path: 'src/parse.c',
+      }),
+      event({
+        eventId: 'premature-write-result',
+        sequence: 1,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'file_write_result',
+        path: 'src/parse.c',
+        attemptEventId: 'premature-write',
+        applied: false,
+      }),
+      event({
+        eventId: 'target-read',
+        sequence: 2,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'file_read',
+        path: 'src/parse.c',
+      }),
+      event({
+        eventId: 'context-search',
+        sequence: 3,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'symbol_search',
+        path: 'src',
+      }),
+      event({
+        eventId: 'informed-write',
+        sequence: 4,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'file_write_attempt',
+        path: 'src/parse.c',
+      }),
+      event({
+        eventId: 'informed-write-result',
+        sequence: 5,
+        candidateRevision: 0,
+        actor: 'agent',
+        kind: 'file_write_result',
+        path: 'src/parse.c',
+        attemptEventId: 'informed-write',
+        applied: true,
+      }),
+    ];
+    for (const trajectoryEvent of events) {
+      state = reduceSecRepoBenchTrajectory({
+        state,
+        event: trajectoryEvent,
+        preparation: context.preparation,
+      }).state;
+    }
+
+    expect(state.candidateRevision).toBe(1);
+    expect(state.observedPaths).toEqual(['src', 'src/parse.c']);
+    expect(state.signals).toHaveLength(1);
+    expect(state.signals[0]).toMatchObject({
+      class: 'context_gap',
+      disposition: 'advisory',
+    });
+    expect(state.interventions[0]).toMatchObject({
+      action: 'inject_guidance',
+      controlPoint: 'pre_action',
+    });
+  });
+
   test('requires independent probes for the current candidate revision', async (): Promise<void> => {
     const context = await fixture();
     let state = createSecRepoBenchTrajectoryState({

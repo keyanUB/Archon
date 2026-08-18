@@ -93,11 +93,15 @@ than production Archon packages.
 | Evaluator adapter and typed results | `scripts/pgacs-secrepobench-evaluation.ts`, `scripts/pgacs-secrepobench-official-evaluator.ts` |
 | Frozen Python oracle | `scripts/secrepobench/pgacs_secrepobench_oracle.py` |
 | Calibration | `scripts/calibrate-pgacs-secrepobench.ts` |
+| Qualification receipt | `scripts/pgacs-secrepobench-qualification.ts`, `current-secrepobench/evidence/` |
 | Experiment entry point | `scripts/run-pgacs-secrepobench.ts` |
 | Tests | adjacent `*.test.ts` files and `scripts/openhands/test_pgacs_workspace_policy.py` |
 
 Generated workspaces and run artifacts use ignored `.pgacs-*` directories.
-They are evidence from a particular execution, not source files.
+They are evidence from a particular execution, not source files. The compact
+qualification receipt is tracked because it records the auditable aggregate
+claim and binds that claim to the exact oracle, registry, and calibration
+digests without committing benchmark repositories or evaluator output.
 
 ## Current Status
 
@@ -112,9 +116,13 @@ Implemented and validated:
 - pinned task-specific functional and OSS-Fuzz evaluation;
 - Claude and OpenHands agent adapters;
 - OpenHands with Qwen through Hugging Face's OpenAI-compatible router;
-- bridge protocol `1.1` with explicit cost availability and budget-enforcement
-  receipts; and
-- result schema `0.5.0`.
+- bridge protocol `1.2` with explicit cost availability, budget-enforcement,
+  and pre-action treatment receipts;
+- C3 target-write deferral until successful target and non-target repository
+  observations are recorded;
+- oracle v0.6 with per-probe duration metadata;
+- result schema `0.6.0`; and
+- a tracked, source-digest-bound receipt for the 18/18 oracle qualification.
 
 The three-task, 12-cell Claude feasibility study is complete. It demonstrates
 mechanism feasibility and security-first blocking, not population-level
@@ -134,6 +142,7 @@ Prerequisites:
 ```bash
 bun install
 bun run pgacs:doctor
+bun run pgacs:qualification:check
 
 uv venv --python 3.13 .pgacs-openhands
 uv pip install --python .pgacs-openhands/bin/python \
@@ -201,6 +210,7 @@ Development rules for humans and agents:
 
 ## Next Development Steps
 
+Oracle v0.6 has passed three secure/vulnerable reference replays for each task.
 The immediate task is to qualify the OpenHands/Qwen path on task 910 using
 `openai/Qwen/Qwen3.6-35B-A3B:scaleway`. It is complete only when all of the
 following acceptance criteria hold:
@@ -218,11 +228,12 @@ following acceptance criteria hold:
 
 After that qualification:
 
-1. Move C3 from a post-write reminder to a pre-edit, evidence-triggered
-   conditioning point.
-2. Add per-probe timing and freeze the next result-schema revision.
-3. Run at least three independent generations per condition before making an
+1. Run at least three independent generations per condition before making an
    effectiveness claim.
+2. Audit C3 intervention precision and correction-after-intervention separately
+   from final security outcomes.
+3. Admit an AST/content predicate only after blinded fixture precision supports
+   deterministic enforcement.
 4. Expand beyond three tasks only after the small protocol is stable and the
    analysis plan is preregistered.
 

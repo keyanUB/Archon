@@ -17,6 +17,7 @@ export interface SecRepoBenchNormalizedProbe {
   attribution: 'candidate' | 'harness' | 'unknown';
   repairEligible: boolean;
   exitCode: number;
+  durationMs: number;
   artifactDigests: {
     detailSha256: string;
     stdoutSha256: string;
@@ -25,9 +26,9 @@ export interface SecRepoBenchNormalizedProbe {
 }
 
 export interface SecRepoBenchEvaluation {
-  schemaVersion: '0.1.0';
-  oracleId: 'pgacs-secrepobench:single-task:v0.5';
-  oracleVersion: '0.5.0';
+  schemaVersion: '0.2.0';
+  oracleId: 'pgacs-secrepobench:single-task:v0.6';
+  oracleVersion: '0.6.0';
   taskId: string;
   candidateSha256: string;
   decision: SecRepoBenchDecision;
@@ -151,10 +152,10 @@ export function normalizeSecRepoBenchOracleResult(
   if (Buffer.byteLength(rawJson, 'utf8') > 512 * 1024) {
     throw new Error('SecRepoBench oracle result exceeds the size limit');
   }
-  if (value.oracleVersion !== '0.5.0') {
-    throw new Error('SecRepoBench oracleVersion must be 0.5.0');
+  if (value.oracleVersion !== '0.6.0') {
+    throw new Error('SecRepoBench oracleVersion must be 0.6.0');
   }
-  if (value.oracleId !== 'pgacs-secrepobench:single-task:v0.5') {
+  if (value.oracleId !== 'pgacs-secrepobench:single-task:v0.6') {
     throw new Error('SecRepoBench oracleId is invalid');
   }
   const taskId = requireString(value, 'taskId', 'oracleResult');
@@ -181,6 +182,13 @@ export function normalizeSecRepoBenchOracleResult(
     if (typeof rawProbe.exitCode !== 'number' || !Number.isSafeInteger(rawProbe.exitCode)) {
       throw new Error(`SecRepoBench probe ${id} has an invalid exitCode`);
     }
+    if (
+      typeof rawProbe.durationMs !== 'number' ||
+      !Number.isSafeInteger(rawProbe.durationMs) ||
+      rawProbe.durationMs < 0
+    ) {
+      throw new Error(`SecRepoBench probe ${id} has an invalid durationMs`);
+    }
     return {
       id: id as SecRepoBenchNormalizedProbe['id'],
       class: expectedClass,
@@ -189,6 +197,7 @@ export function normalizeSecRepoBenchOracleResult(
         status === 'fail' ? 'candidate' : status === 'harness_error' ? 'harness' : 'unknown',
       repairEligible: status === 'fail',
       exitCode: rawProbe.exitCode,
+      durationMs: rawProbe.durationMs,
       artifactDigests: {
         detailSha256: artifactDigest(rawProbe.detail),
         stdoutSha256: artifactDigest(rawProbe.stdout),
@@ -217,8 +226,8 @@ export function normalizeSecRepoBenchOracleResult(
     );
   }
   const evaluationCore = {
-    oracleId: 'pgacs-secrepobench:single-task:v0.5' as const,
-    oracleVersion: '0.5.0' as const,
+    oracleId: 'pgacs-secrepobench:single-task:v0.6' as const,
+    oracleVersion: '0.6.0' as const,
     taskId,
     candidateSha256,
     ...aggregate,
@@ -234,7 +243,7 @@ export function normalizeSecRepoBenchOracleResult(
     reportedDecision,
   };
   return {
-    schemaVersion: '0.1.0',
+    schemaVersion: '0.2.0',
     ...evaluationCore,
     evaluationSha256: stableSha256(evaluationCore),
   };
@@ -276,6 +285,7 @@ function harnessErrorEvaluation(
         attribution: 'harness',
         repairEligible: false,
         exitCode: -1,
+        durationMs: 0,
         artifactDigests: {
           detailSha256: sha256(reason),
           stdoutSha256: sha256(input.stdout ?? ''),
@@ -285,8 +295,8 @@ function harnessErrorEvaluation(
     )
     .sort((left, right) => left.id.localeCompare(right.id));
   const core = {
-    oracleId: 'pgacs-secrepobench:single-task:v0.5' as const,
-    oracleVersion: '0.5.0' as const,
+    oracleId: 'pgacs-secrepobench:single-task:v0.6' as const,
+    oracleVersion: '0.6.0' as const,
     taskId: input.taskId,
     candidateSha256: input.candidateSha256,
     decision: 'harness_error' as const,
@@ -305,5 +315,5 @@ function harnessErrorEvaluation(
     rawResultSha256: sha256(''),
     reason,
   };
-  return { schemaVersion: '0.1.0', ...core, evaluationSha256: stableSha256(core) };
+  return { schemaVersion: '0.2.0', ...core, evaluationSha256: stableSha256(core) };
 }

@@ -99,12 +99,43 @@ function appendWriteAttempt(input: {
   input.events.push({ eventId, kind: 'file_write_attempt', path: input.path });
 }
 
+function appendObservation(input: {
+  events: SecRepoBenchAgentEventDraft[];
+  observationEventIds: Set<string>;
+  observedPaths: Set<string>;
+  toolUseId: string;
+  kind: 'file_read' | 'symbol_search';
+  path: string;
+}): void {
+  const eventId = `${input.toolUseId}:observe`;
+  input.observedPaths.add(input.path);
+  if (input.observationEventIds.has(eventId)) return;
+  input.observationEventIds.add(eventId);
+  input.events.push({ eventId, kind: input.kind, path: input.path });
+}
+
+function missingPreActionEvidence(input: {
+  targetPath: string;
+  observedPaths: Set<string>;
+}): string[] {
+  return [
+    ...(input.observedPaths.has(input.targetPath) ? [] : ['target-read']),
+    ...([...input.observedPaths].some(path => path !== input.targetPath)
+      ? []
+      : ['repository-context-read']),
+  ];
+}
+
 function preToolUseHook(input: {
   cwd: string;
   targetPath: string;
+  preActionControl: SecRepoBenchAgentAttemptInput['preActionControl'];
   events: SecRepoBenchAgentEventDraft[];
+  observedPaths: Set<string>;
   attemptEventIds: Set<string>;
   writeAttemptPaths: Map<string, string>;
+  resultEventIds: Set<string>;
+  failureClasses: string[];
 }): HookCallback {
   return async (hookInput: HookInput, toolUseId: string | undefined): Promise<HookJSONOutput> => {
     if (hookInput.hook_event_name !== 'PreToolUse') return {};
@@ -128,6 +159,31 @@ function preToolUseHook(input: {
             permissionDecisionReason: `PGACS permits writes only to ${input.targetPath}.`,
           },
         };
+      }
+      if (input.preActionControl.enabled) {
+        const missingEvidence = missingPreActionEvidence({
+          targetPath: input.targetPath,
+          observedPaths: input.observedPaths,
+        });
+        if (missingEvidence.length > 0) {
+          const message = `${input.preActionControl.guidance} Missing evidence: ${missingEvidence.join(', ')}.`;
+          appendWriteResult({
+            events: input.events,
+            resultEventIds: input.resultEventIds,
+            toolUseId: eventToolUseId,
+            path: recordedPath,
+            applied: false,
+            detail: message,
+            failureClasses: input.failureClasses,
+          });
+          return {
+            hookSpecificOutput: {
+              hookEventName: 'PreToolUse',
+              permissionDecision: 'deny',
+              permissionDecisionReason: message,
+            },
+          };
+        }
       }
       return {
         hookSpecificOutput: {
@@ -162,6 +218,32 @@ function preToolUseHook(input: {
   };
 }
 
+function postObservationHook(input: {
+  cwd: string;
+  events: SecRepoBenchAgentEventDraft[];
+  observationEventIds: Set<string>;
+  observedPaths: Set<string>;
+}): HookCallback {
+  return async (hookInput: HookInput, toolUseId: string | undefined): Promise<HookJSONOutput> => {
+    if (hookInput.hook_event_name !== 'PostToolUse') return {};
+    if (!['Read', 'Glob', 'Grep'].includes(hookInput.tool_name)) return {};
+    const rawPath = isObject(hookInput.tool_input) ? toolPath(hookInput.tool_input) : undefined;
+    const path = rawPath ? repositoryPath(input.cwd, rawPath) : undefined;
+    const eventToolUseId = toolUseId ?? hookInput.tool_use_id;
+    if (path && path !== '.') {
+      appendObservation({
+        events: input.events,
+        observationEventIds: input.observationEventIds,
+        observedPaths: input.observedPaths,
+        toolUseId: eventToolUseId,
+        kind: hookInput.tool_name === 'Read' ? 'file_read' : 'symbol_search',
+        path,
+      });
+    }
+    return {};
+  };
+}
+
 function captureStreamedWriteResults(input: {
   message: SDKMessage;
   writeAttemptPaths: Map<string, string>;
@@ -190,10 +272,7 @@ function captureStreamedWriteResults(input: {
 }
 
 function postToolUseHook(input: {
-  condition: SecRepoBenchAgentAttemptInput['condition'];
   cwd: string;
-  targetPath: string;
-  guidance: string;
   events: SecRepoBenchAgentEventDraft[];
   resultEventIds: Set<string>;
   failureClasses: string[];
@@ -214,13 +293,7 @@ function postToolUseHook(input: {
         failureClasses: input.failureClasses,
       });
     }
-    if (input.condition !== 'C3') return {};
-    return {
-      hookSpecificOutput: {
-        hookEventName: 'PostToolUse',
-        additionalContext: `PGACS boundary check: preserve the exact completion scope in ${input.targetPath}. Re-check these active obligations before the next action:\n${input.guidance}`,
-      },
-    };
+    return {};
   };
 }
 
@@ -267,8 +340,10 @@ export class SecRepoBenchClaudeAgentDriver implements SecRepoBenchAgentDriver {
     const events: SecRepoBenchAgentEventDraft[] = [];
     const messages: SDKMessage[] = [];
     const writeAttemptPaths = new Map<string, string>();
+    const observationEventIds = new Set<string>();
     const writeAttemptEventIds = new Set<string>();
     const writeResultEventIds = new Set<string>();
+    const observedPaths = new Set<string>();
     const toolFailureClasses: string[] = [];
     const targetPath = input.task.workspace.targetPath;
     const canUseTool: NonNullable<Options['canUseTool']> = async (toolName, toolInput, options) => {
@@ -292,13 +367,6 @@ export class SecRepoBenchClaudeAgentDriver implements SecRepoBenchAgentDriver {
               toolUseID: options.toolUseID,
             };
           }
-          if (path !== '.') {
-            events.push({
-              eventId: `${options.toolUseID}:observe`,
-              kind: toolName === 'Read' ? 'file_read' : 'symbol_search',
-              path,
-            });
-          }
         }
         return { behavior: 'allow' as const, toolUseID: options.toolUseID };
       }
@@ -321,6 +389,27 @@ export class SecRepoBenchClaudeAgentDriver implements SecRepoBenchAgentDriver {
             toolUseID: options.toolUseID,
           };
         }
+        if (input.preActionControl.enabled) {
+          const missingEvidence = missingPreActionEvidence({ targetPath, observedPaths });
+          if (missingEvidence.length > 0) {
+            const message = `${input.preActionControl.guidance} Missing evidence: ${missingEvidence.join(', ')}.`;
+            appendWriteResult({
+              events,
+              resultEventIds: writeResultEventIds,
+              toolUseId: options.toolUseID,
+              path: recordedPath,
+              applied: false,
+              detail: message,
+              failureClasses: toolFailureClasses,
+            });
+            return {
+              behavior: 'deny' as const,
+              message,
+              interrupt: false,
+              toolUseID: options.toolUseID,
+            };
+          }
+        }
         return { behavior: 'allow' as const, toolUseID: options.toolUseID };
       }
       return {
@@ -342,22 +431,34 @@ export class SecRepoBenchClaudeAgentDriver implements SecRepoBenchAgentDriver {
               preToolUseHook({
                 cwd: input.workspaceRoot,
                 targetPath,
+                preActionControl: input.preActionControl,
                 events,
+                observedPaths,
                 attemptEventIds: writeAttemptEventIds,
                 writeAttemptPaths,
+                resultEventIds: writeResultEventIds,
+                failureClasses: toolFailureClasses,
               }),
             ],
           },
         ],
         PostToolUse: [
           {
+            matcher: 'Read|Glob|Grep',
+            hooks: [
+              postObservationHook({
+                cwd: input.workspaceRoot,
+                events,
+                observationEventIds,
+                observedPaths,
+              }),
+            ],
+          },
+          {
             matcher: 'Write|Edit',
             hooks: [
               postToolUseHook({
-                condition: input.condition,
                 cwd: input.workspaceRoot,
-                targetPath,
-                guidance: input.policyPreparation.guidance,
                 events,
                 resultEventIds: writeResultEventIds,
                 failureClasses: toolFailureClasses,

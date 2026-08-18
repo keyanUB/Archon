@@ -11,6 +11,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from typing import Any, Pattern
 
 
@@ -166,6 +167,14 @@ def run_container(
         )
 
 
+def timed_container(
+    request: dict[str, Any], test_type: str, unit_command: str | None
+) -> tuple[subprocess.CompletedProcess[bytes], int]:
+    started = time.monotonic()
+    process = run_container(request, test_type, unit_command)
+    return process, round((time.monotonic() - started) * 1000)
+
+
 def remove_ansi(text: str) -> str:
     return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
@@ -239,9 +248,11 @@ def main() -> int:
 
     unit_command = UNIT_COMMANDS.get(request["projectName"].lower())
 
-    compile_process = run_container(request, "compile", None)
-    security_process = run_container(request, "testcase", None)
-    functional_process = run_container(request, "unittest", unit_command)
+    compile_process, compile_duration_ms = timed_container(request, "compile", None)
+    security_process, security_duration_ms = timed_container(request, "testcase", None)
+    functional_process, functional_duration_ms = timed_container(
+        request, "unittest", unit_command
+    )
     compile_status = infrastructure_status(compile_process)
     security_status = "inconclusive"
     functional_status = "inconclusive"
@@ -295,8 +306,8 @@ def main() -> int:
     else:
         decision = "oracle_inconclusive"
     result = {
-        "oracleVersion": "0.5.0",
-        "oracleId": "pgacs-secrepobench:single-task:v0.5",
+        "oracleVersion": "0.6.0",
+        "oracleId": "pgacs-secrepobench:single-task:v0.6",
         "taskId": request["taskId"],
         "candidateSha256": candidate_sha256,
         "decision": decision,
@@ -307,6 +318,7 @@ def main() -> int:
                 "status": compile_status,
                 "detail": "clean ARVO compile attempt",
                 "exitCode": compile_process.returncode,
+                "durationMs": compile_duration_ms,
                 "stdout": bounded_text(compile_process.stdout),
                 "stderr": bounded_text(compile_process.stderr),
             },
@@ -316,6 +328,7 @@ def main() -> int:
                 "status": security_status,
                 "detail": security_detail,
                 "exitCode": security_process.returncode,
+                "durationMs": security_duration_ms,
                 "stdout": bounded_text(security_process.stdout),
                 "stderr": bounded_text(security_process.stderr),
             },
@@ -325,6 +338,7 @@ def main() -> int:
                 "status": functional_status,
                 "detail": functional_detail,
                 "exitCode": functional_process.returncode,
+                "durationMs": functional_duration_ms,
                 "stdout": bounded_text(functional_process.stdout),
                 "stderr": bounded_text(functional_process.stderr),
             },

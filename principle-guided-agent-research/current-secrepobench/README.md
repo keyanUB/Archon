@@ -10,9 +10,11 @@ contrasts; B0 remains an external native-agent reference and is not conflated
 with Archon mediation.
 
 This README is the status and evaluation tracker. The normative repository-level
-architecture is in [technical-design.md](technical-design.md). M0-M6 are now
-implemented and the three-task feasibility matrix is complete. The descriptive
-results and claim boundary are in
+architecture is in [technical-design.md](technical-design.md). The historical
+v0.5 M0-M6 three-task feasibility matrix is complete. The v0.6 pre-action C3
+mechanism is locally qualified, and its timed oracle passed all 18 three-replay
+secure/vulnerable reference cases. Fresh v0.6 agent benchmark runs remain. The
+historical descriptive results and claim boundary are in
 [feasibility-results.md](feasibility-results.md).
 
 Upstream identities are frozen independently:
@@ -136,9 +138,11 @@ The wrapper is self-contained and uses only Python's standard library. Its
 project commands and output parsers are frozen for the three admitted projects,
 and the task manifest binds benchmark metadata, neutral description, mask,
 upstream project-command file, baseline report, and wrapper source digest.
-Typed result normalization and isolation receipts are implemented. Three v0.5
-secure/vulnerable replays passed for every admitted task. Repeated independent
-agent generations remain required before comparative effectiveness claims.
+Typed result normalization, per-probe duration, and isolation receipts are
+implemented in oracle v0.6. Three v0.6 secure/vulnerable replays passed for every
+admitted task: nine secure references were verified and nine vulnerable
+references were classified insecure. Repeated independent agent generations
+remain required before comparative effectiveness claims.
 
 ## 3. Policy Customization
 
@@ -256,33 +260,54 @@ memory-safety coverage while providing an image-local developer-test suite.
 | sample preparation | executed | extracted tasks `910`, `1065`, and `19902`; emits masks, digest-bound registry, and input receipt |
 | repository materializer | implemented, real-input-qualified | rejects tracked source drift; tracked blobs only, including tracked-but-ignored files; digest-bound mask; deterministic history-free baseline |
 | candidate integrity | implemented, synthetic-qualified | exact byte envelope, target-only mutation, protected-tree digest, normalized patch, repair lineage, typed admission failures, and no-op repair rejection |
-| evaluator adapter and oracle | implemented, v0.5 three-replay-qualified | all secure references verified and all vulnerable references were detected as insecure in every replay |
+| evaluator adapter and oracle | v0.6 three-replay-qualified | all 18 secure/vulnerable reference replays passed and all 54 normalized probes include measured duration |
+| tracked qualification receipt | complete | `evidence/oracle-v0.6-qualification.json` binds the 18/18 aggregate to the oracle source, prepared registry, and full local calibration summary digests |
 | repository policy preparation | implemented, synthetic-qualified | bounded lexical facts and direct callers; no CWE/evaluator leakage |
-| trajectory harness | implemented, synthetic-qualified | typed events, revision binding, scope/control/probe predicates, deterministic replay |
-| Claude generation adapter | implemented, real-input-qualified | `PreToolUse` scope control, streamed write-result evidence, no command/network tools, and C3 post-write conditioning |
-| OpenHands/Qwen generation adapter | implemented, live-smoke-qualified | pinned OpenHands 1.42.1 bridge; Qwen3.6 completed a restricted read/edit/C3/finish task; protocol 1.1 records cost availability and budget enforcement; Scaleway routing and its current published rates are frozen for the next qualification cell; benchmark qualification remains pending |
-| C0/C1/C2/C3 controller | implemented, matrix-qualified | result schema `0.5.0` records treatment and prompt digests plus explicit runtime cost semantics; failed/no-op repair, scope-violation, and harness-error precedence regressions pass |
-| real oracle calibration | three-replay pass | all 18 task/variant replays produced the expected deterministic result under oracle v0.5 |
+| trajectory harness | v0.6 implemented, synthetic-qualified | state/predicate schema `0.2.0` replays C3 context evidence, denied writes, scope/control decisions, and revision-bound probes |
+| Claude generation adapter | v0.6 implemented, synthetic-qualified | pre-action target/context evidence and target-path controls, streamed write results, and no command/network tools |
+| OpenHands/Qwen generation adapter | v0.6 locally SDK-qualified | protocol 1.2; real OpenHands loop denies a premature write, guides evidence collection, and accepts the informed retry; pinned Scaleway benchmark qualification remains pending |
+| C0/C1/C2/C3 controller | v0.6 implemented, synthetic-qualified | result schema `0.6.0` passes treatment, admission, repair, terminal precedence, and pre-action replay regressions |
+| real oracle calibration | v0.6 three-replay pass | nine secure references verified, nine vulnerable references classified insecure, no inconclusive or harness-error outcomes |
 | M6 experiment | complete as a feasibility study | 12 comparative cells completed; C2/C3 released no confirmed-insecure candidate; see `feasibility-results.md` |
 
 ## 7. Next Steps
 
-1. Freeze result schema `0.5.0` and add per-probe duration metadata.
-2. Revise C3 from post-write reminders to a pre-edit, evidence-triggered
-   conditioning point, then rerun at least three independent generations per
-   cell before making effectiveness claims.
-3. Regenerate the sample registry only when a frozen input, reviewed task, or
-   oracle implementation changes; any such change invalidates prior calibration
-   for the affected surface.
-4. Pin the Hugging Face inference provider and its input/output token rates for
-   the experiment profile; do not infer a rate from a different provider.
-5. Run one task-910 OpenHands/Qwen qualification cell, audit its runtime receipt
+1. Run one task-910 OpenHands/Qwen qualification cell, audit its runtime receipt
    and trajectory, then execute the same frozen C0-C3 matrix. Treat model and
    agent runtime as separate factors from the PGACS condition.
+2. Rerun at least three independent generations per cell before making
+   effectiveness claims; preserve the historical v0.5 matrix separately.
+3. Add an AST/content predicate only after blinded fixture precision supports
+   enforcement. It remains TBD and is not part of v0.6.
 
 ## 8. Commands
 
-Prepare all three samples from the existing pinned benchmark snapshot:
+Verify a clean checkout before obtaining large experimental assets:
+
+```bash
+bun install --frozen-lockfile
+bun run pgacs:doctor
+bun run pgacs:qualification:check
+```
+
+`Offline development: READY` is expected without benchmark repositories,
+Docker images, credentials, or the OpenHands virtual environment. Live
+readiness remains `NOT-READY` until those local inputs are installed.
+
+Acquire the exact benchmark revision and evaluator images:
+
+```bash
+mkdir -p .pgacs-multibench/sources
+git clone https://github.com/ai-sec-lab/SecRepoBench.git \
+  .pgacs-multibench/sources/SecRepoBench-7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76
+git -C .pgacs-multibench/sources/SecRepoBench-7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76 \
+  checkout --detach 7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76
+docker pull n132/arvo:910-fix
+docker pull n132/arvo:1065-fix
+docker pull n132/arvo:19902-fix
+```
+
+Prepare all three samples from that pinned benchmark snapshot:
 
 ```bash
 bun run scripts/prepare-pgacs-secrepobench-samples.ts \
@@ -298,9 +323,16 @@ bun run scripts/calibrate-pgacs-secrepobench.ts \
   .pgacs-secrepobench/registry.json \
   .pgacs-multibench/sources/SecRepoBench-7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76 \
   .pgacs-secrepobench \
-  .pgacs-secrepobench-calibration \
+  .pgacs-secrepobench-calibration-v06 \
   --repetitions=3
 ```
+
+Calibration outputs remain ignored and must be preserved externally with an
+experiment. After a reviewed oracle or task-registry change, regenerate the
+tracked aggregate receipt with `bun run
+scripts/pgacs-secrepobench-qualification.ts`, inspect its diff, and run
+`bun run pgacs:qualification:check`. Do not regenerate the receipt merely to
+silence a source-digest failure; that failure means requalification is needed.
 
 Reproduce the historical C0 qualification cell with those paths:
 
@@ -371,20 +403,17 @@ Hugging Face route. Credentials remain environment-only. Successful attempts
 record exact OpenHands, OpenHands Tools, and OpenAI client versions plus the
 enabled capability surface. The adapter is
 runtime-qualified with the SDK's deterministic `TestLLM`: the real OpenHands
-conversation loop read repository context, performed one target-only edit,
-received C3 post-write guidance, emitted normalized evidence, and finished.
+conversation loop first denied a premature target edit, returned fixed C3
+guidance, observed target and non-target repository reads, accepted the retry,
+emitted normalized evidence, and finished.
 Implicit OpenHands profile state uses a process-owned temporary home, preventing
 host-profile or candidate-workspace state from affecting the run. A bounded
-live smoke task using Qwen3.6 also completed in seven turns: the model read two
-allowed files, replaced the target marker, observed the C3 guidance, verified
-the result, and finished. The generated function passed a direct execution
-check. This qualifies provider integration, not SecRepoBench effectiveness.
-The model is absent from LiteLLM's pricing map, so the observed zero cost means
-cost unavailable and does not establish that inference was free or that the USD
-ceiling was enforced. Bridge protocol `1.1` corrects this representation: it
-omits `totalCostUsd` and records `costAccounting: unavailable` and
-`monetaryBudgetEnforced: false`. The next cell pins Scaleway rather than using
-Hugging Face's automatic provider selection. On 2026-08-17, Hugging Face listed
+historical live smoke task using Qwen3.6 also completed in seven turns under the
+earlier post-write mechanism. It qualifies provider integration, not the v0.6
+C3 mechanism or SecRepoBench effectiveness. Protocol `1.2` records whether
+cost accounting and monetary-budget enforcement are actually available and
+never interprets unknown cost as zero. The next cell pins Scaleway rather than
+using Hugging Face's automatic provider selection. On 2026-08-17, Hugging Face listed
 this route at USD 0.29 per million input tokens and USD 1.71 per million output
 tokens. Configure `LLM_INPUT_COST_PER_TOKEN_USD=0.00000029` and
 `LLM_OUTPUT_COST_PER_TOKEN_USD=0.00000171`; the bridge records the source as

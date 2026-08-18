@@ -1,6 +1,10 @@
 import { constants } from 'node:fs';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { delimiter, resolve } from 'node:path';
+import {
+  PGACS_QUALIFICATION_RECEIPT_PATH,
+  verifyPgacsQualificationReceipt,
+} from './pgacs-secrepobench-qualification';
 
 type CheckStatus = 'pass' | 'warn' | 'fail';
 type Readiness = 'ready' | 'not-ready';
@@ -31,6 +35,7 @@ const REQUIRED_PATHS = [
   'principle-guided-agent-research/current-secrepobench/README.md',
   'principle-guided-agent-research/current-secrepobench/technical-design.md',
   'principle-guided-agent-research/current-secrepobench/feasibility-results.md',
+  'principle-guided-agent-research/current-secrepobench/evidence/oracle-v0.6-qualification.json',
   'scripts/pgacs-task-adapters.ts',
   'scripts/pgacs-secrepobench-candidate.ts',
   'scripts/pgacs-secrepobench-controller.ts',
@@ -45,6 +50,32 @@ const REQUIRED_PATHS = [
 ] as const;
 
 const BENCHMARK_REVISION = '7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76';
+
+async function validateQualificationReceipt(repoRoot: string): Promise<PgacsDoctorCheck> {
+  try {
+    const receiptText = await readFile(resolve(repoRoot, PGACS_QUALIFICATION_RECEIPT_PATH), 'utf8');
+    const oracleText = await readFile(
+      resolve(repoRoot, 'scripts/secrepobench/pgacs_secrepobench_oracle.py'),
+      'utf8'
+    );
+    const errors = verifyPgacsQualificationReceipt({ receiptText, oracleText });
+    return check(
+      'qualification-receipt',
+      'Tracked oracle qualification',
+      errors.length === 0 ? 'pass' : 'fail',
+      'offline',
+      errors.length === 0 ? 'v0.6 receipt matches the current oracle source' : errors.join('; ')
+    );
+  } catch (error) {
+    return check(
+      'qualification-receipt',
+      'Tracked oracle qualification',
+      'fail',
+      'offline',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
 
 async function pathExists(path: string): Promise<boolean> {
   try {
@@ -120,7 +151,7 @@ async function validatePreparedRegistry(repoRoot: string): Promise<PgacsDoctorCh
       'Prepared task registry',
       'warn',
       'live',
-      'missing; run the sample-preparation command in the current runbook'
+      'missing; acquire the pinned benchmark and run the sample-preparation command in the current runbook'
     );
   }
 
@@ -249,6 +280,8 @@ export async function collectPgacsDoctorReport(
     )
   );
 
+  checks.push(await validateQualificationReceipt(repoRoot));
+
   const missingPaths: string[] = [];
   for (const relativePath of REQUIRED_PATHS) {
     if (!(await pathExists(resolve(repoRoot, relativePath)))) missingPaths.push(relativePath);
@@ -291,7 +324,7 @@ export async function collectPgacsDoctorReport(
       'live',
       sourceAvailable
         ? `revision ${BENCHMARK_REVISION} is present`
-        : `revision ${BENCHMARK_REVISION} is missing`
+        : `revision ${BENCHMARK_REVISION} is missing; use the acquisition commands in the current runbook`
     )
   );
 

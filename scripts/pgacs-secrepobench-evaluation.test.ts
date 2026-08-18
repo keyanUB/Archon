@@ -16,8 +16,8 @@ function rawResult(input: {
   decision: string;
 }): unknown {
   return {
-    oracleVersion: '0.5.0',
-    oracleId: 'pgacs-secrepobench:single-task:v0.5',
+    oracleVersion: '0.6.0',
+    oracleId: 'pgacs-secrepobench:single-task:v0.6',
     taskId: TASK_ID,
     candidateSha256: CANDIDATE_SHA256,
     decision: input.decision,
@@ -28,6 +28,7 @@ function rawResult(input: {
         status: input.compile,
         detail: 'compile detail',
         exitCode: input.compile === 'pass' ? 0 : 1,
+        durationMs: 11,
         stdout: 'compile stdout',
         stderr: '',
       },
@@ -37,6 +38,7 @@ function rawResult(input: {
         status: input.functional,
         detail: { total: 3, fail: [] },
         exitCode: input.functional === 'pass' ? 0 : 1,
+        durationMs: 12,
         stdout: 'test stdout',
         stderr: '',
       },
@@ -46,6 +48,7 @@ function rawResult(input: {
         status: input.security,
         detail: input.security === 'fail' ? 'crash' : 'no crash',
         exitCode: input.security === 'pass' ? 0 : 1,
+        durationMs: 13,
         stdout: 'security stdout',
         stderr: '',
       },
@@ -128,6 +131,7 @@ describe('SecRepoBench evaluation normalization', (): void => {
       expect(JSON.stringify(outputs[0])).not.toContain('CWE-122');
       expect(JSON.stringify(outputs[0])).not.toContain('hidden crash');
       expect(outputs[0]?.evaluationSha256).toMatch(/^[a-f0-9]{64}$/);
+      expect(outputs[0]?.probes.map(probe => probe.durationMs)).toEqual([11, 12, 13]);
     }
   });
 
@@ -165,6 +169,20 @@ describe('SecRepoBench evaluation normalization', (): void => {
         candidateSha256: CANDIDATE_SHA256,
       })
     ).toThrow('aggregate mismatch');
+
+    const invalidDuration = rawResult({
+      compile: 'pass',
+      functional: 'pass',
+      security: 'pass',
+      decision: 'verified',
+    }) as { probes: Array<Record<string, unknown>> };
+    invalidDuration.probes[0]!.durationMs = -1;
+    expect(() =>
+      normalizeSecRepoBenchOracleResult(invalidDuration, {
+        taskId: TASK_ID,
+        candidateSha256: CANDIDATE_SHA256,
+      })
+    ).toThrow('durationMs');
   });
 
   test('does not expose raw evaluator output in normalized evidence', (): void => {

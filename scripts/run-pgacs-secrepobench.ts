@@ -309,7 +309,7 @@ async function main(): Promise<void> {
     resolve(args.outputRoot, 'experiment-summary.json'),
     `${JSON.stringify(
       {
-        schemaVersion: '0.5.0',
+        schemaVersion: '0.6.0',
         taskId: manifest.id,
         executionContract: {
           agent: args.agent,

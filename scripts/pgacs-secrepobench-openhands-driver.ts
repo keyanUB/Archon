@@ -10,7 +10,7 @@ import type {
   SecRepoBenchAgentRuntimeReceipt,
 } from './pgacs-secrepobench-controller';
 
-const PROTOCOL_VERSION = '1.1';
+const PROTOCOL_VERSION = '1.2';
 const MAX_BRIDGE_OUTPUT_BYTES = 2_000_000;
 
 type JsonObject = Record<string, unknown>;
@@ -126,7 +126,7 @@ function parseRuntimeReceipt(value: unknown): SecRepoBenchAgentRuntimeReceipt | 
     mcpEnabled: requiredBoolean(value.mcpEnabled, 'mcpEnabled'),
     targetOnlyWrites: requiredBoolean(value.targetOnlyWrites, 'targetOnlyWrites'),
     repositoryOnlyReads: requiredBoolean(value.repositoryOnlyReads, 'repositoryOnlyReads'),
-    postWriteConditioning: requiredBoolean(value.postWriteConditioning, 'postWriteConditioning'),
+    preActionConditioning: requiredBoolean(value.preActionConditioning, 'preActionConditioning'),
     costAccounting,
     costSource,
     monetaryBudgetEnforced,
@@ -288,6 +288,7 @@ export class SecRepoBenchOpenHandsAgentDriver implements SecRepoBenchAgentDriver
       prompt: input.prompt,
       condition: input.condition,
       guidance: input.policyPreparation.guidance,
+      preActionControl: input.preActionControl,
       model: this.config.model,
       maxTurns: this.config.maxTurns,
       maxBudgetUsd: this.config.maxBudgetUsd,

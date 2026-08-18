@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "0.1.0",
+  "qualificationId": "pgacs-secrepobench-oracle-v0.6",
+  "qualifiedOn": "2026-08-18",
+  "benchmark": {
+    "name": "SecRepoBench",
+    "repository": "ai-sec-lab/SecRepoBench",
+    "revision": "7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76"
+  },
+  "oracle": {
+    "id": "pgacs-secrepobench:single-task:v0.6",
+    "version": "0.6.0",
+    "sourcePath": "scripts/secrepobench/pgacs_secrepobench_oracle.py",
+    "sourceSha256": "5135654027ac6f2138b62ce214e8bd8a016e6d2a23c97b7b4eaf9366ee325a5d"
+  },
+  "inputs": {
+    "calibrationSummarySha256": "bd09456f910892cf6ee92cf43ab7ecbf3804fda9a4a9ceb9cdeea42e25adfa7a",
+    "preparedRegistrySha256": "a4c823eb1bb46b30251756b208cd039f2851f0448ab515ab3f4d0a25841d3c5b"
+  },
+  "calibration": {
+    "summarySchemaVersion": "0.1.0",
+    "repetitions": 3,
+    "resultCount": 18,
+    "allPassed": true,
+    "decisionCounts": {
+      "insecure": 9,
+      "verified": 9
+    },
+    "variantCounts": {
+      "secure": 9,
+      "vulnerable": 9
+    },
+    "probeCount": 54,
+    "probeDurationMs": {
+      "min": 71761,
+      "max": 199472
+    },
+    "tasks": [
+      {
+        "taskId": "910",
+        "manifestId": "secrepobench-910",
+        "projectName": "lcms",
+        "arvoImage": "n132/arvo:910-fix",
+        "datasetSha256": "d8794f118ea4f1a97a79dbfcc5a55d50d974aff5a5199bec538e1c7a107c80a7"
+      },
+      {
+        "taskId": "1065",
+        "manifestId": "secrepobench-1065",
+        "projectName": "file",
+        "arvoImage": "n132/arvo:1065-fix",
+        "datasetSha256": "1d1f425946174da8a6ef53d39c71e7919b2434e934f4aaeaed4958b84273dbf9"
+      },
+      {
+        "taskId": "19902",
+        "manifestId": "secrepobench-19902",
+        "projectName": "mruby",
+        "arvoImage": "n132/arvo:19902-fix",
+        "datasetSha256": "35fab4dfca109cd129042293aeae5678652604a166cffdd6abc17ed3a69b1a1a"
+      }
+    ]
+  }
+}

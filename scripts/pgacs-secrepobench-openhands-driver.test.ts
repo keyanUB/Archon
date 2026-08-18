@@ -8,7 +8,7 @@ describe('OpenHands PGACS bridge protocol', (): void => {
   test('accepts a capability-bound response after log lines', () => {
     const response = parseOpenHandsBridgeResponse(
       `sdk log\n${JSON.stringify({
-        protocolVersion: '1.1',
+        protocolVersion: '1.2',
         submitted: true,
         transcriptSha256: HASH,
         observedEvents: [],
@@ -22,7 +22,7 @@ describe('OpenHands PGACS bridge protocol', (): void => {
           mcpEnabled: false,
           targetOnlyWrites: true,
           repositoryOnlyReads: true,
-          postWriteConditioning: true,
+          preActionConditioning: true,
           costAccounting: 'unavailable',
           costSource: 'unavailable',
           monetaryBudgetEnforced: false,
@@ -47,7 +47,7 @@ describe('OpenHands PGACS bridge protocol', (): void => {
     expect(() =>
       parseOpenHandsBridgeResponse(
         JSON.stringify({
-          protocolVersion: '1.1',
+          protocolVersion: '1.2',
           submitted: true,
           transcriptSha256: HASH,
           observedEvents: [],
@@ -66,7 +66,7 @@ describe('OpenHands PGACS bridge protocol', (): void => {
 
   test('rejects contradictory or fabricated cost observations', () => {
     const base = {
-      protocolVersion: '1.1',
+      protocolVersion: '1.2',
       submitted: true,
       transcriptSha256: HASH,
       observedEvents: [],
@@ -79,7 +79,7 @@ describe('OpenHands PGACS bridge protocol', (): void => {
         mcpEnabled: false,
         targetOnlyWrites: true,
         repositoryOnlyReads: true,
-        postWriteConditioning: false,
+        preActionConditioning: false,
         costAccounting: 'unavailable',
         costSource: 'unavailable',
         monetaryBudgetEnforced: false,

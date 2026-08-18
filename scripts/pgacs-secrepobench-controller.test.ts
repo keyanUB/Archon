@@ -150,6 +150,16 @@ function agent(fixture: Fixture, preActionControl = true): SecRepoBenchAgentDriv
         transcriptSha256: (secure ? 'b' : 'a').repeat(64),
         observedEvents: [
           {
+            eventId: `${input.phase}:read:target`,
+            kind: 'file_read',
+            path: 'src/parse.c',
+          },
+          {
+            eventId: `${input.phase}:read:context`,
+            kind: 'symbol_search',
+            path: 'src',
+          },
+          {
             eventId: `${input.phase}:write:attempt`,
             kind: 'file_write_attempt',
             path: 'src/parse.c',
@@ -174,8 +184,8 @@ function evaluator(): SecRepoBenchEvaluatorDriver {
       const secure = !candidate.replacementText.includes('+ 1');
       return normalizeSecRepoBenchOracleResult(
         {
-          oracleVersion: '0.5.0',
-          oracleId: 'pgacs-secrepobench:single-task:v0.5',
+          oracleVersion: '0.6.0',
+          oracleId: 'pgacs-secrepobench:single-task:v0.6',
           taskId: 'fixture',
           candidateSha256: candidate.completedFileSha256,
           decision: secure ? 'verified' : 'insecure',
@@ -185,6 +195,7 @@ function evaluator(): SecRepoBenchEvaluatorDriver {
               class: 'functional',
               status: 'pass',
               exitCode: 0,
+              durationMs: 1,
               detail: 'ok',
               stdout: '',
               stderr: '',
@@ -194,6 +205,7 @@ function evaluator(): SecRepoBenchEvaluatorDriver {
               class: 'functional',
               status: 'pass',
               exitCode: 0,
+              durationMs: 2,
               detail: 'ok',
               stdout: '',
               stderr: '',
@@ -203,6 +215,7 @@ function evaluator(): SecRepoBenchEvaluatorDriver {
               class: 'security',
               status: secure ? 'pass' : 'fail',
               exitCode: secure ? 0 : 1,
+              durationMs: 3,
               detail: secure ? 'ok' : 'crash',
               stdout: '',
               stderr: '',
@@ -250,7 +263,7 @@ describe('SecRepoBench experiment controller', (): void => {
     });
 
     expect(result).toMatchObject({
-      schemaVersion: '0.5.0',
+      schemaVersion: '0.6.0',
       terminalDecision: 'failed_no_candidate',
       securitySuccess: false,
       functionalSuccess: false,
@@ -501,5 +514,40 @@ describe('SecRepoBench experiment controller', (): void => {
         evaluator: evaluator(),
       })
     ).rejects.toThrow('pre-action control');
+  });
+
+  test('rejects a runtime receipt that contradicts the assigned C3 mechanism', async () => {
+    const fixture = await createFixture();
+    await expect(
+      runSecRepoBenchCell({
+        condition: 'C3',
+        manifest: fixture.manifest,
+        materialization: fixture.materialization,
+        workspaceRoot: fixture.workspaceRoot,
+        agent: {
+          id: 'fixture-contradictory-receipt',
+          preActionControl: true,
+          runAttempt: async () => ({
+            submitted: false,
+            transcriptSha256: '9'.repeat(64),
+            runtimeReceipt: {
+              framework: 'fixture',
+              versions: {},
+              toolSurface: ['fixture'],
+              shellEnabled: false,
+              browserEnabled: false,
+              mcpEnabled: false,
+              targetOnlyWrites: true,
+              repositoryOnlyReads: true,
+              preActionConditioning: false,
+              costAccounting: 'unavailable',
+              costSource: 'unavailable',
+              monetaryBudgetEnforced: false,
+            },
+          }),
+        },
+        evaluator: evaluator(),
+      })
+    ).rejects.toThrow('treatment assignment');
   });
 });

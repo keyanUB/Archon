@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from openhands.sdk.llm import LLM
 
 
-PROTOCOL_VERSION = "1.1"
+PROTOCOL_VERSION = "1.2"
 HUGGING_FACE_OPENAI_MODEL_PREFIX = "openai/Qwen/"
 HUGGING_FACE_OPENAI_BASE_URL = "https://router.huggingface.co/v1"
 _RUN_RECORDERS: dict[str, list[dict[str, Any]]] = {}
@@ -57,6 +57,19 @@ def _read_request() -> dict[str, Any]:
     guidance = value.get("guidance")
     if not isinstance(guidance, str):
         raise ValueError("guidance must be a string")
+    control = value.get("preActionControl")
+    if not isinstance(control, dict):
+        raise ValueError("preActionControl must be an object")
+    if control.get("schemaVersion") != "0.1.0" or control.get("mechanismVersion") != "0.6.0":
+        raise ValueError("preActionControl version is unsupported")
+    if not isinstance(control.get("enabled"), bool):
+        raise ValueError("preActionControl.enabled must be a boolean")
+    if control["enabled"] != (value["condition"] == "C3"):
+        raise ValueError("preActionControl.enabled must match the experiment condition")
+    if control.get("requiredEvidence") != ["target-read", "repository-context-read"]:
+        raise ValueError("preActionControl.requiredEvidence is unsupported")
+    if not isinstance(control.get("guidance"), str) or not control["guidance"]:
+        raise ValueError("preActionControl.guidance must be a non-empty string")
     return value
 
 
@@ -228,16 +241,15 @@ def _build_and_run(
             self,
             workspace_root: str,
             target_path: str,
-            condition: str,
-            guidance: str,
+            pre_action_control: dict[str, Any],
             recorder_id: str,
         ) -> None:
             self.policy = PgacsWorkspacePolicy(workspace_root, target_path)
             self.target_path = target_path
-            self.condition = condition
-            self.guidance = guidance
+            self.pre_action_control = pre_action_control
             self.events = _RUN_RECORDERS[recorder_id]
             self.sequence = 0
+            self.observed_paths: set[str] = set()
 
         def _event_id(self, suffix: str) -> str:
             self.sequence += 1
@@ -255,6 +267,30 @@ def _build_and_run(
                 self.events.append(
                     {"eventId": attempt_id, "kind": "file_write_attempt", "path": raw_path}
                 )
+                if self.pre_action_control["enabled"] and raw_path == self.target_path:
+                    missing_evidence = []
+                    if self.target_path not in self.observed_paths:
+                        missing_evidence.append("target-read")
+                    if not any(path != self.target_path for path in self.observed_paths):
+                        missing_evidence.append("repository-context-read")
+                    if missing_evidence:
+                        detail = (
+                            f'{self.pre_action_control["guidance"]} Missing evidence: '
+                            f'{", ".join(missing_evidence)}.'
+                        )
+                        self.events.append(
+                            {
+                                "eventId": self._event_id("write-result"),
+                                "kind": "file_write_result",
+                                "path": raw_path,
+                                "attemptEventId": attempt_id,
+                                "applied": False,
+                                "rawArtifactSha256": PgacsWorkspacePolicy.sha256(detail),
+                            }
+                        )
+                        return PgacsWorkspaceObservation(
+                            success=False, operation=operation, path=raw_path, detail=detail
+                        )
             try:
                 if operation == "read":
                     result = self.policy.read(action.path, action.start_line, action.end_line)
@@ -265,6 +301,7 @@ def _build_and_run(
                             "path": result.path,
                         }
                     )
+                    self.observed_paths.add(result.path)
                 elif operation == "list":
                     result = self.policy.list_files(action.path)
                     self.events.append(
@@ -274,6 +311,8 @@ def _build_and_run(
                             "path": result.path,
                         }
                     )
+                    if result.path != ".":
+                        self.observed_paths.add(result.path)
                 elif operation == "search":
                     result = self.policy.search(action.query, action.path)
                     self.events.append(
@@ -283,6 +322,8 @@ def _build_and_run(
                             "path": result.path,
                         }
                     )
+                    if result.path != ".":
+                        self.observed_paths.add(result.path)
                 elif operation == "write":
                     result = self.policy.write(action.path, action.content)
                 else:
@@ -298,12 +339,6 @@ def _build_and_run(
                         }
                     )
                 detail = result.text or "No matches found."
-                if attempt_id is not None and self.condition == "C3":
-                    detail += (
-                        f"\n\nPGACS post-write boundary check: preserve the exact completion "
-                        f"scope in {self.target_path}. Re-check these active obligations before "
-                        f"the next action:\n{self.guidance}"
-                    )
                 return PgacsWorkspaceObservation(
                     success=True, operation=operation, path=result.path, detail=detail
                 )
@@ -371,8 +406,7 @@ def _build_and_run(
         params={
             "workspace_root": request["workspaceRoot"],
             "target_path": request["targetPath"],
-            "condition": request["condition"],
-            "guidance": request["guidance"],
+            "pre_action_control": request["preActionControl"],
             "recorder_id": run_id,
         },
     )
@@ -404,7 +438,7 @@ def _build_and_run(
         "mcpEnabled": False,
         "targetOnlyWrites": True,
         "repositoryOnlyReads": True,
-        "postWriteConditioning": request["condition"] == "C3",
+        "preActionConditioning": request["preActionControl"]["enabled"],
         "costAccounting": (
             "available" if cost_accounting["available"] else "unavailable"
         ),

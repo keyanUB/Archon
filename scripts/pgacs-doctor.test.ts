@@ -6,8 +6,11 @@ describe('PGACS doctor', (): void => {
     const report = await collectPgacsDoctorReport();
     expect(report.offlineDevelopment).toBe('ready');
     expect(report.checks.filter((check): boolean => check.requiredFor === 'offline')).toHaveLength(
-      2
+      3
     );
+    expect(
+      report.checks.find((check): boolean => check.id === 'qualification-receipt')
+    ).toMatchObject({ status: 'pass' });
   });
 
   test('requires an explicit valid pair of token rates', (): void => {

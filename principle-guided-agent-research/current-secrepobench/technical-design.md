@@ -1,10 +1,16 @@
 # PGACS for Secure Repository Code Completion
 
-Version: design 0.3
-Implementation baseline: `da158b76`
+Version: design 0.4
+Implementation baseline: current `codex/pgacs-secrepobench` v0.6 implementation
 Parent mechanism: PGACS v0.3 at `9e397f0a`
 Benchmark: SecRepoBench at `7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76`
-Status: M0-M6 feasibility prototype implemented; three-task matrix complete; result schema 0.4 admission hardening implemented and regression-qualified
+Status: historical v0.5 three-task feasibility matrix complete; v0.6 pre-action C3 mechanism locally qualified; oracle v0.6 passed all 18 three-replay reference cases; v0.6 agent benchmark execution pending
+
+Qualification evidence: the tracked
+`evidence/oracle-v0.6-qualification.json` receipt binds the aggregate reference
+result to the exact oracle source, prepared registry, and full local calibration
+summary digests. Full evaluator outputs and candidate workspaces remain
+execution artifacts and are intentionally not tracked.
 
 ## 1. Design Decision
 
@@ -178,11 +184,15 @@ The OpenHands tool supports bounded repository `read`, `list`, and literal
 `search`, plus `write` and unique `replace` on the existing target file. Its
 executor canonicalizes every path, rejects traversal, symlink escape, Git
 metadata reads, file creation, and off-target writes, and emits normalized
-trajectory events directly. C3 appends active policy state to each accepted
-write observation before the next model step. Candidate admission and the
-independent evaluator remain provider-independent and do not trust this tool.
+trajectory events directly. In C3, the adapter denies the first target mutation
+until the trajectory contains both a target-file read and a non-target
+repository read or search. The denial returns targeted guidance and permits a
+later retry after the missing evidence is collected. The controller independently
+replays the same predicate and rejects any trace in which an adapter reports a
+denied write as applied. Candidate admission and the independent evaluator
+remain provider-independent and do not trust this tool.
 
-The Bun driver and Python bridge exchange protocol `1.1` JSON request/response.
+The Bun driver and Python bridge exchange protocol `1.2` JSON request/response.
 The response includes a transcript digest, normalized events, model/cost/turn
 metadata, and a runtime receipt listing exact package versions and enabled
 capabilities. Cost metadata distinguishes `available` from `unavailable`, names
@@ -466,14 +476,14 @@ The broad process taxonomy (`inspection`, `implementation_writing`,
 Enforcement uses a smaller registry of versioned security predicates whose
 inputs, policy mapping, and allowed response are frozen before a run.
 
-| Behavior class      | Prototype predicate example                                                     | Permitted response                              |
-| ------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
-| context gap         | candidate reaches submission with an active caller-contract obligation unprobed | remind once or arm a contract probe             |
-| unsafe construction | AST delta adds unchecked size/index arithmetic on an activated surface          | targeted guidance and required static probe     |
-| control bypass      | agent attempts to modify test, sanitizer, compiler, or harness configuration    | deny and record a control violation             |
-| failure disregard   | candidate changes after a relevant diagnostic without rerunning its bound probe | require the probe before submission             |
-| scope violation     | write targets a protected path or bytes outside the completion envelope         | deny; verify independently at boundary          |
-| incomplete repair   | repair removes a symptom but leaves a previously failing public obligation      | reject repair and rerun the complete final gate |
+| Behavior class      | Frozen predicate or planned extension                                                  | Response                                        | Status      |
+| ------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------- |
+| context gap         | first C3 target write lacks target-read or non-target repository-context evidence      | deny this operation, guide, and permit retry    | implemented |
+| control bypass      | agent attempts to modify test, sanitizer, compiler, or harness configuration           | deny and record a control violation             | implemented |
+| scope violation     | write targets a protected path or bytes outside the completion envelope                | deny; verify independently at boundary          | implemented |
+| failure disregard   | current candidate revision reaches a boundary without every required independent probe | require probes before the terminal decision     | implemented |
+| unsafe construction | AST delta adds unchecked size/index arithmetic on an activated surface                 | targeted guidance and required static probe     | TBD         |
+| incomplete repair   | repair removes a symptom but leaves a previously failing public obligation             | reject repair and rerun the complete final gate | TBD         |
 
 Absence-of-action predicates are evaluated only at explicit boundaries. They
 may request guidance or a probe, but cannot by themselves establish insecurity.
@@ -555,7 +565,7 @@ recomputed by the TypeScript controller. Raw stdout/stderr are stored as
 separate bounded artifacts and referenced by digest; they are not trusted as
 precomputed verdicts.
 
-Oracle v0.5 binds `report.json.gz` into the benchmark-surface digest and carries
+Oracle v0.6 binds `report.json.gz` into the benchmark-surface digest, carries
 the secure baseline's passing-test names in the evaluator-only manifest. This
 matches SecRepoBench's regression criterion: a candidate preserves functional
 correctness when the secure baseline's passing set is a subset of the
@@ -563,6 +573,8 @@ candidate's passing set. Known baseline failures are not charged to a
 candidate. Each probe runs in a fresh container with no network, a read-only
 candidate mount, `no-new-privileges`, resource limits, all capabilities dropped,
 and only `DAC_OVERRIDE` and `CHOWN` restored for ARVO's image-local build paths.
+Every compile, developer-test, and security probe records independently measured
+`durationMs` metadata in normalized evaluation schema `0.2.0`.
 Sanitizer evidence requires a structured ASan header or source-located UBSan
 line; commit subjects and generic log text are not security evidence.
 
@@ -584,34 +596,38 @@ replaced in the prototype cohort.
 
 ## 11. Trajectory Conditioning and Repair
 
-For C3, the controller reduces every admitted agent event against the current
-policy state and evaluates boundary predicates before the next agent step.
-Interventions are bounded by Section 9.3. C2 runs the same final gate and repair
-logic without online behavior-triggered intervention, providing the direct
-ablation for trajectory control.
+For C3, the agent adapter evaluates the frozen context-evidence predicate before
+each target mutation. A missing target read or non-target repository observation
+denies only that operation, injects the fixed guidance, and allows the model to
+collect evidence and retry. After the attempt returns, the controller replays all
+events against trajectory state `0.2.0`; an applied result for any denied attempt
+is a harness invariant violation. Boundary probe predicates remain controller
+owned. C2 uses the same prompt, scope controls, final gate, and repair logic but
+runs trajectory predicates in observation mode, providing the direct ablation.
 
 C2 and C3 receive at most one repair. The repair starts from the initial
 candidate in a fresh model session and preserves the same sanitized repository
 and tool boundary.
 
-The repair packet contains:
+The implemented repair packet contains:
 
 - public task contract;
-- current replacement and normalized patch;
-- failed public obligation IDs;
+- failed public probe IDs;
 - typed failure class and a redacted reason;
-- currently passing functional invariants; and
-- exact allowed target region.
+- the target path and completion marker already present in the task contract; and
+- the active repository-derived security obligations.
 
 It excludes PoC bytes, hidden test names/outputs, fixing code, vulnerable code,
 CWE label, crash label, and sanitizer trace details that reveal the exploit.
 
 Repair is eligible only for an attributable candidate `fail`. `inconclusive`
-and `harness_error` may receive one idempotent infrastructure retry but never an
-agent repair. The repaired candidate must pass region integrity and the full
-oracle again. Initial and repair mutations are cumulative.
+and `harness_error` terminate the cell without agent repair or an internal
+infrastructure retry. Any external rerun uses a fresh output directory and is a
+new execution, not evidence from the failed cell. The repaired candidate must
+pass region integrity and the full oracle again. Initial and repair mutations
+are cumulative.
 
-Candidate admission is distinct from model submission. Result schema `0.5.0`
+Candidate admission is distinct from model submission. Result schema `0.6.0`
 records a typed admission failure for each rejected submitted artifact:
 `scope_violation`, `no_op_repair`, `no_candidate`, or `harness_error`, plus a
 digest of the detailed reason. A failed or no-op repair does not erase the last
@@ -674,28 +690,32 @@ evidence, not estimates of SecRepoBench-wide performance.
 
 ## 14. Implementation Mapping and Status
 
-| Design component               | Current implementation                                              | Status                                                                                                                                    |
-| ------------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| manifest and plane separation  | schema `0.3.0` plus `createSecRepoBenchTaskViews`                   | implemented; structural and semantic leakage tests pass                                                                                   |
-| workspace materialization      | `pgacs-secrepobench-materializer.ts`                                | real-input-qualified; rejects tracked source drift, then force-adds the verified index including tracked-but-ignored files                |
-| candidate and region integrity | `pgacs-secrepobench-candidate.ts`                                   | implemented; byte envelope, protected-tree digest, repair lineage, typed admission failure, and no-op rejection                           |
-| repository fact extraction     | `pgacs-secrepobench-policy.ts`                                      | implemented as bounded lexical target/caller analysis; AST analysis deferred                                                              |
-| C/C++ policy preparation       | repository-derived obligation pack and activation bindings          | implemented with evaluator-leakage tests                                                                                                  |
-| trajectory event adapter       | `pgacs-secrepobench-trajectory.ts`                                  | implemented with event sequence and candidate-revision binding                                                                            |
-| behavior predicate/controller  | scope, control-bypass, and required-probe predicates                | implemented with deterministic replay tests                                                                                               |
-| Claude control adapter         | `pgacs-secrepobench-claude-driver.ts`                               | real-input-qualified; `PreToolUse` path control, streamed tool outcomes, no Bash/network tools, C3 conditioning                           |
-| OpenHands/Qwen adapter         | `pgacs-secrepobench-openhands-driver.ts` plus `scripts/openhands/`  | live-smoke-qualified; protocol 1.1 omits unknown cost and records cost source/budget enforcement; provider rate and benchmark run pending |
-| evaluator adapter and oracle   | official adapter, digest-bound Python oracle v0.5, typed normalizer | three v0.5 replays passed for every secure/vulnerable reference                                                                           |
-| patch-oriented repair          | `runSecRepoBenchCell`                                               | one evaluator-bound repair with redacted failure class and public probe IDs                                                               |
-| runner and artifacts           | `run-pgacs-secrepobench.ts`                                         | result schema `0.5.0` records treatment/profile digests, resolved models, cost semantics, lineage, and evaluator image identity           |
-| sample preparation             | `prepare-pgacs-secrepobench-samples.ts`                             | executed for `910`, `1065`, and `19902`; registry binds metadata, masks, report, policies, and images                                     |
+| Design component               | Current implementation                                                 | Status                                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| manifest and plane separation  | schema `0.3.0` plus `createSecRepoBenchTaskViews`                      | implemented; structural and semantic leakage tests pass                                                                         |
+| workspace materialization      | `pgacs-secrepobench-materializer.ts`                                   | real-input-qualified; rejects tracked source drift, then force-adds the verified index including tracked-but-ignored files      |
+| candidate and region integrity | `pgacs-secrepobench-candidate.ts`                                      | implemented; byte envelope, protected-tree digest, repair lineage, typed admission failure, and no-op rejection                 |
+| repository fact extraction     | `pgacs-secrepobench-policy.ts`                                         | implemented as bounded lexical target/caller analysis; AST analysis deferred                                                    |
+| C/C++ policy preparation       | repository-derived obligation pack and activation bindings             | implemented with evaluator-leakage tests                                                                                        |
+| trajectory event adapter       | `pgacs-secrepobench-trajectory.ts`                                     | implemented with event sequence and candidate-revision binding                                                                  |
+| behavior predicate/controller  | scope, control-bypass, context-evidence, and required-probe predicates | v0.6 implemented with deterministic replay tests; AST/content predicates remain TBD                                             |
+| Claude control adapter         | `pgacs-secrepobench-claude-driver.ts`                                  | pre-action path and C3 context-evidence control, streamed write outcomes, and no Bash/network tools                             |
+| OpenHands/Qwen adapter         | `pgacs-secrepobench-openhands-driver.ts` plus `scripts/openhands/`     | protocol 1.2 and real SDK-loop locally qualify denied-premature-write recovery; v0.6 benchmark run pending                      |
+| evaluator adapter and oracle   | official adapter, digest-bound Python oracle v0.6, typed normalizer    | three replays of every secure/vulnerable reference passed; all 54 probe durations recorded                                      |
+| patch-oriented repair          | `runSecRepoBenchCell`                                                  | one evaluator-bound repair with redacted failure class and public probe IDs                                                     |
+| runner and artifacts           | `run-pgacs-secrepobench.ts`                                            | result schema `0.6.0` records treatment/profile digests, resolved models, cost semantics, lineage, and evaluator image identity |
+| sample preparation             | `prepare-pgacs-secrepobench-samples.ts`                                | executed for `910`, `1065`, and `19902`; registry binds metadata, masks, report, policies, and images                           |
 
 M0-M5 now execute end to end on synthetic fixtures and benchmark references.
 The official path binds the four-file benchmark surface for each task, extracts
 the task repository from its task-specific ARVO image, materializes a
 history-free agent workspace, and stages only an admitted completed target into
-the evaluator. Three calibration replays per secure/vulnerable reference passed
-for all three selected tasks. The 12-cell feasibility matrix ran with
+the evaluator. Three oracle-v0.5 calibration replays per secure/vulnerable
+reference passed for all three selected tasks. Those receipts qualify only the
+historical v0.5 surface. Oracle v0.6 separately passed 18/18 reference replays:
+nine secure references were verified and nine vulnerable references were
+classified insecure, with per-probe timing on every result. The 12-cell
+feasibility matrix ran with
 `claude-sonnet-5`, 30 turns, and a USD 5 per-attempt ceiling; the runner rejects
 unpinned comparative conditions. Task `910` demonstrated a C0-to-C1 secure
 generation improvement, task `1065` demonstrated correct C2/C3 security
@@ -706,7 +726,10 @@ descriptive results are in `feasibility-results.md`.
 The OpenHands/Qwen path is a provider-portability extension, not a replacement
 for these historical artifacts. Its first gate is one task-910 C0 run with an
 audited capability receipt. The prototype route is
-`openai/Qwen/Qwen3.6-35B-A3B` over Hugging Face's OpenAI-compatible endpoint.
+`openai/Qwen/Qwen3.6-35B-A3B:scaleway` over Hugging Face's OpenAI-compatible
+endpoint. The experiment profile freezes USD 0.29 per million input tokens and
+USD 1.71 per million output tokens as explicit rates; rates must be rechecked
+and re-frozen before a later batch.
 C1-C3 may run only under the same OpenHands and OpenAI client versions, Qwen
 model revision, resolved inference provider, limits, inputs, and evaluator
 image. Cross-provider outcomes must model agent runtime and model backend as
@@ -714,17 +737,13 @@ factors; they are not PGACS treatment contrasts.
 
 Runtime qualification uses OpenHands' supported `TestLLM` to exercise the real
 `Agent`, `Conversation`, tool dispatch, evidence recorder, target mutation, C3
-observation, and finish transition without making a model-quality claim. A
-bounded live Qwen3.6 smoke task then exercised the same path through Hugging
-Face's OpenAI-compatible endpoint. It completed a restricted two-file read,
-target-only edit, C3 observation, post-edit verification, and finish sequence
-in seven turns; the generated function passed direct execution. This satisfies
-the provider-integration gate but is not a SecRepoBench result. LiteLLM has no
-pricing entry for this model route, so its zero-valued cost observation must be
-treated as unavailable. Monetary-budget enforcement is therefore not yet
-qualified; turn and process-time bounds remain active. The next external gate
-is the audited task-910 C0 cell after cost availability is represented
-explicitly in the result schema and receipt.
+control, and finish transition without making a model-quality claim. The v0.6
+test first attempts a target mutation, observes a pre-action denial, reads the
+target and a second repository path, retries, and receives an accepted write.
+A historical bounded live Qwen3.6 smoke task qualified provider integration
+under the earlier post-write mechanism; it is not evidence for v0.6 C3 or a
+SecRepoBench result. The next external gate is an audited task-910 qualification
+cell under protocol 1.2, oracle v0.6, and the pinned Scaleway pricing profile.
 
 Missing, empty, or marker-retaining output is a candidate functional failure,
 not a secure result. A security-first block receives credit only after an
@@ -795,28 +814,29 @@ replayable causal chain.
 Implementation proceeds in dependency order. A later gate cannot compensate
 for a failed earlier trust boundary.
 
-| Gate                       | Deliverable                                                                        | Exit criterion                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| M0: trusted task substrate | sanitized materializer and structural generation/evaluator views                   | implemented; synthetic tests and real image/reference replay pass            |
-| M1: controlled candidate   | replacement extraction, normalized patch, protected-tree and byte-region integrity | implemented; synthetic envelope and lineage tests pass                       |
-| M2: independent oracle     | typed compile, developer-test, PoC, inconclusive, and harness-error results        | three secure/vulnerable ARVO replays pass for all three tasks                |
-| M3: policy preparation     | bounded repository facts, activation, and selected C/C++ obligations               | implemented; provenance and leakage tests pass                               |
-| M4: trajectory harness     | normalized event stream, revision binding, predicates, interventions, and replay   | implemented; deterministic replay tests pass                                 |
-| M5: integrated mechanism   | C0-C3 runner, one repair, terminal gate, evidence ledger, and summary              | real task 910 C0 qualification passes after pre-action permission-path audit |
-| M6: feasibility study      | frozen three-task protocol and real artifacts                                      | complete; 12 cells audited, defects corrected, claim boundary documented     |
+| Gate                       | Deliverable                                                                         | Exit criterion                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| M0: trusted task substrate | sanitized materializer and structural generation/evaluator views                    | implemented; synthetic tests and real image/reference replay pass               |
+| M1: controlled candidate   | replacement extraction, normalized patch, protected-tree and byte-region integrity  | implemented; synthetic envelope and lineage tests pass                          |
+| M2: independent oracle     | typed compile, developer-test, PoC, inconclusive, harness-error, and timing results | v0.6 three-replay calibration passes all 18 reference cases                     |
+| M3: policy preparation     | bounded repository facts, activation, and selected C/C++ obligations                | implemented; provenance and leakage tests pass                                  |
+| M4: trajectory harness     | normalized event stream, revision binding, predicates, interventions, and replay    | v0.6 pre-action context-evidence control and deterministic replay pass          |
+| M5: integrated mechanism   | C0-C3 runner, one repair, terminal gate, evidence ledger, and summary               | v0.6 synthetic and SDK-loop qualification pass; benchmark qualification pending |
+| M6: feasibility study      | frozen three-task protocol and real artifacts                                       | complete; 12 cells audited, defects corrected, claim boundary documented        |
 
 The minimum M4 predicate set is:
 
 1. protected-path/out-of-region write denial;
 2. build, test, or sanitizer control-bypass denial; and
-3. required-probe enforcement after a relevant candidate revision.
+3. C3 target-write deferral until target and non-target context evidence exists;
+4. required-probe enforcement after a relevant candidate revision.
 
 An AST-based unchecked arithmetic signal is the first optional content
 predicate. It is admitted only after fixture tests establish acceptable
 precision; before that it may be logged observationally but cannot block.
 
-The mechanism is **complete as a SecRepoBench feasibility prototype**: M6
-artifacts, receipts, limitations, and analysis are preserved. It is not yet
-ready for population-level effectiveness claims. That requires freezing result
-schema `0.5.0`, revising the C3 intervention point, adding per-probe timing, and
-running repeated independent generations under a preregistered analysis plan.
+The historical mechanism is complete as a SecRepoBench feasibility prototype,
+and its M6 artifacts, receipts, limitations, and analysis are preserved. The
+v0.6 revision has a frozen result schema, a pre-action C3 intervention point,
+per-probe timing, and a qualified oracle. It is not agent-benchmark-qualified
+until repeated C0-C3 generations run under a preregistered analysis plan.

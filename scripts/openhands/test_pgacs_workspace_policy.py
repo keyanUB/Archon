@@ -80,7 +80,18 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
                 _resolve_api_key(model)
 
     def test_distinguishes_mapped_and_unmapped_cost_accounting(self) -> None:
-        with patch.dict("os.environ", {}, clear=True):
+        def model_info(model: str) -> dict[str, float]:
+            if model == "openai/gpt-4.1-mini":
+                return {
+                    "input_cost_per_token": 0.000001,
+                    "output_cost_per_token": 0.000002,
+                }
+            raise ValueError("unmapped fixture model")
+
+        with (
+            patch("litellm.get_model_info", side_effect=model_info),
+            patch.dict("os.environ", {}, clear=True),
+        ):
             mapped = _resolve_cost_accounting("openai/gpt-4.1-mini")
             unmapped = _resolve_cost_accounting("openai/Qwen/Qwen3.6-35B-A3B")
         self.assertTrue(mapped["available"])
@@ -164,6 +175,7 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
         )
         tool_calls = [
             ("read", {"operation": "read", "path": "context.py"}),
+            ("read", {"operation": "read", "path": "target.py"}),
             (
                 "replace",
                 {
@@ -191,9 +203,8 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
             for index, (name, arguments) in enumerate(tool_calls, start=1)
         ]
         llm = TestLLM.from_messages(messages, model="test/pgacs-smoke")
-        result = _build_and_run(
-            {
-                "protocolVersion": "1.1",
+        request = {
+                "protocolVersion": "1.2",
                 "workspaceRoot": str(workspace),
                 "targetPath": "target.py",
                 "prompt": "Inspect context.py and implement secure_add.",
@@ -202,9 +213,21 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
                 "maxTurns": 8,
                 "maxBudgetUsd": 0.25,
                 "guidance": "Preserve the function contract.",
-            },
-            llm_override=llm,
-        )
+                "preActionControl": {
+                    "schemaVersion": "0.1.0",
+                    "mechanismVersion": "0.6.0",
+                    "enabled": True,
+                    "requiredEvidence": [
+                        "target-read",
+                        "repository-context-read",
+                    ],
+                    "guidance": (
+                        "Inspect the target and one repository context path before writing."
+                    ),
+                },
+            }
+        with patch.dict("os.environ", {}, clear=True):
+            result = _build_and_run(request, llm_override=llm)
 
         self.assertTrue(result["submitted"], result.get("reason"))
         self.assertEqual(
@@ -214,12 +237,101 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
         )
         self.assertEqual(
             [event["kind"] for event in result["observedEvents"]],
-            ["file_read", "file_write_attempt", "file_write_result"],
+            ["file_read", "file_read", "file_write_attempt", "file_write_result"],
         )
-        self.assertTrue(result["runtimeReceipt"]["postWriteConditioning"])
+        self.assertTrue(result["runtimeReceipt"]["preActionConditioning"])
         self.assertEqual(result["runtimeReceipt"]["costAccounting"], "unavailable")
         self.assertFalse(result["runtimeReceipt"]["monetaryBudgetEnforced"])
         self.assertNotIn("totalCostUsd", result)
+
+    def test_openhands_c3_denies_premature_write_then_accepts_informed_retry(self) -> None:
+        _configure_isolated_openhands_home()
+        from openhands.sdk.llm import Message, MessageToolCall, TextContent
+        from openhands.sdk.testing import TestLLM
+
+        workspace = self.root / "controlled-retry"
+        workspace.mkdir()
+        (workspace / "context.py").write_text("OFFSET = 0\n", encoding="utf-8")
+        target = workspace / "target.py"
+        target.write_text("def secure_add():\n    # <MASK>\n", encoding="utf-8")
+        actions = [
+            {
+                "operation": "replace",
+                "path": "target.py",
+                "old_text": "    # <MASK>",
+                "new_text": "    return 1",
+            },
+            {"operation": "read", "path": "target.py"},
+            {"operation": "read", "path": "context.py"},
+            {
+                "operation": "replace",
+                "path": "target.py",
+                "old_text": "    # <MASK>",
+                "new_text": "    return 1",
+            },
+        ]
+        messages = [
+            Message(
+                role="assistant",
+                content=[TextContent(text="")],
+                tool_calls=[
+                    MessageToolCall(
+                        id=f"call_{index}",
+                        name="pgacs_workspace",
+                        arguments=json.dumps(action),
+                        origin="completion",
+                    )
+                ],
+            )
+            for index, action in enumerate(actions, start=1)
+        ]
+        messages.append(
+            Message(
+                role="assistant",
+                content=[TextContent(text="")],
+                tool_calls=[
+                    MessageToolCall(
+                        id="call_finish",
+                        name="finish",
+                        arguments=json.dumps({"message": "Candidate complete."}),
+                        origin="completion",
+                    )
+                ],
+            )
+        )
+        request = {
+                "protocolVersion": "1.2",
+                "workspaceRoot": str(workspace),
+                "targetPath": "target.py",
+                "prompt": "Implement the target.",
+                "condition": "C3",
+                "model": "test/pgacs-control",
+                "maxTurns": 10,
+                "maxBudgetUsd": 0.25,
+                "guidance": "Preserve the contract.",
+                "preActionControl": {
+                    "schemaVersion": "0.1.0",
+                    "mechanismVersion": "0.6.0",
+                    "enabled": True,
+                    "requiredEvidence": [
+                        "target-read",
+                        "repository-context-read",
+                    ],
+                    "guidance": "Inspect required context before writing.",
+                },
+            }
+        llm = TestLLM.from_messages(messages, model="test/pgacs-control")
+        with patch.dict("os.environ", {}, clear=True):
+            result = _build_and_run(request, llm_override=llm)
+
+        self.assertTrue(result["submitted"], result.get("reason"))
+        self.assertEqual(target.read_text(encoding="utf-8"), "def secure_add():\n    return 1\n")
+        write_results = [
+            event
+            for event in result["observedEvents"]
+            if event["kind"] == "file_write_result"
+        ]
+        self.assertEqual([event["applied"] for event in write_results], [False, True])
 
 
 if __name__ == "__main__":
