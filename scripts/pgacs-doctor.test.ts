@@ -6,11 +6,11 @@ describe('PGACS doctor', (): void => {
     const report = await collectPgacsDoctorReport();
     expect(report.offlineDevelopment).toBe('ready');
     expect(report.checks.filter((check): boolean => check.requiredFor === 'offline')).toHaveLength(
-      3
+      2
     );
     expect(
       report.checks.find((check): boolean => check.id === 'qualification-receipt')
-    ).toMatchObject({ status: 'pass' });
+    ).toMatchObject({ status: 'warn', requiredFor: 'live' });
   });
 
   test('requires an explicit valid pair of token rates', (): void => {
@@ -34,6 +34,19 @@ describe('PGACS doctor', (): void => {
         LLM_OUTPUT_COST_PER_TOKEN_USD: '0.2',
       })
     ).toBe(true);
+  });
+
+  test('fails live readiness on a non-native Docker architecture', async () => {
+    const armReport = await collectPgacsDoctorReport({ architecture: 'arm64' });
+    expect(
+      armReport.checks.find((check): boolean => check.id === 'evaluator-architecture')
+    ).toMatchObject({ status: 'warn', requiredFor: 'live' });
+    expect(armReport.liveOpenHandsExperiment).toBe('not-ready');
+
+    const x64Report = await collectPgacsDoctorReport({ architecture: 'x64' });
+    expect(
+      x64Report.checks.find((check): boolean => check.id === 'evaluator-architecture')
+    ).toMatchObject({ status: 'pass', requiredFor: 'live' });
   });
 
   test('supports a machine-readable command result', async () => {

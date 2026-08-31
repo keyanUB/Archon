@@ -3,7 +3,10 @@ import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 
 import { extractSecRepoBenchCandidate } from './pgacs-secrepobench-candidate';
-import { evaluateSecRepoBenchCandidateOfficially } from './pgacs-secrepobench-official-evaluator';
+import {
+  evaluateSecRepoBenchCandidateOfficially,
+  inspectNativeEvaluatorImage,
+} from './pgacs-secrepobench-official-evaluator';
 import {
   assertFreshSanitizedWorkspace,
   materializeSecRepoBenchWorkspace,
@@ -91,6 +94,27 @@ async function main(): Promise<void> {
   if (args.taskIds && manifests.length !== args.taskIds.size) {
     throw new Error('At least one requested calibration task is absent from the registry');
   }
+  const imageReferences = [
+    ...new Set(manifests.map(manifest => requireBenchmark(manifest).arvoImage)),
+  ].sort();
+  const evaluatorImages = await Promise.all(
+    imageReferences.map(reference => inspectNativeEvaluatorImage(reference))
+  );
+  if (
+    evaluatorImages.some(
+      identity => identity.hostArchitecture !== 'amd64' || identity.imageArchitecture !== 'amd64'
+    )
+  ) {
+    throw new Error('SecRepoBench qualification requires a native amd64 Docker environment');
+  }
+  const hostIdentities = new Set(
+    evaluatorImages.map(identity => `${identity.hostOs}:${identity.hostArchitecture}`)
+  );
+  if (hostIdentities.size !== 1) {
+    throw new Error('Calibration images did not observe one stable Docker host identity');
+  }
+  const evaluatorHost = evaluatorImages[0];
+  if (!evaluatorHost) throw new Error('Calibration did not inspect an evaluator image');
   await mkdir(args.outputRoot);
   const results = [];
   for (const manifest of manifests) {
@@ -182,9 +206,22 @@ async function main(): Promise<void> {
     resolve(args.outputRoot, 'calibration-summary.json'),
     `${JSON.stringify(
       {
-        schemaVersion: '0.1.0',
+        schemaVersion: '0.2.0',
         repetitions: args.repetitions,
         passed: results.every(result => result.passed),
+        environment: {
+          host: {
+            os: evaluatorHost.hostOs,
+            architecture: evaluatorHost.hostArchitecture,
+          },
+          images: evaluatorImages.map(identity => ({
+            reference: identity.reference,
+            imageId: identity.imageId,
+            repoDigests: identity.repoDigests,
+            os: identity.imageOs,
+            architecture: identity.imageArchitecture,
+          })),
+        },
         results,
       },
       null,

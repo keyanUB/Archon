@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
 
+import { assertNativeEvaluatorArchitecture } from './pgacs-secrepobench-official-evaluator';
+
 async function parseSecurity(stderr: string): Promise<string> {
   const source = join(import.meta.dir, 'secrepobench/pgacs_secrepobench_oracle.py');
   const program = [
@@ -76,5 +78,31 @@ describe('SecRepoBench security parser', (): void => {
       skip: [],
       total: 2,
     });
+  });
+});
+
+describe('SecRepoBench evaluator platform', (): void => {
+  test('accepts canonical architecture aliases', (): void => {
+    expect(() =>
+      assertNativeEvaluatorArchitecture({
+        hostArchitecture: 'aarch64',
+        imageArchitecture: 'arm64',
+      })
+    ).not.toThrow();
+    expect(() =>
+      assertNativeEvaluatorArchitecture({
+        hostArchitecture: 'x86_64',
+        imageArchitecture: 'amd64',
+      })
+    ).not.toThrow();
+  });
+
+  test('rejects emulated sanitizer execution', (): void => {
+    expect(() =>
+      assertNativeEvaluatorArchitecture({
+        hostArchitecture: 'aarch64',
+        imageArchitecture: 'amd64',
+      })
+    ).toThrow('requires a native image');
   });
 });

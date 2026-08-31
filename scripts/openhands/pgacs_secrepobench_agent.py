@@ -15,7 +15,7 @@ import time
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from pgacs_workspace_policy import PgacsWorkspacePolicy, WorkspacePolicyError
 
@@ -23,7 +23,9 @@ if TYPE_CHECKING:
     from openhands.sdk.llm import LLM
 
 
-PROTOCOL_VERSION = "1.2"
+PROTOCOL_VERSION = "2.0"
+CONTROL_PREFIX = "PGACS_CONTROL "
+RESULT_PREFIX = "PGACS_RESULT "
 HUGGING_FACE_OPENAI_MODEL_PREFIX = "openai/Qwen/"
 HUGGING_FACE_OPENAI_BASE_URL = "https://router.huggingface.co/v1"
 _RUN_RECORDERS: dict[str, list[dict[str, Any]]] = {}
@@ -36,12 +38,16 @@ def _json_sha256(value: object) -> str:
 
 
 def _read_request() -> dict[str, Any]:
-    raw = sys.stdin.read()
+    raw = sys.stdin.readline()
+    if not raw:
+        raise ValueError("bridge request is missing")
     value = json.loads(raw)
     if not isinstance(value, dict):
         raise ValueError("bridge request must be a JSON object")
     if value.get("protocolVersion") != PROTOCOL_VERSION:
         raise ValueError("unsupported bridge protocol version")
+    if value.get("type") != "start":
+        raise ValueError("bridge request type must be start")
     required_strings = ("workspaceRoot", "targetPath", "prompt", "condition", "model")
     for key in required_strings:
         if not isinstance(value.get(key), str) or not value[key]:
@@ -70,6 +76,15 @@ def _read_request() -> dict[str, Any]:
         raise ValueError("preActionControl.requiredEvidence is unsupported")
     if not isinstance(control.get("guidance"), str) or not control["guidance"]:
         raise ValueError("preActionControl.guidance must be a non-empty string")
+    deterministic_smoke = value.get("deterministicSmoke")
+    if deterministic_smoke is not None:
+        if not isinstance(deterministic_smoke, dict):
+            raise ValueError("deterministicSmoke must be an object")
+        for key in ("oldText", "newText", "contextPath"):
+            if not isinstance(deterministic_smoke.get(key), str) or not deterministic_smoke[key]:
+                raise ValueError(f"deterministicSmoke.{key} must be a non-empty string")
+        if value["model"] != "test/pgacs-protocol-smoke":
+            raise ValueError("deterministicSmoke requires the frozen test model identity")
     return value
 
 
@@ -184,8 +199,53 @@ def _configure_isolated_openhands_home() -> str:
     return _OPENHANDS_HOME.name
 
 
+ControlDecision = dict[str, Any]
+DecisionCallback = Callable[[dict[str, Any]], ControlDecision]
+
+
+def _stdio_decision(event: dict[str, Any]) -> ControlDecision:
+    request_id = uuid.uuid4().hex
+    print(
+        CONTROL_PREFIX
+        + json.dumps(
+            {
+                "protocolVersion": PROTOCOL_VERSION,
+                "type": "event",
+                "requestId": request_id,
+                "event": event,
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+    raw = sys.stdin.readline()
+    if not raw:
+        raise RuntimeError("PGACS controller closed before returning a decision")
+    value = json.loads(raw)
+    if (
+        not isinstance(value, dict)
+        or value.get("protocolVersion") != PROTOCOL_VERSION
+        or value.get("type") != "decision"
+        or value.get("requestId") != request_id
+        or not isinstance(value.get("decision"), dict)
+    ):
+        raise RuntimeError("PGACS controller returned a malformed decision")
+    decision = value["decision"]
+    if decision.get("schemaVersion") != "0.1.0" or decision.get("action") not in (
+        "allow",
+        "observe",
+        "inject_guidance",
+        "deny",
+    ):
+        raise RuntimeError("PGACS controller returned an unsupported decision")
+    if not isinstance(decision.get("reason"), str):
+        raise RuntimeError("PGACS controller decision reason is missing")
+    return decision
+
+
 def _build_and_run(
-    request: dict[str, Any], *, llm_override: LLM | None = None
+    request: dict[str, Any], *, llm_override: LLM | None = None,
+    decision_callback: DecisionCallback = _stdio_decision,
 ) -> dict[str, Any]:
     _configure_isolated_openhands_home()
     from pydantic import Field
@@ -200,7 +260,6 @@ def _build_and_run(
         ToolDefinition,
     )
     from openhands.sdk.conversation.state import ConversationExecutionStatus
-    from openhands.sdk.event.llm_convertible.action import ActionEvent
     from openhands.sdk.llm import LLM
     from openhands.sdk.tool import ToolExecutor, register_tool
 
@@ -208,6 +267,58 @@ def _build_and_run(
     recorder: list[dict[str, Any]] = []
     transcript: list[dict[str, Any]] = []
     _RUN_RECORDERS[run_id] = recorder
+
+    deterministic_smoke = request.get("deterministicSmoke")
+    if deterministic_smoke is not None and llm_override is None:
+        from openhands.sdk.llm import Message, MessageToolCall, TextContent
+        from openhands.sdk.testing import TestLLM
+
+        actions = [
+            {
+                "operation": "replace",
+                "path": request["targetPath"],
+                "old_text": deterministic_smoke["oldText"],
+                "new_text": deterministic_smoke["newText"],
+            },
+            {"operation": "read", "path": request["targetPath"]},
+            {"operation": "list", "path": deterministic_smoke["contextPath"]},
+            {
+                "operation": "replace",
+                "path": request["targetPath"],
+                "old_text": deterministic_smoke["oldText"],
+                "new_text": deterministic_smoke["newText"],
+            },
+        ]
+        messages = [
+            Message(
+                role="assistant",
+                content=[TextContent(text="")],
+                tool_calls=[
+                    MessageToolCall(
+                        id=f"call_{index}",
+                        name="pgacs_workspace",
+                        arguments=json.dumps(action),
+                        origin="completion",
+                    )
+                ],
+            )
+            for index, action in enumerate(actions, start=1)
+        ]
+        messages.append(
+            Message(
+                role="assistant",
+                content=[TextContent(text="")],
+                tool_calls=[
+                    MessageToolCall(
+                        id="call_finish",
+                        name="finish",
+                        arguments=json.dumps({"message": "Protocol smoke complete."}),
+                        origin="completion",
+                    )
+                ],
+            )
+        )
+        llm_override = TestLLM.from_messages(messages, model=request["model"])
 
     class PgacsWorkspaceAction(Action):
         operation: Literal["read", "list", "search", "write", "replace"] = Field(
@@ -245,15 +356,17 @@ def _build_and_run(
             recorder_id: str,
         ) -> None:
             self.policy = PgacsWorkspacePolicy(workspace_root, target_path)
-            self.target_path = target_path
-            self.pre_action_control = pre_action_control
+            del pre_action_control
             self.events = _RUN_RECORDERS[recorder_id]
             self.sequence = 0
-            self.observed_paths: set[str] = set()
 
         def _event_id(self, suffix: str) -> str:
             self.sequence += 1
             return f"openhands:{self.sequence}:{suffix}"
+
+        def _record_and_decide(self, event: dict[str, Any]) -> ControlDecision:
+            self.events.append(event)
+            return decision_callback(event)
 
         def __call__(
             self, action: PgacsWorkspaceAction, conversation=None
@@ -264,72 +377,58 @@ def _build_and_run(
             attempt_id: str | None = None
             if operation in ("write", "replace"):
                 attempt_id = self._event_id("write-attempt")
-                self.events.append(
+                decision = self._record_and_decide(
                     {"eventId": attempt_id, "kind": "file_write_attempt", "path": raw_path}
                 )
-                if self.pre_action_control["enabled"] and raw_path == self.target_path:
-                    missing_evidence = []
-                    if self.target_path not in self.observed_paths:
-                        missing_evidence.append("target-read")
-                    if not any(path != self.target_path for path in self.observed_paths):
-                        missing_evidence.append("repository-context-read")
-                    if missing_evidence:
-                        detail = (
-                            f'{self.pre_action_control["guidance"]} Missing evidence: '
-                            f'{", ".join(missing_evidence)}.'
-                        )
-                        self.events.append(
-                            {
-                                "eventId": self._event_id("write-result"),
-                                "kind": "file_write_result",
-                                "path": raw_path,
-                                "attemptEventId": attempt_id,
-                                "applied": False,
-                                "rawArtifactSha256": PgacsWorkspacePolicy.sha256(detail),
-                            }
-                        )
-                        return PgacsWorkspaceObservation(
-                            success=False, operation=operation, path=raw_path, detail=detail
-                        )
+                if decision["action"] in ("inject_guidance", "deny"):
+                    detail = decision["reason"]
+                    self._record_and_decide(
+                        {
+                            "eventId": self._event_id("write-result"),
+                            "kind": "file_write_result",
+                            "path": raw_path,
+                            "attemptEventId": attempt_id,
+                            "applied": False,
+                            "rawArtifactSha256": PgacsWorkspacePolicy.sha256(detail),
+                        }
+                    )
+                    return PgacsWorkspaceObservation(
+                        success=False, operation=operation, path=raw_path, detail=detail
+                    )
             try:
                 if operation == "read":
                     result = self.policy.read(action.path, action.start_line, action.end_line)
-                    self.events.append(
+                    self._record_and_decide(
                         {
                             "eventId": self._event_id("read"),
                             "kind": "file_read",
                             "path": result.path,
                         }
                     )
-                    self.observed_paths.add(result.path)
                 elif operation == "list":
                     result = self.policy.list_files(action.path)
-                    self.events.append(
+                    self._record_and_decide(
                         {
                             "eventId": self._event_id("list"),
                             "kind": "symbol_search",
                             "path": result.path,
                         }
                     )
-                    if result.path != ".":
-                        self.observed_paths.add(result.path)
                 elif operation == "search":
                     result = self.policy.search(action.query, action.path)
-                    self.events.append(
+                    self._record_and_decide(
                         {
                             "eventId": self._event_id("search"),
                             "kind": "symbol_search",
                             "path": result.path,
                         }
                     )
-                    if result.path != ".":
-                        self.observed_paths.add(result.path)
                 elif operation == "write":
                     result = self.policy.write(action.path, action.content)
                 else:
                     result = self.policy.replace(action.path, action.old_text, action.new_text)
                 if attempt_id is not None:
-                    self.events.append(
+                    self._record_and_decide(
                         {
                             "eventId": self._event_id("write-result"),
                             "kind": "file_write_result",
@@ -345,7 +444,7 @@ def _build_and_run(
             except (WorkspacePolicyError, OSError) as error:
                 detail = str(error)
                 if attempt_id is not None:
-                    self.events.append(
+                    self._record_and_decide(
                         {
                             "eventId": self._event_id("write-result"),
                             "kind": "file_write_result",
@@ -439,6 +538,7 @@ def _build_and_run(
         "targetOnlyWrites": True,
         "repositoryOnlyReads": True,
         "preActionConditioning": request["preActionControl"]["enabled"],
+        "centralPolicyAuthority": True,
         "costAccounting": (
             "available" if cost_accounting["available"] else "unavailable"
         ),
@@ -466,28 +566,32 @@ def _build_and_run(
         conversation.run()
         status = conversation.state.execution_status
         submitted = status == ConversationExecutionStatus.FINISHED
-        action_count = sum(
-            1 for event in conversation.state.events if isinstance(event, ActionEvent)
-        )
         metrics = conversation.conversation_stats.get_combined_metrics()
+        # Token usage has one record per measured completion call. TestLLM intentionally
+        # emits none, so the result omits numTurns instead of fabricating a tool-action count.
+        llm_call_count = len(metrics.token_usages)
         reason = None if submitted else f"OpenHands conversation ended with status {status.value}"
         result = {
             "protocolVersion": PROTOCOL_VERSION,
+            "type": "result",
             "submitted": submitted,
             "transcriptSha256": _json_sha256(transcript),
             "observedEvents": recorder,
             "reason": reason,
             "modelIds": [request["model"]],
-            "numTurns": action_count,
             "durationMs": round((time.monotonic() - started) * 1000),
             "runtimeReceipt": runtime_receipt,
+            "eventsDecidedOnline": True,
         }
+        if llm_call_count > 0:
+            result["numTurns"] = llm_call_count
         if cost_accounting["available"]:
             result["totalCostUsd"] = metrics.accumulated_cost
         return result
     except Exception as error:
         result = {
             "protocolVersion": PROTOCOL_VERSION,
+            "type": "result",
             "submitted": False,
             "transcriptSha256": _json_sha256(transcript),
             "observedEvents": recorder,
@@ -495,6 +599,7 @@ def _build_and_run(
             "modelIds": [request["model"]],
             "durationMs": round((time.monotonic() - started) * 1000),
             "runtimeReceipt": runtime_receipt,
+            "eventsDecidedOnline": True,
         }
         if cost_accounting["available"]:
             result["totalCostUsd"] = llm.metrics.accumulated_cost
@@ -507,6 +612,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--model")
+    parser.add_argument("--deterministic-smoke", action="store_true")
     args = parser.parse_args()
     try:
         if args.self_test:
@@ -542,16 +648,22 @@ def main() -> int:
             )
             return 0 if provider_ready is not False else 2
         request = _read_request()
-        print(json.dumps(_build_and_run(request), sort_keys=True))
+        if args.deterministic_smoke != (request.get("deterministicSmoke") is not None):
+            raise ValueError(
+                "deterministic smoke mode must be enabled by both controller and bridge"
+            )
+        print(RESULT_PREFIX + json.dumps(_build_and_run(request), sort_keys=True), flush=True)
         return 0
     except Exception as error:
         print(
             json.dumps(
                 {
                     "protocolVersion": PROTOCOL_VERSION,
+                    "type": "result",
                     "submitted": False,
                     "transcriptSha256": _json_sha256([]),
                     "observedEvents": [],
+                    "eventsDecidedOnline": True,
                     "reason": f"{error.__class__.__name__}: {error}",
                 },
                 sort_keys=True,

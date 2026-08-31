@@ -18,6 +18,38 @@ from pgacs_secrepobench_agent import (
 from pgacs_workspace_policy import PgacsWorkspacePolicy, WorkspacePolicyError
 
 
+def central_decider(target_path: str, *, enforce: bool):
+    observed_paths: set[str] = set()
+
+    def decide(event: dict[str, object]) -> dict[str, object]:
+        kind = event["kind"]
+        path = event.get("path")
+        if kind in ("file_read", "symbol_search") and isinstance(path, str):
+            if path != ".":
+                observed_paths.add(path)
+        missing = []
+        if kind == "file_write_attempt" and path == target_path:
+            if target_path not in observed_paths:
+                missing.append("target-read")
+            if not any(item != target_path for item in observed_paths):
+                missing.append("repository-context-read")
+        action = "inject_guidance" if enforce and missing else "allow"
+        return {
+            "schemaVersion": "0.1.0",
+            "action": action,
+            "reason": (
+                "Inspect required context before writing: " + ", ".join(missing)
+                if missing
+                else "Allowed by the test controller."
+            ),
+            "signalIds": [],
+            "interventionIds": [],
+            "decisionSha256": "0" * 64,
+        }
+
+    return decide
+
+
 class PgacsWorkspacePolicyTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
@@ -204,7 +236,8 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
         ]
         llm = TestLLM.from_messages(messages, model="test/pgacs-smoke")
         request = {
-                "protocolVersion": "1.2",
+                "protocolVersion": "2.0",
+                "type": "start",
                 "workspaceRoot": str(workspace),
                 "targetPath": "target.py",
                 "prompt": "Inspect context.py and implement secure_add.",
@@ -227,9 +260,14 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
                 },
             }
         with patch.dict("os.environ", {}, clear=True):
-            result = _build_and_run(request, llm_override=llm)
+            result = _build_and_run(
+                request,
+                llm_override=llm,
+                decision_callback=central_decider("target.py", enforce=True),
+            )
 
         self.assertTrue(result["submitted"], result.get("reason"))
+        self.assertNotIn("numTurns", result)
         self.assertEqual(
             target.read_text(encoding="utf-8"),
             "def secure_add(left: int, right: int) -> int:\n"
@@ -300,7 +338,8 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
             )
         )
         request = {
-                "protocolVersion": "1.2",
+                "protocolVersion": "2.0",
+                "type": "start",
                 "workspaceRoot": str(workspace),
                 "targetPath": "target.py",
                 "prompt": "Implement the target.",
@@ -322,7 +361,11 @@ class PgacsWorkspacePolicyTest(unittest.TestCase):
             }
         llm = TestLLM.from_messages(messages, model="test/pgacs-control")
         with patch.dict("os.environ", {}, clear=True):
-            result = _build_and_run(request, llm_override=llm)
+            result = _build_and_run(
+                request,
+                llm_override=llm,
+                decision_callback=central_decider("target.py", enforce=True),
+            )
 
         self.assertTrue(result["submitted"], result.get("reason"))
         self.assertEqual(target.read_text(encoding="utf-8"), "def secure_add():\n    return 1\n")

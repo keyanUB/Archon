@@ -10,13 +10,16 @@ import type {
   SecRepoBenchAgentRuntimeReceipt,
 } from './pgacs-secrepobench-controller';
 
-const PROTOCOL_VERSION = '1.2';
+const PROTOCOL_VERSION = '2.0';
 const MAX_BRIDGE_OUTPUT_BYTES = 2_000_000;
+const CONTROL_PREFIX = 'PGACS_CONTROL ';
+const RESULT_PREFIX = 'PGACS_RESULT ';
 
 type JsonObject = Record<string, unknown>;
 
 interface OpenHandsBridgeResponse {
   protocolVersion: string;
+  type: 'result';
   submitted: boolean;
   transcriptSha256: string;
   observedEvents: SecRepoBenchAgentEventDraft[];
@@ -26,6 +29,7 @@ interface OpenHandsBridgeResponse {
   durationMs?: number;
   totalCostUsd?: number;
   runtimeReceipt?: SecRepoBenchAgentRuntimeReceipt;
+  eventsDecidedOnline: true;
 }
 
 function isObject(value: unknown): value is JsonObject {
@@ -127,6 +131,7 @@ function parseRuntimeReceipt(value: unknown): SecRepoBenchAgentRuntimeReceipt | 
     targetOnlyWrites: requiredBoolean(value.targetOnlyWrites, 'targetOnlyWrites'),
     repositoryOnlyReads: requiredBoolean(value.repositoryOnlyReads, 'repositoryOnlyReads'),
     preActionConditioning: requiredBoolean(value.preActionConditioning, 'preActionConditioning'),
+    centralPolicyAuthority: requiredBoolean(value.centralPolicyAuthority, 'centralPolicyAuthority'),
     costAccounting,
     costSource,
     monetaryBudgetEnforced,
@@ -135,74 +140,76 @@ function parseRuntimeReceipt(value: unknown): SecRepoBenchAgentRuntimeReceipt | 
   };
 }
 
+function parseObservedEvent(item: unknown): SecRepoBenchAgentEventDraft {
+  if (!isObject(item) || typeof item.eventId !== 'string' || typeof item.kind !== 'string') {
+    throw new Error('OpenHands bridge returned an invalid observed event');
+  }
+  const rawArtifactSha256 = item.rawArtifactSha256;
+  if (
+    rawArtifactSha256 !== undefined &&
+    (typeof rawArtifactSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(rawArtifactSha256))
+  ) {
+    throw new Error('OpenHands bridge returned an invalid event artifact digest');
+  }
+  const base = {
+    eventId: item.eventId,
+    ...(typeof rawArtifactSha256 === 'string' ? { rawArtifactSha256 } : {}),
+  };
+  if (item.kind === 'file_read' || item.kind === 'symbol_search') {
+    if (typeof item.path !== 'string') throw new Error('Observed path must be a string');
+    return { ...base, kind: item.kind, path: item.path };
+  }
+  if (item.kind === 'file_write_attempt') {
+    if (typeof item.path !== 'string') throw new Error('Observed path must be a string');
+    return { ...base, kind: item.kind, path: item.path };
+  }
+  if (item.kind === 'file_write_result') {
+    if (
+      typeof item.path !== 'string' ||
+      typeof item.attemptEventId !== 'string' ||
+      typeof item.applied !== 'boolean'
+    ) {
+      throw new Error('OpenHands bridge returned an invalid write result');
+    }
+    return {
+      ...base,
+      kind: item.kind,
+      path: item.path,
+      attemptEventId: item.attemptEventId,
+      applied: item.applied,
+    };
+  }
+  if (item.kind === 'command_attempt') {
+    if (typeof item.commandClass !== 'string') {
+      throw new Error('OpenHands bridge returned an invalid command attempt');
+    }
+    return { ...base, kind: item.kind, commandClass: item.commandClass };
+  }
+  if (item.kind === 'command_result') {
+    if (typeof item.commandClass !== 'string' || !Number.isSafeInteger(item.exitCode)) {
+      throw new Error('OpenHands bridge returned an invalid command result');
+    }
+    return {
+      ...base,
+      kind: item.kind,
+      commandClass: item.commandClass,
+      exitCode: item.exitCode as number,
+    };
+  }
+  if (item.kind === 'diagnostic_observed') {
+    if (typeof item.diagnosticClass !== 'string') {
+      throw new Error('OpenHands bridge returned an invalid diagnostic event');
+    }
+    return { ...base, kind: item.kind, diagnosticClass: item.diagnosticClass };
+  }
+  throw new Error(`OpenHands bridge returned unknown event kind ${item.kind}`);
+}
+
 function parseObservedEvents(value: unknown): SecRepoBenchAgentEventDraft[] {
   if (!Array.isArray(value)) {
     throw new Error('OpenHands bridge returned invalid observedEvents');
   }
-  return value.map(item => {
-    if (!isObject(item) || typeof item.eventId !== 'string' || typeof item.kind !== 'string') {
-      throw new Error('OpenHands bridge returned an invalid observed event');
-    }
-    const rawArtifactSha256 = item.rawArtifactSha256;
-    if (
-      rawArtifactSha256 !== undefined &&
-      (typeof rawArtifactSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(rawArtifactSha256))
-    ) {
-      throw new Error('OpenHands bridge returned an invalid event artifact digest');
-    }
-    const base = {
-      eventId: item.eventId,
-      ...(typeof rawArtifactSha256 === 'string' ? { rawArtifactSha256 } : {}),
-    };
-    if (item.kind === 'file_read' || item.kind === 'symbol_search') {
-      if (typeof item.path !== 'string') throw new Error('Observed path must be a string');
-      return { ...base, kind: item.kind, path: item.path };
-    }
-    if (item.kind === 'file_write_attempt') {
-      if (typeof item.path !== 'string') throw new Error('Observed path must be a string');
-      return { ...base, kind: item.kind, path: item.path };
-    }
-    if (item.kind === 'file_write_result') {
-      if (
-        typeof item.path !== 'string' ||
-        typeof item.attemptEventId !== 'string' ||
-        typeof item.applied !== 'boolean'
-      ) {
-        throw new Error('OpenHands bridge returned an invalid write result');
-      }
-      return {
-        ...base,
-        kind: item.kind,
-        path: item.path,
-        attemptEventId: item.attemptEventId,
-        applied: item.applied,
-      };
-    }
-    if (item.kind === 'command_attempt') {
-      if (typeof item.commandClass !== 'string') {
-        throw new Error('OpenHands bridge returned an invalid command attempt');
-      }
-      return { ...base, kind: item.kind, commandClass: item.commandClass };
-    }
-    if (item.kind === 'command_result') {
-      if (typeof item.commandClass !== 'string' || !Number.isSafeInteger(item.exitCode)) {
-        throw new Error('OpenHands bridge returned an invalid command result');
-      }
-      return {
-        ...base,
-        kind: item.kind,
-        commandClass: item.commandClass,
-        exitCode: item.exitCode as number,
-      };
-    }
-    if (item.kind === 'diagnostic_observed') {
-      if (typeof item.diagnosticClass !== 'string') {
-        throw new Error('OpenHands bridge returned an invalid diagnostic event');
-      }
-      return { ...base, kind: item.kind, diagnosticClass: item.diagnosticClass };
-    }
-    throw new Error(`OpenHands bridge returned unknown event kind ${item.kind}`);
-  });
+  return value.map(parseObservedEvent);
 }
 
 export function parseOpenHandsBridgeResponse(output: string): OpenHandsBridgeResponse {
@@ -213,15 +220,22 @@ export function parseOpenHandsBridgeResponse(output: string): OpenHandsBridgeRes
     .split('\n')
     .map(line => line.trim())
     .filter(Boolean);
-  const lastLine = lines.at(-1);
+  const lastLine = lines
+    .filter(line => line.startsWith(RESULT_PREFIX) || line.startsWith('{'))
+    .at(-1);
   if (!lastLine) throw new Error('OpenHands bridge returned no protocol response');
-  const value: unknown = JSON.parse(lastLine);
+  const value: unknown = JSON.parse(
+    lastLine.startsWith(RESULT_PREFIX) ? lastLine.slice(RESULT_PREFIX.length) : lastLine
+  );
   if (!isObject(value)) throw new Error('OpenHands bridge response must be a JSON object');
   if (value.protocolVersion !== PROTOCOL_VERSION) {
     throw new Error(`Unsupported OpenHands bridge protocol: ${String(value.protocolVersion)}`);
   }
   if (typeof value.submitted !== 'boolean') {
     throw new Error('OpenHands bridge returned invalid submitted status');
+  }
+  if (value.type !== 'result' || value.eventsDecidedOnline !== true) {
+    throw new Error('OpenHands bridge did not attest online event decisions');
   }
   if (
     typeof value.transcriptSha256 !== 'string' ||
@@ -243,6 +257,7 @@ export function parseOpenHandsBridgeResponse(output: string): OpenHandsBridgeRes
   }
   return {
     protocolVersion: PROTOCOL_VERSION,
+    type: 'result',
     submitted: value.submitted,
     transcriptSha256: value.transcriptSha256,
     observedEvents: parseObservedEvents(value.observedEvents),
@@ -252,7 +267,30 @@ export function parseOpenHandsBridgeResponse(output: string): OpenHandsBridgeRes
     durationMs: optionalFiniteNumber(value.durationMs, 'durationMs'),
     totalCostUsd,
     runtimeReceipt,
+    eventsDecidedOnline: true,
   };
+}
+
+interface OpenHandsControlEnvelope {
+  requestId: string;
+  event: SecRepoBenchAgentEventDraft;
+}
+
+export function parseOpenHandsControlEnvelope(line: string): OpenHandsControlEnvelope {
+  if (!line.startsWith(CONTROL_PREFIX)) {
+    throw new Error('OpenHands control message has an invalid prefix');
+  }
+  const value: unknown = JSON.parse(line.slice(CONTROL_PREFIX.length));
+  if (
+    !isObject(value) ||
+    value.protocolVersion !== PROTOCOL_VERSION ||
+    value.type !== 'event' ||
+    typeof value.requestId !== 'string' ||
+    value.requestId.length === 0
+  ) {
+    throw new Error('OpenHands control message is malformed');
+  }
+  return { requestId: value.requestId, event: parseObservedEvent(value.event) };
 }
 
 function failureTranscript(reason: string): string {
@@ -270,7 +308,13 @@ export class SecRepoBenchOpenHandsAgentDriver implements SecRepoBenchAgentDriver
       maxBudgetUsd: number;
       pythonExecutable?: string;
       bridgePath?: string;
+      bridgeArgs?: string[];
       timeoutMs?: number;
+      deterministicSmoke?: {
+        oldText: string;
+        newText: string;
+        contextPath: string;
+      };
     }
   ) {}
 
@@ -292,24 +336,63 @@ export class SecRepoBenchOpenHandsAgentDriver implements SecRepoBenchAgentDriver
       model: this.config.model,
       maxTurns: this.config.maxTurns,
       maxBudgetUsd: this.config.maxBudgetUsd,
+      ...(this.config.deterministicSmoke
+        ? { deterministicSmoke: this.config.deterministicSmoke }
+        : {}),
     };
-    const subprocess = Bun.spawn([pythonExecutable, bridgePath], {
-      cwd: process.cwd(),
-      stdin: new Blob([JSON.stringify(request)]),
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
+    const subprocess = Bun.spawn(
+      [pythonExecutable, bridgePath, ...(this.config.bridgeArgs ?? [])],
+      {
+        cwd: process.cwd(),
+        stdin: 'pipe',
+        stdout: 'pipe',
+        stderr: 'pipe',
+      }
+    );
     let timedOut = false;
     const timeout = setTimeout(() => {
       timedOut = true;
       subprocess.kill();
     }, this.config.timeoutMs ?? 1_200_000);
     try {
-      const [stdout, stderr, exitCode] = await Promise.all([
-        new Response(subprocess.stdout).text(),
-        new Response(subprocess.stderr).text(),
-        subprocess.exited,
-      ]);
+      subprocess.stdin.write(`${JSON.stringify({ type: 'start', ...request })}\n`);
+      subprocess.stdin.flush();
+      const stderrPromise = new Response(subprocess.stderr).text();
+      const reader = subprocess.stdout.getReader();
+      const decoder = new TextDecoder();
+      let stdout = '';
+      let pending = '';
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        const text = decoder.decode(chunk.value, { stream: true });
+        stdout += text;
+        if (Buffer.byteLength(stdout, 'utf8') > MAX_BRIDGE_OUTPUT_BYTES) {
+          subprocess.kill();
+          throw new Error('OpenHands bridge output exceeded the admitted size');
+        }
+        pending += text;
+        const lines = pending.split('\n');
+        pending = lines.pop() ?? '';
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line.startsWith(CONTROL_PREFIX)) continue;
+          const envelope = parseOpenHandsControlEnvelope(line);
+          const decision = await input.eventController.decide(envelope.event);
+          subprocess.stdin.write(
+            `${JSON.stringify({
+              protocolVersion: PROTOCOL_VERSION,
+              type: 'decision',
+              requestId: envelope.requestId,
+              decision,
+            })}\n`
+          );
+          subprocess.stdin.flush();
+        }
+      }
+      stdout += decoder.decode();
+      subprocess.stdin.end();
+      const [stderr, exitCode] = await Promise.all([stderrPromise, subprocess.exited]);
       if (timedOut) {
         const reason = 'OpenHands bridge exceeded the attempt timeout';
         return { submitted: false, transcriptSha256: failureTranscript(reason), reason };
@@ -341,6 +424,8 @@ export class SecRepoBenchOpenHandsAgentDriver implements SecRepoBenchAgentDriver
       }
       return response;
     } catch (error) {
+      subprocess.kill();
+      await subprocess.exited.catch(() => undefined);
       const reason = error instanceof Error ? error.message : String(error);
       return { submitted: false, transcriptSha256: failureTranscript(reason), reason };
     } finally {

@@ -2,7 +2,9 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-export const PGACS_QUALIFICATION_SCHEMA_VERSION = '0.1.0' as const;
+import type { NativeEvaluatorImageIdentity } from './pgacs-secrepobench-official-evaluator';
+
+export const PGACS_QUALIFICATION_SCHEMA_VERSION = '0.2.0' as const;
 export const PGACS_QUALIFICATION_RECEIPT_PATH =
   'principle-guided-agent-research/current-secrepobench/evidence/oracle-v0.6-qualification.json';
 const EXPECTED_BENCHMARK_REVISION = '7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76';
@@ -28,6 +30,14 @@ interface QualificationTask {
   datasetSha256: string;
 }
 
+export interface QualifiedEvaluatorImage {
+  reference: string;
+  imageId: string;
+  repoDigests: string[];
+  os: string;
+  architecture: 'amd64';
+}
+
 export interface PgacsQualificationReceipt {
   schemaVersion: typeof PGACS_QUALIFICATION_SCHEMA_VERSION;
   qualificationId: 'pgacs-secrepobench-oracle-v0.6';
@@ -46,6 +56,10 @@ export interface PgacsQualificationReceipt {
   inputs: {
     calibrationSummarySha256: string;
     preparedRegistrySha256: string;
+  };
+  environment: {
+    host: { os: string; architecture: 'amd64' };
+    images: QualifiedEvaluatorImage[];
   };
   calibration: {
     summarySchemaVersion: string;
@@ -72,6 +86,33 @@ interface VerifyQualificationOptions {
   oracleText: string;
   summaryText?: string;
   registryText?: string;
+}
+
+export interface VerifiedQualificationEnvironment {
+  host: { os: string; architecture: 'amd64' };
+  images: QualifiedEvaluatorImage[];
+}
+
+export function assertPgacsEvaluatorMatchesQualification(input: {
+  current: NativeEvaluatorImageIdentity;
+  qualified: QualifiedEvaluatorImage;
+  qualifiedHostOs: string;
+}): void {
+  const currentDigests = [...input.current.repoDigests].sort();
+  const qualifiedDigests = [...input.qualified.repoDigests].sort();
+  if (
+    input.current.reference !== input.qualified.reference ||
+    input.current.imageId !== input.qualified.imageId ||
+    JSON.stringify(currentDigests) !== JSON.stringify(qualifiedDigests) ||
+    input.current.hostArchitecture !== 'amd64' ||
+    input.current.imageArchitecture !== input.qualified.architecture ||
+    input.current.hostOs !== input.qualifiedHostOs ||
+    input.current.imageOs !== input.qualified.os
+  ) {
+    throw new Error(
+      `Current evaluator image does not match its native qualification: ${input.current.reference}`
+    );
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -118,6 +159,61 @@ function validSha256(value: unknown): boolean {
   return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
 }
 
+function parseQualifiedEnvironment(
+  summary: Record<string, unknown>
+): PgacsQualificationReceipt['environment'] {
+  if (!isRecord(summary.environment) || !isRecord(summary.environment.host)) {
+    throw new Error('calibration summary environment is missing');
+  }
+  const host = summary.environment.host;
+  const hostOs = requireString(host, 'os', 'calibration summary environment host');
+  const hostArchitecture = requireString(
+    host,
+    'architecture',
+    'calibration summary environment host'
+  );
+  if (hostArchitecture !== 'amd64') {
+    throw new Error('calibration summary was not produced on native amd64');
+  }
+  if (!Array.isArray(summary.environment.images) || summary.environment.images.length === 0) {
+    throw new Error('calibration summary evaluator images are missing');
+  }
+  const images = summary.environment.images.map(
+    (value: unknown, index: number): QualifiedEvaluatorImage => {
+      if (!isRecord(value)) throw new Error(`calibration image ${index} must be an object`);
+      const architecture = requireString(value, 'architecture', `calibration image ${index}`);
+      if (architecture !== 'amd64') {
+        throw new Error(`calibration image ${index} is not amd64`);
+      }
+      const imageId = requireString(value, 'imageId', `calibration image ${index}`);
+      if (!/^sha256:[a-f0-9]{64}$/.test(imageId)) {
+        throw new Error(`calibration image ${index} has an invalid image ID`);
+      }
+      if (
+        !Array.isArray(value.repoDigests) ||
+        value.repoDigests.length === 0 ||
+        value.repoDigests.some(
+          digest => typeof digest !== 'string' || !/^[^@\s]+@sha256:[a-f0-9]{64}$/.test(digest)
+        )
+      ) {
+        throw new Error(`calibration image ${index} lacks immutable repository digests`);
+      }
+      return {
+        reference: requireString(value, 'reference', `calibration image ${index}`),
+        imageId,
+        repoDigests: [...new Set(value.repoDigests as string[])].sort(),
+        os: requireString(value, 'os', `calibration image ${index}`),
+        architecture: 'amd64',
+      };
+    }
+  );
+  images.sort((left, right) => left.reference.localeCompare(right.reference));
+  if (new Set(images.map(image => image.reference)).size !== images.length) {
+    throw new Error('calibration summary contains duplicate evaluator image references');
+  }
+  return { host: { os: hostOs, architecture: 'amd64' }, images };
+}
+
 export function buildPgacsQualificationReceipt(
   options: BuildQualificationOptions
 ): PgacsQualificationReceipt {
@@ -141,6 +237,7 @@ export function buildPgacsQualificationReceipt(
   const oracleVersions = new Set<string>();
   const durations: number[] = [];
   let probeCount = 0;
+  const environment = parseQualifiedEnvironment(summary);
 
   for (const [index, value] of results.entries()) {
     if (!isRecord(value)) throw new Error(`calibration result ${index} must be an object`);
@@ -241,6 +338,12 @@ export function buildPgacsQualificationReceipt(
   ) {
     throw new Error('calibration task identities do not match the prepared registry');
   }
+  const qualifiedImageReferences = new Set(
+    environment.images.map((image: QualifiedEvaluatorImage): string => image.reference)
+  );
+  if (tasks.some(task => !qualifiedImageReferences.has(task.arvoImage))) {
+    throw new Error('calibration environment does not bind every task evaluator image');
+  }
 
   const revision = /^SecRepoBench@([0-9a-f]{40}):/.exec(
     requireString(registry, 'sourceManifest', 'prepared registry')
@@ -253,7 +356,7 @@ export function buildPgacsQualificationReceipt(
     throw new Error('qualifiedOn must use YYYY-MM-DD');
   }
 
-  return {
+  const receipt: PgacsQualificationReceipt = {
     schemaVersion: PGACS_QUALIFICATION_SCHEMA_VERSION,
     qualificationId: 'pgacs-secrepobench-oracle-v0.6',
     qualifiedOn: options.qualifiedOn,
@@ -272,6 +375,7 @@ export function buildPgacsQualificationReceipt(
       calibrationSummarySha256: sha256(options.summaryText),
       preparedRegistrySha256: sha256(options.registryText),
     },
+    environment,
     calibration: {
       summarySchemaVersion: requireString(summary, 'schemaVersion', 'calibration summary'),
       repetitions,
@@ -284,6 +388,16 @@ export function buildPgacsQualificationReceipt(
       tasks,
     },
   };
+  const receiptErrors = verifyPgacsQualificationReceipt({
+    receiptText: JSON.stringify(receipt),
+    oracleText: options.oracleText,
+    summaryText: options.summaryText,
+    registryText: options.registryText,
+  });
+  if (receiptErrors.length > 0) {
+    throw new Error(`Calibration does not satisfy qualification: ${receiptErrors.join('; ')}`);
+  }
+  return receipt;
 }
 
 export function verifyPgacsQualificationReceipt(options: VerifyQualificationOptions): string[] {
@@ -323,7 +437,7 @@ export function verifyPgacsQualificationReceipt(options: VerifyQualificationOpti
   } else {
     const calibration = receipt.calibration;
     if (
-      calibration.summarySchemaVersion !== '0.1.0' ||
+      calibration.summarySchemaVersion !== '0.2.0' ||
       calibration.repetitions !== 3 ||
       calibration.resultCount !== 18 ||
       calibration.allPassed !== true ||
@@ -361,6 +475,37 @@ export function verifyPgacsQualificationReceipt(options: VerifyQualificationOpti
       }
     }
   }
+  if (!isRecord(receipt.environment) || !isRecord(receipt.environment.host)) {
+    errors.push('native qualification environment is missing');
+  } else {
+    const environment = receipt.environment;
+    const host = environment.host as Record<string, unknown>;
+    if (host.architecture !== 'amd64' || typeof host.os !== 'string' || host.os.length === 0) {
+      errors.push('qualification host is not native amd64');
+    }
+    if (!Array.isArray(environment.images) || environment.images.length !== 3) {
+      errors.push('qualification does not bind the three evaluator images');
+    } else {
+      for (const [taskId, expected] of Object.entries(EXPECTED_TASKS)) {
+        const image = environment.images.find(
+          (value: unknown): boolean => isRecord(value) && value.reference === expected.arvoImage
+        );
+        if (
+          !isRecord(image) ||
+          image.architecture !== 'amd64' ||
+          typeof image.os !== 'string' ||
+          !/^sha256:[a-f0-9]{64}$/.test(String(image.imageId)) ||
+          !Array.isArray(image.repoDigests) ||
+          image.repoDigests.length === 0 ||
+          image.repoDigests.some(
+            digest => typeof digest !== 'string' || !/^[^@\s]+@sha256:[a-f0-9]{64}$/.test(digest)
+          )
+        ) {
+          errors.push(`invalid evaluator image qualification for task ${taskId}`);
+        }
+      }
+    }
+  }
   if (!isRecord(receipt.inputs)) {
     errors.push('qualification input digests are missing');
   } else {
@@ -386,6 +531,17 @@ export function verifyPgacsQualificationReceipt(options: VerifyQualificationOpti
   return errors;
 }
 
+export function requirePgacsQualifiedEnvironment(
+  options: VerifyQualificationOptions
+): VerifiedQualificationEnvironment {
+  const errors = verifyPgacsQualificationReceipt(options);
+  if (errors.length > 0) {
+    throw new Error(`PGACS evaluator qualification is not current: ${errors.join('; ')}`);
+  }
+  const receipt = parseRecord(options.receiptText, 'qualification receipt');
+  return parseQualifiedEnvironment(receipt);
+}
+
 async function readIfPresent(path: string): Promise<string | undefined> {
   try {
     return await readFile(path, 'utf8');
@@ -399,14 +555,21 @@ async function main(): Promise<void> {
   const repoRoot = resolve(import.meta.dir, '..');
   const args = process.argv.slice(2);
   const checkOnly = args.includes('--check');
-  const unknown = args.filter((argument: string): boolean => argument !== '--check');
+  const summaryOptions = args.filter((argument: string): boolean =>
+    argument.startsWith('--summary=')
+  );
+  if (summaryOptions.length > 1) throw new Error('Duplicate option: --summary');
+  const unknown = args.filter(
+    (argument: string): boolean => argument !== '--check' && !argument.startsWith('--summary=')
+  );
   if (unknown.length > 0) throw new Error(`Unknown option: ${unknown[0]}`);
 
   const receiptPath = resolve(repoRoot, PGACS_QUALIFICATION_RECEIPT_PATH);
   const oraclePath = resolve(repoRoot, 'scripts/secrepobench/pgacs_secrepobench_oracle.py');
   const summaryPath = resolve(
     repoRoot,
-    '.pgacs-secrepobench-calibration-v06/calibration-summary.json'
+    summaryOptions[0]?.slice('--summary='.length) ||
+      '.pgacs-secrepobench-calibration-v06/calibration-summary.json'
   );
   const registryPath = resolve(repoRoot, '.pgacs-secrepobench/registry.json');
   const oracleText = await readFile(oraclePath, 'utf8');

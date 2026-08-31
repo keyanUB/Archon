@@ -162,8 +162,19 @@ describe('SecRepoBench trajectory controller', (): void => {
     });
     expect(second).toEqual(first);
     expect(first.candidateRevision).toBe(1);
-    expect(first.signals).toEqual([]);
-    expect(first.interventions).toEqual([]);
+    expect(first.signals).toMatchObject([
+      {
+        class: 'context_gap',
+        disposition: 'advisory',
+        evidenceRefs: ['missing-evidence:repository-context-read'],
+      },
+    ]);
+    expect(first.interventions).toMatchObject([
+      {
+        action: 'record',
+        controlPoint: 'pre_action',
+      },
+    ]);
     expect(first.stateSha256).toMatch(/^[a-f0-9]{64}$/);
   });
 
@@ -291,7 +302,7 @@ describe('SecRepoBench trajectory controller', (): void => {
     });
   });
 
-  test('requires independent probes for the current candidate revision', async (): Promise<void> => {
+  test('does not treat hidden evaluator probes as agent validation behavior', async (): Promise<void> => {
     const context = await fixture();
     let state = createSecRepoBenchTrajectoryState({
       taskId: context.task.taskId,
@@ -354,12 +365,9 @@ describe('SecRepoBench trajectory controller', (): void => {
       finalSignals = reduced.signals;
       finalInterventions = reduced.interventions;
     }
-    expect(finalSignals[0]).toMatchObject({
-      class: 'failure_disregard',
-      disposition: 'probe_required',
-    });
-    expect(finalInterventions[0]?.action).toBe('require_probe');
-    expect(finalInterventions[0]?.evidenceRefs).toHaveLength(3);
+    expect(finalSignals).toEqual([]);
+    expect(finalInterventions).toEqual([]);
+    expect(state.probeRevision).toEqual({});
   });
 
   test('rejects event sequence and candidate-revision drift', async (): Promise<void> => {

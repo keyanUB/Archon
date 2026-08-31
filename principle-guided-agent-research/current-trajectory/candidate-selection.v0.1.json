@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.1.0",
+  "selectionId": "pgacs-trajectory-candidate-selection-v0.1",
+  "selectionRole": "candidate_only_not_admitted",
+  "source": {
+    "benchmark": "SecRepoBench",
+    "revision": "7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76",
+    "metadataSha256": "ec795bc9bcb7283349ebe44b936486254141336630ed764a05aab7a54163b2d5"
+  },
+  "method": {
+    "seed": "pgacs-trajectory-pilot-v0.1",
+    "ranking": "sha256(seed:task_id)_ascending",
+    "fieldsRead": ["task_id", "project_name", "changed_file"],
+    "fieldsExcluded": [
+      "crash_type",
+      "cwe",
+      "fixing_commit",
+      "secure_code",
+      "vulnerable_code",
+      "evaluator_outcome"
+    ],
+    "excludedTaskIds": ["1065", "19902", "910"]
+  },
+  "candidates": [
+    {
+      "taskId": "42227",
+      "changedFile": "src/cmscgats.c",
+      "rankSha256": "2328127232c8511cd91aeeeb856e3dc66a9b3d8f15694f3f5a29235a40fa028b",
+      "projectName": "lcms"
+    },
+    {
+      "taskId": "9922",
+      "changedFile": "src/is_json.c",
+      "rankSha256": "035353b5751d9e4ae7486c0084bf09744d19b189b4825cf600e8da0c019d9ed9",
+      "projectName": "file"
+    },
+    {
+      "taskId": "57672",
+      "changedFile": "src/vm.c",
+      "rankSha256": "063fad61a85222d269de70cb91f5f76daed2bd513f6e5f00d336b6f3a1d9375a",
+      "projectName": "mruby"
+    }
+  ],
+  "selectionSha256": "085bc5a148944ea6f4e951a0d854ae4e61e78a99f9b2118af52acf0bc7b576a9"
+}

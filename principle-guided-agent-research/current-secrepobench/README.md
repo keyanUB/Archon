@@ -5,17 +5,25 @@
 This branch adapts PGACS v0.3 to SecRepoBench's repository-level C/C++ code
 completion tasks. It does not replace the generic harness or revise the claims
 from the completed BaxBench experiment. The first target is a three-task
-feasibility study. The implemented runner supports the primary C0/C1/C2/C3
-contrasts; B0 remains an external native-agent reference and is not conflated
-with Archon mediation.
+feasibility study. The implemented runner supports C0/C1/C2/C3, but the primary
+SecRepoBench treatment contrasts are C0/C1/C2. C3 is retained as an exploratory
+mechanism condition; its incremental trajectory claim is evaluated only on
+tasks admitted by the [trajectory-control protocol](../current-trajectory/README.md).
+B0 remains an external native-agent reference and is not conflated with Archon
+mediation.
 
 This README is the status and evaluation tracker. The normative repository-level
 architecture is in [technical-design.md](technical-design.md). The historical
-v0.5 M0-M6 three-task feasibility matrix is complete. The v0.6 pre-action C3
-mechanism is locally qualified, and its timed oracle passed all 18 three-replay
-secure/vulnerable reference cases. Fresh v0.6 agent benchmark runs remain. The
-historical descriptive results and claim boundary are in
-[feasibility-results.md](feasibility-results.md).
+v0.5 M0-M6 three-task feasibility matrix is complete. Protocol 2.0 now routes
+OpenHands events through the central TypeScript controller before mutation.
+Public runtime probes, natural loop conditioning, dynamic policy activation,
+native-amd64 oracle requalification, and live protocol-2.0 model qualification
+remain pending. The historical timed oracle passed all 18 three-replay
+secure/vulnerable reference cases, and the first OpenHands/Qwen task-910 C0-C3
+matrix completed under the prior protocol. The historical descriptive results and claim
+boundary are in [feasibility-results.md](feasibility-results.md); the new
+candidate and trajectory comparison is in
+[openhands-qwen-task910-results.md](openhands-qwen-task910-results.md).
 
 Upstream identities are frozen independently:
 
@@ -204,11 +212,14 @@ All conditions share the exact model snapshot, neutral task prompt, repository,
 tool budget, timeout, and evaluator. `H1` is not pooled with the main
 conditions.
 
-B0 is an external native-agent reference. C0/C1/C2/C3 provide the primary
-within-Archon treatment contrasts: initial guidance, artifact enforcement, and
-online trajectory control are added one at a time. Differences between B0 and
-C0 may include mediation effects and are not attributed to policy guidance
-alone.
+B0 is an external native-agent reference. C0/C1/C2 provide the primary
+within-Archon SecRepoBench contrasts: initial guidance and artifact enforcement
+are added one at a time. Differences between B0 and C0 may include mediation
+effects and are not attributed to policy guidance alone. C3 may exercise the
+same online controller for engineering qualification, but `C2 -> C3` is a
+trajectory-control contrast only on prospectively admitted trajectory-rich
+tasks. If no eligible intervention opportunity occurs, the mechanism is
+reported as not exercised.
 
 Primary outcomes are:
 
@@ -260,25 +271,33 @@ memory-safety coverage while providing an image-local developer-test suite.
 | sample preparation | executed | extracted tasks `910`, `1065`, and `19902`; emits masks, digest-bound registry, and input receipt |
 | repository materializer | implemented, real-input-qualified | rejects tracked source drift; tracked blobs only, including tracked-but-ignored files; digest-bound mask; deterministic history-free baseline |
 | candidate integrity | implemented, synthetic-qualified | exact byte envelope, target-only mutation, protected-tree digest, normalized patch, repair lineage, typed admission failures, and no-op repair rejection |
-| evaluator adapter and oracle | v0.6 three-replay-qualified | all 18 secure/vulnerable reference replays passed and all 54 normalized probes include measured duration |
-| tracked qualification receipt | complete | `evidence/oracle-v0.6-qualification.json` binds the 18/18 aggregate to the oracle source, prepared registry, and full local calibration summary digests |
+| evaluator adapter and oracle | historical v0.6 replay complete; current qualification pending | all 18 historical secure/vulnerable reference replays passed, but the receipt predates native-architecture and immutable-image-digest requirements |
+| tracked qualification receipt | historical evidence | `evidence/oracle-v0.6-qualification.json` binds the 18/18 aggregate to source digests but must be regenerated on native amd64 with image digests |
 | repository policy preparation | implemented, synthetic-qualified | bounded lexical facts and direct callers; no CWE/evaluator leakage |
-| trajectory harness | v0.6 implemented, synthetic-qualified | state/predicate schema `0.2.0` replays C3 context evidence, denied writes, scope/control decisions, and revision-bound probes |
+| trajectory harness | partially implemented, synthetic-qualified | protocol 2.0 central file-action decisions, C2 observation, C3 context conditioning, scope controls, and replay pass; public probes, loop conditioning, and dynamic activation remain TBD |
+| trajectory-task admission | implemented, synthetic-qualified | schema `0.1.0` fails closed on non-blind selection, missing C2/C3 opportunity parity, evaluator leakage, insufficient fixtures, and coupled oracles |
 | Claude generation adapter | v0.6 implemented, synthetic-qualified | pre-action target/context evidence and target-path controls, streamed write results, and no command/network tools |
-| OpenHands/Qwen generation adapter | v0.6 locally SDK-qualified | protocol 1.2; real OpenHands loop denies a premature write, guides evidence collection, and accepts the informed retry; pinned Scaleway benchmark qualification remains pending |
-| C0/C1/C2/C3 controller | v0.6 implemented, synthetic-qualified | result schema `0.6.0` passes treatment, admission, repair, terminal precedence, and pre-action replay regressions |
-| real oracle calibration | v0.6 three-replay pass | nine secure references verified, nine vulnerable references classified insecure, no inconclusive or harness-error outcomes |
+| OpenHands/Qwen generation adapter | protocol 2.0 implemented; live requalification pending | bidirectional JSONL; real SDK subprocess deny/read/retry/allow smoke passes; Python executes central decisions and no longer owns the predicate; historical task `910` used the prior protocol |
+| C0/C1/C2/C3 controller | central online authority implemented | result schema `0.6.0`; phase-scoped event IDs; duplicate/undecided online events fail closed |
+| real oracle calibration | historical v0.6 three-replay pass | nine secure references verified and nine vulnerable references classified insecure; native-amd64 requalification pending |
 | M6 experiment | complete as a feasibility study | 12 comparative cells completed; C2/C3 released no confirmed-insecure candidate; see `feasibility-results.md` |
 
 ## 7. Next Steps
 
-1. Run one task-910 OpenHands/Qwen qualification cell, audit its runtime receipt
-   and trajectory, then execute the same frozen C0-C3 matrix. Treat model and
-   agent runtime as separate factors from the PGACS condition.
-2. Rerun at least three independent generations per cell before making
+1. Requalify the oracle on native amd64 and bind immutable evaluator-image
+   digests and host/image architecture into the receipt.
+2. Add a preregistered harness-mediated public-probe interface and natural
+   diagnostic/repair loop events; do not expose raw shell or hidden PoC output.
+3. Connect eligible runtime facts to the generic monotonic policy-state reducer
+   and qualify the protocol-2.0 OpenHands loop with deterministic fixtures.
+4. Rerun task-910 C0/C1/C2 from one revision in randomized condition order and
+   run at least three independent generations per cell before making artifact-
    effectiveness claims; preserve the historical v0.5 matrix separately.
-3. Add an AST/content predicate only after blinded fixture precision supports
-   enforcement. It remains TBD and is not part of v0.6.
+5. Complete native qualification and opportunity fixtures for the prospectively
+   selected trajectory candidates, then freeze a three-task C2/C3 pilot.
+6. Keep unchecked-size-arithmetic and repository-helper-bypass analysis
+   observation-only. Enforce a content predicate only after blinded fixture
+   precision and a genuine pre-mutation intervention boundary are established.
 
 ## 8. Commands
 
@@ -287,12 +306,13 @@ Verify a clean checkout before obtaining large experimental assets:
 ```bash
 bun install --frozen-lockfile
 bun run pgacs:doctor
-bun run pgacs:qualification:check
 ```
 
 `Offline development: READY` is expected without benchmark repositories,
 Docker images, credentials, or the OpenHands virtual environment. Live
-readiness remains `NOT-READY` until those local inputs are installed.
+readiness remains `NOT-READY` until those local inputs are installed and a
+current native qualification receipt exists. The tracked historical receipt
+causes `bun run pgacs:qualification:check` to fail by design.
 
 Acquire the exact benchmark revision and evaluator images:
 
@@ -306,6 +326,40 @@ docker pull n132/arvo:910-fix
 docker pull n132/arvo:1065-fix
 docker pull n132/arvo:19902-fix
 ```
+
+Before calibration or an experiment, verify that Docker is running the ARVO
+images natively:
+
+```bash
+docker info --format '{{.Architecture}}'
+docker image inspect n132/arvo:910-fix --format '{{.Architecture}}'
+```
+
+The normalized values must match (`x86_64` equals `amd64`, and `aarch64` equals
+`arm64`). PGACS refuses cross-architecture sanitizer execution because an
+emulation fault is infrastructure evidence, not a candidate vulnerability.
+
+On an Apple Silicon workstation, use a native-amd64 Linux host through an SSH
+Docker context instead of local emulation:
+
+```bash
+docker context create pgacs-amd64 --docker host=ssh://USER@AMD64_HOST
+docker --context pgacs-amd64 info --format '{{.Architecture}}'
+docker context use pgacs-amd64
+docker pull n132/arvo:910-fix
+docker pull n132/arvo:1065-fix
+docker pull n132/arvo:19902-fix
+bun run pgacs:doctor
+```
+
+The remote user must be permitted to run Docker without an interactive sudo
+prompt. Keep this context active for preparation, calibration, qualification,
+and experiment execution; the candidate bind mounts are transmitted only if
+the Docker daemon can access the referenced paths, so the recommended setup is
+to run the repository checkout and commands directly on the amd64 host. A
+remote context from the Mac is suitable for readiness checks but not for these
+bind-mounted evaluator invocations unless the checkout exists at the same path
+on the remote host.
 
 Prepare all three samples from that pinned benchmark snapshot:
 
@@ -323,16 +377,29 @@ bun run scripts/calibrate-pgacs-secrepobench.ts \
   .pgacs-secrepobench/registry.json \
   .pgacs-multibench/sources/SecRepoBench-7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76 \
   .pgacs-secrepobench \
-  .pgacs-secrepobench-calibration-v06 \
-  --repetitions=3
+  .pgacs-secrepobench-calibration-v06-native-20260831 \
+  --repetitions=3 \
+  --tasks=910,1065,19902
 ```
 
 Calibration outputs remain ignored and must be preserved externally with an
-experiment. After a reviewed oracle or task-registry change, regenerate the
-tracked aggregate receipt with `bun run
-scripts/pgacs-secrepobench-qualification.ts`, inspect its diff, and run
-`bun run pgacs:qualification:check`. Do not regenerate the receipt merely to
-silence a source-digest failure; that failure means requalification is needed.
+experiment. On a native-amd64 host, the command records Docker host/image
+architecture, image IDs, and immutable repository digests in summary schema
+`0.2.0`. Generate the tracked receipt from that exact output:
+
+```bash
+bun run scripts/pgacs-secrepobench-qualification.ts \
+  --summary=.pgacs-secrepobench-calibration-v06-native-20260831/calibration-summary.json
+bun run pgacs:qualification:check \
+  --summary=.pgacs-secrepobench-calibration-v06-native-20260831/calibration-summary.json
+bun run pgacs:doctor
+```
+
+Inspect the receipt diff before accepting it. Do not regenerate a receipt
+merely to silence a source, registry, or image-digest failure; each failure
+means requalification is required. The runner independently reloads the
+receipt, oracle, and prepared registry and compares the current Docker image
+identity before every new experiment.
 
 Reproduce the historical C0 qualification cell with those paths:
 
@@ -410,7 +477,7 @@ Implicit OpenHands profile state uses a process-owned temporary home, preventing
 host-profile or candidate-workspace state from affecting the run. A bounded
 historical live smoke task using Qwen3.6 also completed in seven turns under the
 earlier post-write mechanism. It qualifies provider integration, not the v0.6
-C3 mechanism or SecRepoBench effectiveness. Protocol `1.2` records whether
+C3 mechanism or SecRepoBench effectiveness. Protocol `2.0` records whether
 cost accounting and monetary-budget enforcement are actually available and
 never interprets unknown cost as zero. The next cell pins Scaleway rather than
 using Hugging Face's automatic provider selection. On 2026-08-17, Hugging Face listed

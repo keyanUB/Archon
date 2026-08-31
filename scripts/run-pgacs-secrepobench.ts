@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { lstat, mkdir, realpath, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 
 import {
@@ -15,11 +15,20 @@ import {
   type SecRepoBenchCondition,
   type SecRepoBenchEvaluatorDriver,
 } from './pgacs-secrepobench-controller';
-import { evaluateSecRepoBenchCandidateOfficially } from './pgacs-secrepobench-official-evaluator';
+import {
+  evaluateSecRepoBenchCandidateOfficially,
+  inspectNativeEvaluatorImage,
+  type NativeEvaluatorImageIdentity,
+} from './pgacs-secrepobench-official-evaluator';
 import {
   assertFreshSanitizedWorkspace,
   materializeSecRepoBenchWorkspace,
 } from './pgacs-secrepobench-materializer';
+import {
+  assertPgacsEvaluatorMatchesQualification,
+  PGACS_QUALIFICATION_RECEIPT_PATH,
+  requirePgacsQualifiedEnvironment,
+} from './pgacs-secrepobench-qualification';
 
 interface CliArguments {
   registryPath: string;
@@ -210,7 +219,8 @@ async function assertEvaluatorReady(input: {
   manifest: FrozenTaskManifest;
   frozenEvaluatorPath: string;
   repositoryRoot: string;
-}): Promise<string> {
+  registryPath: string;
+}): Promise<NativeEvaluatorImageIdentity> {
   const benchmark = input.manifest.evaluator.secRepoBench;
   if (!benchmark) throw new Error('SecRepoBench evaluator metadata is missing');
   await verifySecRepoBenchBenchmarkSurface(input.manifest, input.frozenEvaluatorPath);
@@ -220,27 +230,39 @@ async function assertEvaluatorReady(input: {
   if (!sourceStatus.isFile() || sourceStatus.isSymbolicLink()) {
     throw new Error('PGACS SecRepoBench oracle source is invalid');
   }
-  const imageId = await commandOutput([
-    'docker',
-    'image',
-    'inspect',
-    '--format={{.Id}}',
-    benchmark.arvoImage,
+  const [receiptText, oracleText, registryText] = await Promise.all([
+    readFile(resolve(input.repositoryRoot, PGACS_QUALIFICATION_RECEIPT_PATH), 'utf8'),
+    readFile(oracleSource, 'utf8'),
+    readFile(input.registryPath, 'utf8'),
   ]);
-  if (!/^sha256:[a-f0-9]{64}$/.test(imageId)) {
-    throw new Error('ARVO image did not resolve to a content-addressed image ID');
+  const qualifiedEnvironment = requirePgacsQualifiedEnvironment({
+    receiptText,
+    oracleText,
+    registryText,
+  });
+  const qualifiedImage = qualifiedEnvironment.images.find(
+    image => image.reference === benchmark.arvoImage
+  );
+  if (!qualifiedImage) {
+    throw new Error(`Qualification receipt does not bind evaluator image ${benchmark.arvoImage}`);
   }
-  return imageId;
+  const currentImage = await inspectNativeEvaluatorImage(benchmark.arvoImage);
+  assertPgacsEvaluatorMatchesQualification({
+    current: currentImage,
+    qualified: qualifiedImage,
+    qualifiedHostOs: qualifiedEnvironment.host.os,
+  });
+  return currentImage;
 }
 
 async function assertEvaluatorImageUnchanged(
   manifest: FrozenTaskManifest,
-  imageId: string
+  qualifiedImage: NativeEvaluatorImageIdentity
 ): Promise<void> {
   const image = manifest.evaluator.secRepoBench?.arvoImage;
   if (!image) throw new Error('SecRepoBench evaluator metadata is missing');
-  const currentId = await commandOutput(['docker', 'image', 'inspect', '--format={{.Id}}', image]);
-  if (currentId !== imageId) {
+  const currentImage = await inspectNativeEvaluatorImage(image);
+  if (JSON.stringify(currentImage) !== JSON.stringify(qualifiedImage)) {
     throw new Error(`ARVO image binding changed during the experiment: ${image}`);
   }
 }
@@ -251,10 +273,11 @@ async function main(): Promise<void> {
   await assertContainedOutput(repositoryRoot, args.outputRoot);
   await assertDockerReady();
   const manifest = findManifest(args.registryPath, args.taskId);
-  const evaluatorImageId = await assertEvaluatorReady({
+  const evaluatorImage = await assertEvaluatorReady({
     manifest,
     frozenEvaluatorPath: args.frozenEvaluatorPath,
     repositoryRoot,
+    registryPath: args.registryPath,
   });
   await mkdir(args.outputRoot, { recursive: false });
   const agent = createAgent(args);
@@ -276,7 +299,7 @@ async function main(): Promise<void> {
     const evaluator: SecRepoBenchEvaluatorDriver = {
       id: 'secrepobench-official-isolated-v0.2',
       evaluate: async ({ candidate, attempt }) => {
-        await assertEvaluatorImageUnchanged(manifest, evaluatorImageId);
+        await assertEvaluatorImageUnchanged(manifest, evaluatorImage);
         return evaluateSecRepoBenchCandidateOfficially({
           manifest,
           candidate,
@@ -318,8 +341,13 @@ async function main(): Promise<void> {
           maxTurns: args.maxTurns ?? 30,
           maxBudgetUsd: args.maxBudgetUsd ?? null,
           evaluatorImage: {
-            reference: manifest.evaluator.secRepoBench?.arvoImage ?? null,
-            imageId: evaluatorImageId,
+            reference: evaluatorImage.reference,
+            imageId: evaluatorImage.imageId,
+            repoDigests: evaluatorImage.repoDigests,
+            hostOs: evaluatorImage.hostOs,
+            hostArchitecture: evaluatorImage.hostArchitecture,
+            imageOs: evaluatorImage.imageOs,
+            imageArchitecture: evaluatorImage.imageArchitecture,
           },
         },
         results,

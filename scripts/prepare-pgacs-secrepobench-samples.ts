@@ -10,6 +10,10 @@ import {
   type FrozenTaskManifest,
   type FrozenTaskRegistry,
 } from './pgacs-task-adapters';
+import {
+  selectTrajectoryCandidateTasks,
+  type TrajectoryCandidateSelectionReceipt,
+} from './select-pgacs-trajectory-candidates';
 
 const EVALUATOR_REVISION = '7ca5c4a7e908f8013e7b9ae624ba0d96f8c6ec76';
 
@@ -22,7 +26,7 @@ interface PrototypeTask {
   cweId: string;
 }
 
-const TASKS: PrototypeTask[] = [
+const DEVELOPMENT_TASKS: PrototypeTask[] = [
   {
     id: '910',
     projectName: 'lcms',
@@ -57,6 +61,60 @@ function isObject(value: unknown): value is JsonObject {
 
 function sha256(value: Uint8Array | string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+function cweForCrashType(crashType: string): string {
+  const normalized = crashType.toLowerCase();
+  if (normalized.includes('use-after-free')) return 'CWE-416';
+  if (normalized.includes('buffer-overflow') && normalized.includes('read')) return 'CWE-125';
+  if (normalized.includes('buffer-overflow') && normalized.includes('write')) return 'CWE-787';
+  throw new Error(`No reviewed CWE mapping exists for crash type: ${crashType}`);
+}
+
+export function resolveTrajectoryCandidateTasks(input: {
+  metadata: unknown;
+  metadataText: string;
+  selection: unknown;
+}): { tasks: PrototypeTask[]; receipt: TrajectoryCandidateSelectionReceipt } {
+  const expected = selectTrajectoryCandidateTasks({
+    metadata: input.metadata,
+    metadataText: input.metadataText,
+  });
+  if (stableSha256(input.selection) !== stableSha256(expected)) {
+    throw new Error('Trajectory candidate selection does not match the pinned selection protocol');
+  }
+  if (!isObject(input.metadata)) {
+    throw new Error('SecRepoBench sample metadata must be an object keyed by task ID');
+  }
+  const metadata = input.metadata;
+  const tasks = expected.candidates.map(candidate => {
+    const raw = metadata[candidate.taskId];
+    if (!isObject(raw)) {
+      throw new Error(`Benchmark metadata is missing task ${candidate.taskId}`);
+    }
+    const fixingCommit = raw.fixing_commit;
+    const crashType = raw.crash_type;
+    if (typeof fixingCommit !== 'string' || !/^[a-f0-9]{40}$/.test(fixingCommit)) {
+      throw new Error(
+        `Benchmark metadata has an invalid fixing commit for task ${candidate.taskId}`
+      );
+    }
+    if (typeof crashType !== 'string' || crashType.length === 0) {
+      throw new Error(`Benchmark metadata has an invalid crash type for task ${candidate.taskId}`);
+    }
+    if (raw.project_name !== candidate.projectName || raw.changed_file !== candidate.changedFile) {
+      throw new Error(`Benchmark metadata identity changed for task ${candidate.taskId}`);
+    }
+    return {
+      id: candidate.taskId,
+      projectName: candidate.projectName,
+      fixingCommit,
+      changedFile: candidate.changedFile,
+      crashType,
+      cweId: cweForCrashType(crashType),
+    };
+  });
+  return { tasks, receipt: expected };
 }
 
 async function command(command: string[], cwd?: string): Promise<string> {
@@ -285,10 +343,15 @@ async function buildManifest(input: {
 }
 
 async function main(): Promise<void> {
-  const [rawBenchmarkRoot, rawOutputRoot] = process.argv.slice(2);
-  if (!rawBenchmarkRoot || !rawOutputRoot || process.argv.length !== 4) {
+  const [rawBenchmarkRoot, rawOutputRoot, rawSelectionOption] = process.argv.slice(2);
+  if (
+    !rawBenchmarkRoot ||
+    !rawOutputRoot ||
+    process.argv.length > 5 ||
+    (rawSelectionOption !== undefined && !rawSelectionOption.startsWith('--selection='))
+  ) {
     throw new Error(
-      'Usage: prepare-pgacs-secrepobench-samples.ts BENCHMARK_SNAPSHOT NEW_OUTPUT_ROOT'
+      'Usage: prepare-pgacs-secrepobench-samples.ts BENCHMARK_SNAPSHOT NEW_OUTPUT_ROOT [--selection=RECEIPT_JSON]'
     );
   }
   const repositoryRoot = await realpath(process.cwd());
@@ -307,13 +370,28 @@ async function main(): Promise<void> {
   await mkdir(sourceRoot, { recursive: true });
   await mkdir(masksRoot, { recursive: true });
   try {
+    const metadataText = await readFile(resolve(benchmarkRoot, 'sample_metadata.json'), 'utf8');
+    const metadata = JSON.parse(metadataText) as unknown;
+    let tasks = DEVELOPMENT_TASKS;
+    let selectionReceipt: TrajectoryCandidateSelectionReceipt | undefined;
+    if (rawSelectionOption !== undefined) {
+      const selectionPath = rawSelectionOption.slice('--selection='.length);
+      if (selectionPath.length === 0) throw new Error('--selection requires a receipt path');
+      const resolved = resolveTrajectoryCandidateTasks({
+        metadata,
+        metadataText,
+        selection: JSON.parse(await readFile(resolve(selectionPath), 'utf8')) as unknown,
+      });
+      tasks = resolved.tasks;
+      selectionReceipt = resolved.receipt;
+    }
     const digests = await policyDigests(repositoryRoot);
-    const tasks: FrozenTaskManifest[] = [];
+    const manifests: FrozenTaskManifest[] = [];
     const taskInputs = [];
-    for (const task of TASKS) {
+    for (const task of tasks) {
       await extractTaskSource({ task, sourceRoot });
       const built = await buildManifest({ task, benchmarkRoot, masksRoot, digests });
-      tasks.push(built.manifest);
+      manifests.push(built.manifest);
       taskInputs.push({
         taskId: task.id,
         sourceRepositoryRoot: resolve(outputRoot, 'sources', task.id),
@@ -322,9 +400,11 @@ async function main(): Promise<void> {
     }
     const registry: FrozenTaskRegistry = {
       schemaVersion: '0.1.0',
-      sourceManifest: `SecRepoBench@${EVALUATOR_REVISION}:sample_metadata.json`,
+      sourceManifest: selectionReceipt
+        ? `SecRepoBench@${EVALUATOR_REVISION}:candidate-selection:${selectionReceipt.selectionSha256}`
+        : `SecRepoBench@${EVALUATOR_REVISION}:sample_metadata.json`,
       generator: 'scripts/prepare-pgacs-secrepobench-samples.ts',
-      tasks,
+      tasks: manifests,
     };
     await writeFile(
       resolve(temporaryRoot, 'registry.json'),
@@ -344,4 +424,4 @@ async function main(): Promise<void> {
   process.stdout.write(`Prepared SecRepoBench samples at ${outputRoot}\n`);
 }
 
-await main();
+if (import.meta.main) await main();

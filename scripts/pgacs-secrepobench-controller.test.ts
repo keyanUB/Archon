@@ -9,6 +9,7 @@ import {
   reduceSecRepoBenchTerminalDecision,
   runSecRepoBenchCell,
   type SecRepoBenchAgentDriver,
+  type SecRepoBenchAgentEventDraft,
   type SecRepoBenchEvaluatorDriver,
 } from './pgacs-secrepobench-controller';
 import { normalizeSecRepoBenchOracleResult } from './pgacs-secrepobench-evaluation';
@@ -340,11 +341,58 @@ describe('SecRepoBench experiment controller', (): void => {
     expect(result.candidates).toHaveLength(2);
     expect(result.candidates[1]?.parentCandidateSha256).toBe(result.candidates[0]?.candidateSha256);
     expect(result.ledger.at(-1)?.kind).toBe('decision');
-    expect(
-      result.trajectory.interventions.filter(
-        intervention => intervention.action === 'require_probe'
-      )
-    ).toHaveLength(2);
+    expect(result.trajectory.probeRevision).toMatchObject({
+      'repository.compile': 2,
+      'secrepobench.developer-tests': 2,
+      'secrepobench.oss-fuzz-poc': 2,
+    });
+  });
+
+  test('scopes driver event identifiers independently for each attempt', async () => {
+    const fixture = await createFixture();
+    const reusableEventAgent: SecRepoBenchAgentDriver = {
+      id: 'fixture-attempt-local-event-agent',
+      preActionControl: true,
+      runAttempt: async input => {
+        const secure = input.phase === 'repair-1';
+        await writeFile(
+          fixture.targetPath,
+          `int parse(int value) {\n  return value${secure ? '' : ' + 1'};\n}\n`
+        );
+        return {
+          submitted: true,
+          transcriptSha256: (secure ? 'f' : 'e').repeat(64),
+          observedEvents: [
+            { eventId: 'read:target', kind: 'file_read', path: 'src/parse.c' },
+            { eventId: 'read:context', kind: 'symbol_search', path: 'src' },
+            { eventId: 'write:attempt', kind: 'file_write_attempt', path: 'src/parse.c' },
+            {
+              eventId: 'write:result',
+              kind: 'file_write_result',
+              path: 'src/parse.c',
+              attemptEventId: 'write:attempt',
+              applied: true,
+            },
+          ],
+        };
+      },
+    };
+
+    const result = await runSecRepoBenchCell({
+      condition: 'C2',
+      manifest: fixture.manifest,
+      materialization: fixture.materialization,
+      workspaceRoot: fixture.workspaceRoot,
+      agent: reusableEventAgent,
+      evaluator: evaluator(),
+    });
+
+    expect(result.terminalDecision).toBe('verified');
+    expect(result.trajectory.processedEventIds).toContain('initial:write:attempt');
+    expect(result.trajectory.processedEventIds).toContain('repair-1:write:attempt');
+    expect(result.trajectory.processedEventIds).toHaveLength(
+      new Set(result.trajectory.processedEventIds).size
+    );
   });
 
   test('retains the admitted failure when the bounded repair produces no candidate', async () => {
@@ -514,6 +562,86 @@ describe('SecRepoBench experiment controller', (): void => {
         evaluator: evaluator(),
       })
     ).rejects.toThrow('pre-action control');
+  });
+
+  test('makes C3 write decisions in the central controller before adapter mutation', async () => {
+    const fixture = await createFixture();
+    const result = await runSecRepoBenchCell({
+      condition: 'C3',
+      manifest: fixture.manifest,
+      materialization: fixture.materialization,
+      workspaceRoot: fixture.workspaceRoot,
+      agent: {
+        id: 'fixture-online-controller-agent',
+        preActionControl: true,
+        runAttempt: async input => {
+          const events: SecRepoBenchAgentEventDraft[] = [];
+          const decide = async (event: SecRepoBenchAgentEventDraft) => {
+            events.push(event);
+            return input.eventController.decide(event);
+          };
+          const prematureAttempt: SecRepoBenchAgentEventDraft = {
+            eventId: 'write:premature',
+            kind: 'file_write_attempt',
+            path: 'src/parse.c',
+          };
+          expect((await decide(prematureAttempt)).action).toBe('inject_guidance');
+          await decide({
+            eventId: 'write:premature-result',
+            kind: 'file_write_result',
+            path: 'src/parse.c',
+            attemptEventId: prematureAttempt.eventId,
+            applied: false,
+          });
+          await decide({ eventId: 'read:target', kind: 'file_read', path: 'src/parse.c' });
+          await decide({ eventId: 'read:context', kind: 'symbol_search', path: 'src' });
+          const admittedAttempt: SecRepoBenchAgentEventDraft = {
+            eventId: 'write:admitted',
+            kind: 'file_write_attempt',
+            path: 'src/parse.c',
+          };
+          expect((await decide(admittedAttempt)).action).toBe('allow');
+          await writeFile(fixture.targetPath, 'int parse(int value) {\n  return value;\n}\n');
+          await decide({
+            eventId: 'write:admitted-result',
+            kind: 'file_write_result',
+            path: 'src/parse.c',
+            attemptEventId: admittedAttempt.eventId,
+            applied: true,
+          });
+          return {
+            submitted: true,
+            transcriptSha256: '9'.repeat(64),
+            observedEvents: events,
+            eventsDecidedOnline: true,
+            runtimeReceipt: {
+              framework: 'fixture',
+              versions: { fixture: '1.0.0' },
+              toolSurface: ['fixture_workspace'],
+              shellEnabled: false,
+              browserEnabled: false,
+              mcpEnabled: false,
+              targetOnlyWrites: true,
+              repositoryOnlyReads: true,
+              preActionConditioning: true,
+              centralPolicyAuthority: true,
+              costAccounting: 'unavailable',
+              costSource: 'unavailable',
+              monetaryBudgetEnforced: false,
+            },
+          };
+        },
+      },
+      evaluator: evaluator(),
+    });
+
+    expect(result.terminalDecision).toBe('verified');
+    expect(result.trajectory.candidateRevision).toBe(1);
+    expect(
+      result.trajectory.interventions.some(
+        intervention => intervention.action === 'inject_guidance'
+      )
+    ).toBe(true);
   });
 
   test('rejects a runtime receipt that contradicts the assigned C3 mechanism', async () => {

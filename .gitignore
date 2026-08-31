@@ -125,4 +125,6 @@ test-results/
 .pgacs-multibench/
 .pgacs-secrepobench/
 .pgacs-secrepobench-calibration*/
+.pgacs-trajectory-secrepobench/
+.pgacs-trajectory-secrepobench-calibration*/
 .pgacs-openhands/

@@ -50,6 +50,20 @@ export interface SecRepoBenchAgentAttemptInput {
   repairFeedback?: SecRepoBenchRepairFeedback;
   policyPreparation: SecRepoBenchPolicyPreparation;
   preActionControl: SecRepoBenchPreActionControl;
+  eventController: SecRepoBenchAgentEventController;
+}
+
+export interface SecRepoBenchAgentControlDecision {
+  schemaVersion: '0.1.0';
+  action: 'allow' | 'observe' | 'inject_guidance' | 'deny';
+  reason: string;
+  signalIds: string[];
+  interventionIds: string[];
+  decisionSha256: string;
+}
+
+export interface SecRepoBenchAgentEventController {
+  decide(event: SecRepoBenchAgentEventDraft): Promise<SecRepoBenchAgentControlDecision>;
 }
 
 export interface SecRepoBenchAgentAttemptResult {
@@ -62,6 +76,7 @@ export interface SecRepoBenchAgentAttemptResult {
   durationMs?: number;
   totalCostUsd?: number;
   runtimeReceipt?: SecRepoBenchAgentRuntimeReceipt;
+  eventsDecidedOnline?: boolean;
 }
 
 export interface SecRepoBenchAgentRuntimeReceipt {
@@ -74,6 +89,7 @@ export interface SecRepoBenchAgentRuntimeReceipt {
   targetOnlyWrites: boolean;
   repositoryOnlyReads: boolean;
   preActionConditioning: boolean;
+  centralPolicyAuthority?: boolean;
   costAccounting: 'available' | 'unavailable';
   costSource: 'explicit' | 'litellm_model_map' | 'unavailable';
   monetaryBudgetEnforced: boolean;
@@ -151,6 +167,21 @@ export interface SecRepoBenchEvaluatorDriver {
     attempt: SecRepoBenchAttemptPhase;
     workspaceRoot: string;
   }): Promise<SecRepoBenchEvaluation>;
+}
+
+function scopeAgentEventDraft(
+  phase: SecRepoBenchAttemptPhase,
+  draft: SecRepoBenchAgentEventDraft
+): SecRepoBenchAgentEventDraft {
+  const eventId = `${phase}:${draft.eventId}`;
+  if (draft.kind === 'file_write_result') {
+    return {
+      ...draft,
+      eventId,
+      attemptEventId: `${phase}:${draft.attemptEventId}`,
+    };
+  }
+  return { ...draft, eventId };
 }
 
 export type SecRepoBenchTerminalDecision =
@@ -379,6 +410,33 @@ function toEvent(input: {
   } as SecRepoBenchTrajectoryEvent;
 }
 
+function controlDecision(
+  reduction: ReturnType<typeof reduceSecRepoBenchTrajectory>
+): SecRepoBenchAgentControlDecision {
+  const strongest =
+    reduction.interventions.find(item => item.action === 'deny') ??
+    reduction.interventions.find(item => item.action === 'inject_guidance') ??
+    reduction.interventions.find(item => item.action === 'record');
+  const action: SecRepoBenchAgentControlDecision['action'] =
+    strongest?.action === 'deny' ||
+    strongest?.action === 'inject_guidance' ||
+    strongest?.action === 'record'
+      ? strongest.action === 'record'
+        ? 'observe'
+        : strongest.action
+      : 'allow';
+  const core = {
+    schemaVersion: '0.1.0' as const,
+    action,
+    reason: strongest?.reason ?? 'No frozen trajectory predicate requires intervention.',
+    signalIds: reduction.signals.map(signal => signal.signalId).sort(),
+    interventionIds: reduction.interventions
+      .map(intervention => intervention.interventionId)
+      .sort(),
+  };
+  return { ...core, decisionSha256: stableSha256(core) };
+}
+
 export async function runSecRepoBenchCell(input: {
   condition: SecRepoBenchCondition;
   manifest: FrozenTaskManifest;
@@ -438,6 +496,7 @@ export async function runSecRepoBenchCell(input: {
       preparation,
       feedback,
     });
+    const onlineEventIds = new Set<string>();
     const result = await input.agent.runAttempt({
       condition: input.condition,
       phase,
@@ -447,6 +506,25 @@ export async function runSecRepoBenchCell(input: {
       repairFeedback: feedback,
       policyPreparation: preparation,
       preActionControl: preActionControl(input.condition, views.generation.workspace.targetPath),
+      eventController: {
+        decide: async draft => {
+          const scopedDraft = scopeAgentEventDraft(phase, draft);
+          if (onlineEventIds.has(scopedDraft.eventId)) {
+            throw new Error(`Agent event ${scopedDraft.eventId} was submitted more than once`);
+          }
+          const reduction = reduceSecRepoBenchTrajectory({
+            state: trajectory,
+            event: toEvent({ draft: scopedDraft, state: trajectory }),
+            preparation,
+          });
+          trajectory = reduction.state;
+          onlineEventIds.add(scopedDraft.eventId);
+          if (reduction.interventions.some(item => item.action === 'deny')) {
+            controlViolation = true;
+          }
+          return controlDecision(reduction);
+        },
+      },
     });
     assertRuntimeReceipt(input.condition, result.runtimeReceipt);
     appendEvidence(ledger, 'agent_attempt', result);
@@ -463,11 +541,19 @@ export async function runSecRepoBenchCell(input: {
       ...(result.totalCostUsd !== undefined ? { totalCostUsd: result.totalCostUsd } : {}),
       ...(result.runtimeReceipt ? { runtimeReceipt: result.runtimeReceipt } : {}),
     });
+    if (result.eventsDecidedOnline && !result.runtimeReceipt?.centralPolicyAuthority) {
+      throw new Error('Online event decisions require a central-policy-authority receipt');
+    }
     for (const draft of result.observedEvents ?? []) {
+      const scopedDraft = scopeAgentEventDraft(phase, draft);
+      if (onlineEventIds.has(scopedDraft.eventId)) continue;
+      if (result.eventsDecidedOnline) {
+        throw new Error(`OpenHands result contains undecided online event ${scopedDraft.eventId}`);
+      }
       const reduction = reduceSecRepoBenchTrajectory({
         state: trajectory,
         event: toEvent({
-          draft,
+          draft: scopedDraft,
           state: trajectory,
         }),
         preparation,

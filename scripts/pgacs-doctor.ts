@@ -27,6 +27,7 @@ export interface PgacsDoctorReport {
 interface DoctorOptions {
   repoRoot?: string;
   environment?: NodeJS.ProcessEnv;
+  architecture?: NodeJS.Architecture;
 }
 
 const REQUIRED_PATHS = [
@@ -62,16 +63,18 @@ async function validateQualificationReceipt(repoRoot: string): Promise<PgacsDoct
     return check(
       'qualification-receipt',
       'Tracked oracle qualification',
-      errors.length === 0 ? 'pass' : 'fail',
-      'offline',
-      errors.length === 0 ? 'v0.6 receipt matches the current oracle source' : errors.join('; ')
+      errors.length === 0 ? 'pass' : 'warn',
+      'live',
+      errors.length === 0
+        ? 'current native-amd64 receipt binds the oracle, registry, and immutable evaluator images'
+        : `historical evidence only; ${errors.join('; ')}`
     );
   } catch (error) {
     return check(
       'qualification-receipt',
       'Tracked oracle qualification',
-      'fail',
-      'offline',
+      'warn',
+      'live',
       error instanceof Error ? error.message : String(error)
     );
   }
@@ -213,6 +216,43 @@ function dockerCheck(executable: string | null, environment: NodeJS.ProcessEnv):
   );
 }
 
+function normalizeDockerArchitecture(value: string): string {
+  const architecture = value.trim().toLowerCase();
+  if (architecture === 'x86_64' || architecture === 'x64') return 'amd64';
+  if (architecture === 'aarch64') return 'arm64';
+  return architecture;
+}
+
+function evaluatorArchitectureCheck(
+  executable: string | null,
+  environment: NodeJS.ProcessEnv,
+  architectureOverride?: NodeJS.Architecture
+): PgacsDoctorCheck {
+  let architecture = architectureOverride ? normalizeDockerArchitecture(architectureOverride) : '';
+  if (!architecture && executable) {
+    const receipt = Bun.spawnSync([executable, 'info', '--format', '{{.Architecture}}'], {
+      env: environment,
+      stderr: 'pipe',
+      stdout: 'pipe',
+      timeout: 10_000,
+    });
+    if (receipt.exitCode === 0) {
+      architecture = normalizeDockerArchitecture(receipt.stdout.toString());
+    }
+  }
+  return check(
+    'evaluator-architecture',
+    'Native evaluator architecture',
+    architecture === 'amd64' ? 'pass' : 'warn',
+    'live',
+    architecture === 'amd64'
+      ? 'active Docker daemon is native amd64 and eligible for ARVO qualification'
+      : architecture
+        ? `active Docker daemon is ${architecture}; ARVO qualification requires native amd64`
+        : 'Docker daemon architecture is unavailable'
+  );
+}
+
 function openHandsPythonCheck(
   pythonPath: string,
   available: boolean,
@@ -328,7 +368,9 @@ export async function collectPgacsDoctorReport(
     )
   );
 
-  checks.push(dockerCheck(await findExecutable('docker', environment), environment));
+  const dockerExecutable = await findExecutable('docker', environment);
+  checks.push(dockerCheck(dockerExecutable, environment));
+  checks.push(evaluatorArchitectureCheck(dockerExecutable, environment, options.architecture));
 
   const configuredPython = environment.PGACS_OPENHANDS_PYTHON;
   const defaultPython = resolve(repoRoot, '.pgacs-openhands/bin/python');
